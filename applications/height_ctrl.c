@@ -146,7 +146,7 @@ float Height_Ctrl(float T,float thr,u8 ready,float en)	//en	1：定高   0：非定高
 		}
 		else			//悬停或下降
 		{
-				set_speed_t = thr_set/450 * MAX_VERTICAL_SPEED_DW;
+			set_speed_t = thr_set/450 * MAX_VERTICAL_SPEED_DW;
 		}
 		
 		//速度期望限幅滤波
