@@ -90,11 +90,19 @@ void Ultra_Get(u8 com_data)
 	{
 		ultra.height =  ((ultra_tmp<<8) + com_data)/10;		//单位是cm（传入数据单位是mm，÷10后单位是cm）
 		
-		if(ultra.height < 500) // 5米范围内认为有效，跳变值约10米.
+		#if defined(USE_KS103)
+		if(ultra.height < 180) // KS103在1.8m内数据稳定
 		{
 			ultra.relative_height = ultra.height;	//单位是cm
 			ultra.measure_ok = 1;
 		}
+		#elif defined(USE_US100)
+		if(ultra.height < 500) // US100在5m内可用
+		{
+			ultra.relative_height = ultra.height;	//单位是cm
+			ultra.measure_ok = 1;
+		}
+		#endif
 		else
 		{
 			ultra.measure_ok = 2; //数据超范围
