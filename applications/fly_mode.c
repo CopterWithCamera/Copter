@@ -55,7 +55,7 @@ void mode_check(float *ch_in)
 	}
 	else if(*(ch_in+AUX2) <200)		//中间
 	{
-		ctrl_command = 1;
+		ctrl_command = 3;
 	}
 	else							//最高
 	{

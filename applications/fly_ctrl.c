@@ -20,6 +20,7 @@ void fly_ctrl(void)	//调用周期2ms
 	0：正常的手动飞行模式（超声波+气压计定高）
 	1：高度锁定
 	2：高度锁定+姿态归零
+	3：降落模式
 	
 	*/
 	
@@ -62,9 +63,13 @@ void fly_ctrl(void)	//调用周期2ms
 			CH_ctrl[3] = 0;	//3：航向
 			CH_ctrl[2] = 0;	//2：油门（油门位于中值，含义为高度保持）
 		}
-		else if(ctrl_command == 3)
+		else if(ctrl_command == 3)	//匀速降落
 		{
+			CH_ctrl[0] = CH_filter[0];	//0：横滚
+			CH_ctrl[1] = CH_filter[1];	//1：俯仰
+			CH_ctrl[3] = CH_filter[3];	//3：航向
 			
+			CH_ctrl[2] = -100;	//2：油门（油门位于中下）
 		}
 	}
 }

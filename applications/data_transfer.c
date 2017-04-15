@@ -256,8 +256,8 @@ void ANO_DT_Data_Exchange(void)
 	{
 		
 		f.send_location = 0;
-		ANO_DT_Send_Location(	0,			0,			0*10000000,		0 *10000000,	0		);
-		//						定位状态	卫星数量	精度 			纬度 			回航角
+		ANO_DT_Send_Location(	-1,			2,			3 *10000000,	4 *10000000,	0		);
+		//						定位状态	卫星数量			经度 			纬度 			回航角
 		
 	}
 
