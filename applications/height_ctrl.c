@@ -15,6 +15,7 @@
 #include "ctrl.h"
 #include "include.h"
 #include "fly_mode.h"
+#include "fly_ctrl.h"
 
 float	set_height_e,
 		set_height_em,
@@ -128,31 +129,52 @@ float Height_Ctrl(float T,float thr,u8 ready,float en)	//en	1：定高   0：非定高
 		}
 		
 		//======================================================================================
-			
-		//升降判断，生成速度期望
-		if(thr_set>0)	//上升
+		
+
+		
+		if(ctrl_command == 3)	//飞行控制函数直接控制垂直速度期望
 		{
-			set_speed_t = thr_set/450 * MAX_VERTICAL_SPEED_UP;	//set_speed_t 表示期望上升速度占最大上升速度的比值
+			//直接由控制函数设置垂直速度期望
 			
-			//起飞处理
-			if(thr_take_off_f == 0)	//如果没有起飞（本次解锁后还没有起飞）
+			set_speed = height_speed_ctrl;
+		}
+		else if(ctrl_command == 4)	//起飞
+		{
+			
+		}
+		else if(0)				//飞信控制函数直接控制高度期望
+		{
+			
+		}
+		else					//油门控制垂直速度期望
+		{
+			//遥控器输入值控制升降
+			
+			//升降判断，生成速度期望
+			if(thr_set>0)	//上升
 			{
-				if(thr_set>100)	//达到起飞油门
+				set_speed_t = thr_set/450 * MAX_VERTICAL_SPEED_UP;	//set_speed_t 表示期望上升速度占最大上升速度的比值
+				
+				//遥控器控制条件下的起飞处理
+				if(thr_take_off_f == 0)	//如果没有起飞（本次解锁后还没有起飞）
 				{
-					thr_take_off_f = 1;	//起飞标志置1，此标志只在上锁后会被归零
-					thr_take_off = 350; //直接赋值起飞基准油门
+					if(thr_set>100)	//达到起飞油门
+					{
+						thr_take_off_f = 1;	//起飞标志置1，此标志只在上锁后会被归零
+						thr_take_off = 350; //直接赋值起飞基准油门
+					}
 				}
 			}
+			else			//悬停或下降
+			{
+				set_speed_t = thr_set/450 * MAX_VERTICAL_SPEED_DW;
+			}
+
+			//速度期望限幅滤波
+			set_speed_t = LIMIT(set_speed_t,-MAX_VERTICAL_SPEED_DW,MAX_VERTICAL_SPEED_UP);	//速度期望限幅
+			LPF_1_(10.0f,T,my_pow_2_curve(set_speed_t,0.25f,MAX_VERTICAL_SPEED_DW),set_speed);	//LPF_1_是低通滤波器，截至频率是10Hz，输出值是set_speed，my_pow_2_curve把输入数据转换为2阶的曲线，在0附近平缓，在数值较大的部分卸率大
+			set_speed = LIMIT(set_speed,-MAX_VERTICAL_SPEED_DW,MAX_VERTICAL_SPEED_UP);	//限幅，单位mm/s
 		}
-		else			//悬停或下降
-		{
-			set_speed_t = thr_set/450 * MAX_VERTICAL_SPEED_DW;
-		}
-		
-		//速度期望限幅滤波
-		set_speed_t = LIMIT(set_speed_t,-MAX_VERTICAL_SPEED_DW,MAX_VERTICAL_SPEED_UP);	//速度期望限幅
-		LPF_1_(10.0f,T,my_pow_2_curve(set_speed_t,0.25f,MAX_VERTICAL_SPEED_DW),set_speed);	//LPF_1_是低通滤波器，截至频率是10Hz，输出值是set_speed，my_pow_2_curve把输入数据转换为2阶的曲线，在0附近平缓，在数值较大的部分卸率大
-		set_speed = LIMIT(set_speed,-MAX_VERTICAL_SPEED_DW,MAX_VERTICAL_SPEED_UP);	//限幅，单位mm/s
 		
 		//set_speed为最终输出的期望速度
 		

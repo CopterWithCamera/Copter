@@ -1,25 +1,17 @@
 #include "fly_mode.h"
+#include "fly_ctrl.h"
 #include "rc.h"
-
-extern float set_height_e;
+#include "ultrasonic.h"
 
 u8 mode_state;
-u8 ctrl_command;
 void mode_check(float *ch_in)
 {
 	/*
-	
 	mode_state：
 	0：手动
 	1：气压计
 	2：超声波+气压计
 	3：自动
-	
-	AUX1（CH5）：
-	低：0
-	中：2
-	高：3
-	
 	*/
 	
 	//根据AUX1通道（第5通道）的数值切换飞行模式
@@ -33,7 +25,10 @@ void mode_check(float *ch_in)
 	}
 	else if(*(ch_in+AUX1) < 0)			//-150 -- 0
 	{
-		mode_state = 3;	//自动控制模式，有fly_ctrl.c中代码影响摇杆值
+		if(ultra.measure_ok == 1)		//只有在超声波传感器有数据时才允许自动控制（严重依赖超声波）
+		{
+			mode_state = 3;	//自动控制模式，有fly_ctrl.c中代码影响摇杆值
+		}
 	}
 	else if(*(ch_in+AUX1) < 150)		//0 -- 150
 	{
@@ -48,26 +43,8 @@ void mode_check(float *ch_in)
 		mode_state = 1;	//气压计定高
 	}
 	
-	//根据AUX2通道（第6通道）的数值输入自动控制指令
-	if(*(ch_in+AUX2) <-200)			//最低
-	{
-		ctrl_command = 0;
-	}
-	else if(*(ch_in+AUX2) <200)		//中间
-	{
-		ctrl_command = 3;
-	}
-	else							//最高
-	{
-		ctrl_command = 2;
-	}
-	
-	//自动回位开关
-	if(*(ch_in+AUX3) > 0)			//触发
-	{
-		set_height_e = 0;	//期望速度差归零
-	}
-	
+	//fly_ctrl用的飞行模式控制，在mode_state=3时起作用
+	Ctrl_Mode(ch_in);
 }
 
 

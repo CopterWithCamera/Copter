@@ -82,7 +82,6 @@ enum
 //================控制=====================
 #define MAX_VERTICAL_SPEED_UP	5000										//最大上升速度mm/s
 #define MAX_VERTICAL_SPEED_DW	3000										//最大下降速度mm/s
-#define MAX_VERTICAL_SPEED_LAND	300										//近地面区域最大下降速度mm/s
 
 #define MAX_CTRL_ANGLE			30.0f										//遥控能达到的最大角度
 #define ANGLE_TO_MAX_AS 		30.0f										//角度误差N时，期望角速度达到最大（可以通过调整CTRL_2的P值调整）

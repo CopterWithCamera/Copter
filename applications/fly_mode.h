@@ -6,7 +6,6 @@
 #include "parameter.h"
 
 extern u8 mode_state;
-extern u8 ctrl_command;
 
 void mode_check(float *ch_in);
 #endif
