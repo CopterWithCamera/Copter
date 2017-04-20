@@ -17,13 +17,15 @@
 #include "fly_mode.h"
 #include "fly_ctrl.h"
 
-float	set_height_e,
-		set_height_em,
+float	set_height_e,	//期望高度差 -- 最终采纳的目标高度差
+		set_height_em,	//期望高度差（积分速度源没有经过加速度修正和带通滤波）
 		set_speed_t,	//遥控器数据转换为期望速度时用的中间变量，经过低通滤波得到set_speed
 		set_speed,		//遥控器设置的期望速度，单位mm/s
 		exp_speed,		//位置PID算出的期望速度，用于速度PID
+		exp_acc,		//期望加速度（速度PID得出）
 		fb_speed,
-		exp_acc,fb_acc,fb_speed,fb_speed_old;
+		fb_acc,
+		fb_speed_old;
 
 _hc_value_st hc_value;
 
@@ -301,15 +303,10 @@ float Height_Ctrl(float T,float thr,u8 ready,float en)	//en	1：定高   0：非定高
 									&h_speed_arg, 				//PID参数结构体
 									&h_speed_val,				//PID数据结构体
 									500 *en						//integration limit，积分限幅
-									 );							//输出	
+									 );							//输出
 			
 			exp_acc = LIMIT(exp_acc,-3000,3000);
 			dT = 0;
-			
-			//这段代码像是在计算目标高度差
-			//integra_fix += (exp_speed - hc_value.m_speed) *dT;
-			//integra_fix = LIMIT(integra_fix,-1500 *en,1500 *en);
-			//LPF_1_(0.5f,dT,integra_fix,h_speed_val.err_i);
 			
 			dT2 += dT;		//计算微分时间
 			height_cnt++;	//计算循环执行周期

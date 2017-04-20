@@ -20,6 +20,8 @@
 #include "ultrasonic.h"
 #include "anotc_baro_ctrl.h"
 #include "fly_mode.h"
+#include "height_ctrl.h"
+#include "fly_ctrl.h"
 
 
 /////////////////////////////////////////////////////////////////////////////////////
@@ -256,7 +258,7 @@ void ANO_DT_Data_Exchange(void)
 	{
 		
 		f.send_location = 0;
-		ANO_DT_Send_Location(	-1,			2,			3 *10000000,	4 *10000000,	0		);
+		ANO_DT_Send_Location(	0,			ctrl_command,		3 *10000000,	4 *10000000,	0		);
 		//						定位状态	卫星数量			经度 			纬度 			回航角
 		
 	}
@@ -913,35 +915,43 @@ void ANO_DT_Send_User()
 	data_to_send[_cnt++]=0xf1; //用户数据
 	data_to_send[_cnt++]=0;
 	
-	_temp = (s16)set_speed;            					//1	
+	_temp = (s16)hc_value.m_acc;							//地理坐标系Z轴加速度  					//1	
 	data_to_send[_cnt++]=BYTE1(_temp);
 	data_to_send[_cnt++]=BYTE0(_temp);
 
-	_temp = (s16)set_height_e;							//2
+	_temp = (s16)hc_value.fusion_acc;						//经过修正的地理坐标系Z轴加速度			//2
 	data_to_send[_cnt++]=BYTE1(_temp);
 	data_to_send[_cnt++]=BYTE0(_temp);
 	
-	_temp = (s16)hc_value.m_speed;						//3
+	_temp = (s16)ctrl_command;								//指令号								//3
 	data_to_send[_cnt++]=BYTE1(_temp);
 	data_to_send[_cnt++]=BYTE0(_temp);	
 	
-	_temp = (s16)hc_value.fusion_speed;					//4
+	_temp = (s16)set_speed;									//摇杆表示的速度期望/控制期望速度		//4
 	data_to_send[_cnt++]=BYTE1(_temp);
 	data_to_send[_cnt++]=BYTE0(_temp);
 	
-	_temp = (s16)baro_fusion.fusion_displacement.out;	//5
+	_temp = (s16)hc_value.m_speed;							//垂直速度								//5
 	data_to_send[_cnt++]=BYTE1(_temp);
 	data_to_send[_cnt++]=BYTE0(_temp);
 	
-	_temp = (s16)(ultra.height *10);              		//6
+	_temp = (s16)(ultra.relative_height *10);				//超声波高度				     		//6
 	data_to_send[_cnt++]=BYTE1(_temp);
 	data_to_send[_cnt++]=BYTE0(_temp);
 
-	_temp = (s16)(10000 * reference_v.z);              	//7
+	_temp = (s16)(baro_fusion.fusion_displacement.out);   	//气压计融合高度           				//7
 	data_to_send[_cnt++]=BYTE1(_temp);
 	data_to_send[_cnt++]=BYTE0(_temp);
 	
-	_temp = (s16)(10000 * acc_3d_hg.z);              	//8
+	_temp = (s16)(sonar_fusion.fusion_displacement.out);	//超声波融合高度              			//8
+	data_to_send[_cnt++]=BYTE1(_temp);
+	data_to_send[_cnt++]=BYTE0(_temp);
+	
+	_temp = (s16)(baro_p.displacement);						//气压计高度	              			//9
+	data_to_send[_cnt++]=BYTE1(_temp);
+	data_to_send[_cnt++]=BYTE0(_temp);
+	
+	_temp = (s16)(sonar.displacement);						//超声波融合高度              			//10
 	data_to_send[_cnt++]=BYTE1(_temp);
 	data_to_send[_cnt++]=BYTE0(_temp);
 

@@ -42,9 +42,6 @@ void fusion_prepare(float dT,float av_arr[],u16 av_num,u16 *av_cnt,float deadzon
 	pre_data->dis_deadzone = my_deathzoom(data->relative_height,pre_data->dis_deadzone,deadzone);		//设置死区
 	Moving_Average(av_arr,av_num ,(av_cnt),(10 *pre_data->dis_deadzone ),&(pre_data->displacement));	//取平均值，厘米->毫米
 	
-//	Moving_Average(av_arr,av_num ,(av_cnt),(10 *data->relative_height),&(pre_data->dis_deadzone)); 		//厘米->毫米	
-//	pre_data->displacement = my_deathzoom(pre_data->dis_deadzone,pre_data->displacement,10 *deadzone);
-	
 	pre_data->speed = safe_div(pre_data->displacement - pre_data->displacement_old,dT,0);	//速度 = （本次高度-上次高度）÷时间
 	pre_data->acceleration = safe_div(pre_data->speed - pre_data->speed_old,dT,0);
 	

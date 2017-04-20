@@ -2,6 +2,7 @@
 #define _USART_H
 
 #include "stm32f4xx.h"
+#include <stdio.h>
 
 extern u8 Rx_Buf[];
 void Usart2_Init(u32 br_num);

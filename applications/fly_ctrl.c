@@ -54,7 +54,7 @@ void fly_ctrl_land(void)	//调用周期2ms
 //	CH_ctrl[2] = -60;	//-50对应的大约是0.3m/s，-100大约是0.6m/s，具体数值通过实验确定
 	
 	//设定期望垂直速度
-	height_speed_ctrl = -200;	//单位mm/s
+	height_speed_ctrl = -300;	//单位mm/s
 	CH_ctrl[2] = 0;				//油门值拉最低，转速输出函数检测到油门低时才允许螺旋桨停转
 	
 	if(ultra.relative_height < 5)	//当前飞机在地面时超声波数据是3-4cm（和具体机型有关）
@@ -128,13 +128,19 @@ void Ctrl_Mode(float *ch_in)
 	}
 	else							//最高
 	{
-		ctrl_command = 2;
+		ctrl_command = 1;
 	}
 	
 	//自动回位开关
 	if(*(ch_in+AUX3) > 0)			//触发
 	{
 		set_height_e = 0;	//期望速度差归零
+	}
+	
+	//
+	if(*(ch_in+AUX4) > 0)			//
+	{
+		
 	}
 }
 

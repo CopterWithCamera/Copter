@@ -53,6 +53,7 @@ typedef struct
 	
 }_fusion_p_st;
 extern _fusion_p_st baro_p;
+extern _fusion_p_st sonar;
 
 typedef struct
 {
@@ -61,7 +62,6 @@ typedef struct
 	float b;
 	float c;
 }_h_f_set_st;
-				
 
 extern float wz_speed;
 

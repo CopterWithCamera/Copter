@@ -35,21 +35,21 @@ typedef struct
 
 extern _height_st baro;
 
-	//气压计初始化
-	void MS5611_Init(void);
-	//读取气压计数据
-	int MS5611_Update(void);	
-	//返回气压高度
-	
-	int32_t MS5611_Get_BaroAlt(void);
+//气压计初始化
+void MS5611_Init(void);
+//读取气压计数据
+int MS5611_Update(void);	
+//返回气压高度
 
-	void MS5611_Reset(void);
-	u8 MS5611_Read_Prom(void);
-	void MS5611_Start_T(void);
-	void MS5611_Start_P(void);
-	void MS5611_Read_Adc_T(void);
-	void MS5611_Read_Adc_P(void);
-	void MS5611_BaroAltCalculate(void);
+int32_t MS5611_Get_BaroAlt(void);
+
+void MS5611_Reset(void);
+u8 MS5611_Read_Prom(void);
+void MS5611_Start_T(void);
+void MS5611_Start_P(void);
+void MS5611_Read_Adc_T(void);
+void MS5611_Read_Adc_P(void);
+void MS5611_BaroAltCalculate(void);
 
 extern u8 ms5611_ok;
 
