@@ -39,16 +39,15 @@ u8 All_Init()
 	
 	LED_Init();								//LED功能初始化
 	
-//	Usart2_Init(500000);			//串口2初始化，函数参数为波特率
-//	Usart2_Init(256000);
-	Usart2_Init(115200);
-	Uart4_Init(115200);
+	Usart1_Init(115200);
+	Usart2_Init(115200);					//串口2初始化，函数参数为波特率
+//	Uart4_Init(115200);
 	
 	Para_Init();							//参数初始化
 	
 	Delay_ms(100);						//延时
 	
-	Ultrasonic_Init();   			//超声波初始化
+	Ultrasonic_Init();   			//超声波初始化（串口5初始化）
 	
 	ak8975_ok = !(ANO_AK8975_Run());
 	

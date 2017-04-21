@@ -54,15 +54,20 @@ void TIM4_IRQHandler(void)
 
 }
 
+void USART1_IRQHandler(void)
+{
+	Usart1_IRQ();
+}
+
 void USART2_IRQHandler(void)
 {
 	Usart2_IRQ();
 }
 
-void UART4_IRQHandler(void)
-{
-	Uart4_IRQ();
-}
+//void UART4_IRQHandler(void)
+//{
+//	
+//}
 
 void UART5_IRQHandler(void)
 {
