@@ -915,15 +915,15 @@ void ANO_DT_Send_User()
 	data_to_send[_cnt++]=0xf1; //用户数据
 	data_to_send[_cnt++]=0;
 	
-	_temp = (s16)hc_value.m_acc;							//地理坐标系Z轴加速度  					//1	
+	_temp = (s16)hc_value.m_acc * 1000;							//地理坐标系Z轴加速度  					//1	
 	data_to_send[_cnt++]=BYTE1(_temp);
 	data_to_send[_cnt++]=BYTE0(_temp);
 
-	_temp = (s16)hc_value.fusion_acc;						//经过修正的地理坐标系Z轴加速度			//2
+	_temp = (s16)hc_value.fusion_acc * 1000;						//经过修正的地理坐标系Z轴加速度			//2
 	data_to_send[_cnt++]=BYTE1(_temp);
 	data_to_send[_cnt++]=BYTE0(_temp);
 	
-	_temp = (s16)ctrl_command;								//指令号								//3
+	_temp = (s16)ctrl_command * 1000;								//指令号								//3
 	data_to_send[_cnt++]=BYTE1(_temp);
 	data_to_send[_cnt++]=BYTE0(_temp);	
 	

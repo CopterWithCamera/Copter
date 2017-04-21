@@ -26,6 +26,7 @@ void height_lock(void)
 	CH_ctrl[3] = CH_filter[3];	//3：航向
 
 	CH_ctrl[2] = 0;	//2：油门（油门位于中值，含义为高度保持）
+
 }
 
 //2：高度姿态锁定
@@ -190,27 +191,47 @@ void Fly_Ctrl(void)	//调用周期2ms
 		if(ctrl_command == 0)	
 		{
 			hand_ctrl();				//正常的手动飞行模式
+				
+			printf("hand\r\n");
 		}
 		//1
 		else if(ctrl_command == 1)	
 		{
 			height_lock();				//高度锁定
+			
+			printf("height lock\r\n");
 		}
 		//2
 		else if(ctrl_command == 2)	
 		{
 			height_attitude_lock();		//高度锁定+姿态归零
+			
+			printf("attitude lock\r\n");
 		}
 		//3
 		else if(ctrl_command == 3)	
 		{
 			fly_ctrl_land();			//降落模式
+			
+			printf("land\r\n");
 		}
 		//4
 		else if(ctrl_command == 4)
 		{
 			fly_ctrl_takeoff();
+			
+			printf("take off\r\n");
 		}
 	}
+	
+	static u16 counter = 0;
+	
+//	counter++;
+//	if(counter>20)
+//	{
+//		counter = 0;
+//		
+//		printf("command = %d\r\n",ctrl_command);
+//	}
 }
 
