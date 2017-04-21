@@ -496,7 +496,7 @@ void Usart1_IRQ(void)
 int fputc(int ch, FILE *f)
 {
 	unsigned char temp = (unsigned char)ch;
-	Usart1_Send(&temp,1);
+	Usart2_Send(&temp,1);
 	return (ch);
 }
 

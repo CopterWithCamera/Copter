@@ -44,7 +44,7 @@ void ANO_DT_Send_Data(u8 *dataToSend , u8 length)
 	Usb_Hid_Adddata(data_to_send,length);
 #endif
 #ifdef ANO_DT_USE_USART2
-	Usart2_Send(data_to_send, length);
+	Usart1_Send(data_to_send, length);
 #endif
 }
 static void ANO_DT_Send_Check(u8 head, u8 check_sum)
@@ -927,11 +927,11 @@ void ANO_DT_Send_User()
 	data_to_send[_cnt++]=BYTE1(_temp);
 	data_to_send[_cnt++]=BYTE0(_temp);	
 	
-	_temp = (s16)set_speed;									//摇杆表示的速度期望/控制期望速度		//4
+	_temp = (s16)set_speed* 1000;									//摇杆表示的速度期望/控制期望速度		//4
 	data_to_send[_cnt++]=BYTE1(_temp);
 	data_to_send[_cnt++]=BYTE0(_temp);
 	
-	_temp = (s16)hc_value.m_speed;							//垂直速度								//5
+	_temp = (s16)hc_value.m_speed* 1000;							//垂直速度								//5
 	data_to_send[_cnt++]=BYTE1(_temp);
 	data_to_send[_cnt++]=BYTE0(_temp);
 	
@@ -939,19 +939,19 @@ void ANO_DT_Send_User()
 	data_to_send[_cnt++]=BYTE1(_temp);
 	data_to_send[_cnt++]=BYTE0(_temp);
 
-	_temp = (s16)(baro_fusion.fusion_displacement.out);   	//气压计融合高度           				//7
+	_temp = (s16)(baro_fusion.fusion_displacement.out)* 1000;   	//气压计融合高度           				//7
 	data_to_send[_cnt++]=BYTE1(_temp);
 	data_to_send[_cnt++]=BYTE0(_temp);
 	
-	_temp = (s16)(sonar_fusion.fusion_displacement.out);	//超声波融合高度              			//8
+	_temp = (s16)(sonar_fusion.fusion_displacement.out)* 1000;	//超声波融合高度              			//8
 	data_to_send[_cnt++]=BYTE1(_temp);
 	data_to_send[_cnt++]=BYTE0(_temp);
 	
-	_temp = (s16)(baro_p.displacement);						//气压计高度	              			//9
+	_temp = (s16)(baro_p.displacement)* 1000;						//气压计高度	              			//9
 	data_to_send[_cnt++]=BYTE1(_temp);
 	data_to_send[_cnt++]=BYTE0(_temp);
 	
-	_temp = (s16)(sonar.displacement);						//超声波融合高度              			//10
+	_temp = (s16)(sonar.displacement)* 1000;						//超声波融合高度              			//10
 	data_to_send[_cnt++]=BYTE1(_temp);
 	data_to_send[_cnt++]=BYTE0(_temp);
 

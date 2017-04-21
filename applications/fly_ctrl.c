@@ -40,11 +40,18 @@ void height_attitude_lock(void)
 
 //3：降落
 float height_speed_ctrl = 0;
+
 void fly_ctrl_land(void)	//调用周期2ms
 {
 	static u16 lock_time = 0;
 	
 	//降落函数只可在起飞后调用
+	
+	//从其他模式切换到降落模式
+	if(ctrl_command != ctrl_command_old)
+	{
+		set_height_e = 0;	//期望速度差归零
+	}
 	
 	//俯仰、横滚、航向轴正常
 	CH_ctrl[0] = CH_filter[0];	//0：横滚
@@ -55,7 +62,7 @@ void fly_ctrl_land(void)	//调用周期2ms
 //	CH_ctrl[2] = -60;	//-50对应的大约是0.3m/s，-100大约是0.6m/s，具体数值通过实验确定
 	
 	//设定期望垂直速度
-	height_speed_ctrl = -300;	//单位mm/s
+	height_speed_ctrl = -400;	//单位mm/s
 	CH_ctrl[2] = 0;				//油门值拉最低，转速输出函数检测到油门低时才允许螺旋桨停转
 	
 	if(ultra.relative_height < 5)	//当前飞机在地面时超声波数据是3-4cm（和具体机型有关）
@@ -87,7 +94,7 @@ void fly_ctrl_takeoff(void)	//调用周期2ms
 				thr_take_off = 350; //直接赋值起飞基准油门
 			}
 			
-			height_speed_ctrl = 300;	//300mm/s上升
+			height_speed_ctrl = 500;	//300mm/s上升
 			
 			if(ultra.relative_height > 35)	//超过30cm（传感器离地面4-5cm）
 			{
@@ -115,8 +122,11 @@ void fly_ctrl_takeoff(void)	//调用周期2ms
 
 //识别控制指令
 u8 ctrl_command;
+u8 ctrl_command_old;
 void Ctrl_Mode(float *ch_in)
 {
+	//更新ctrl_command_old
+	ctrl_command_old = ctrl_command;
 	
 	//根据AUX2通道（第6通道）的数值输入自动控制指令
 	if(*(ch_in+AUX2) <-200)			//最低
@@ -129,7 +139,7 @@ void Ctrl_Mode(float *ch_in)
 	}
 	else							//最高
 	{
-		ctrl_command = 1;
+		ctrl_command = 4;
 	}
 	
 	//自动回位开关
@@ -188,7 +198,7 @@ void Fly_Ctrl(void)	//调用周期2ms
 	else if(mode_state == 3)	//自动（高度控制已经默认是超声波+气压计定高）
 	{
 		//0
-		if(ctrl_command == 0)	
+		if(ctrl_command == 0)
 		{
 			hand_ctrl();				//正常的手动飞行模式
 				
@@ -210,7 +220,7 @@ void Fly_Ctrl(void)	//调用周期2ms
 		}
 		//3
 		else if(ctrl_command == 3)	
-		{
+		{	
 			fly_ctrl_land();			//降落模式
 			
 			printf("land\r\n");
@@ -218,14 +228,13 @@ void Fly_Ctrl(void)	//调用周期2ms
 		//4
 		else if(ctrl_command == 4)
 		{
-			fly_ctrl_takeoff();
+			fly_ctrl_takeoff();			//起飞模式
 			
 			printf("take off\r\n");
 		}
 	}
 	
-	static u16 counter = 0;
-	
+//	static u16 counter = 0;
 //	counter++;
 //	if(counter>20)
 //	{
