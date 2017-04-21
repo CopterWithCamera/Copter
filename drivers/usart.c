@@ -1,4 +1,4 @@
-/******************** (C) COPYRIGHT 2014 ANO Tech ********************************
+                   /******************** (C) COPYRIGHT 2014 ANO Tech ********************************
   * 作者   ：匿名科创
  * 文件名  ：usart.c
  * 描述    ：串口驱动
@@ -15,8 +15,9 @@
 
 	/*
 	
+	USART1：调试端口
 	USART2：数传
-	UART4：调试端口
+	UART4：
 	UART5：超声波（按要求加了延迟）
 	
 
@@ -406,7 +407,7 @@ int fgetc(FILE *f)
 
 
 //========================================================================================================
-//USART2
+//USART1
 
 void Usart1_Init(u32 br_num)
 {
@@ -486,25 +487,27 @@ void Usart1_IRQ(void)
 	
 	if(USART2->SR & USART_SR_ORE)//ORE中断
 	{
-		com_data = USART2->DR;
+		com_data = USART1->DR;
 	}
 
 	//接收中断
-	if( USART_GetITStatus(USART2,USART_IT_RXNE) )
+	if( USART_GetITStatus(USART1,USART_IT_RXNE) )
 	{
-		USART_ClearITPendingBit(USART2,USART_IT_RXNE);//清除中断标志
+		USART_ClearITPendingBit(USART1,USART_IT_RXNE);//清除中断标志
 
-		com_data = USART2->DR;
-		ANO_DT_Data_Receive_Prepare(com_data);
+		com_data = USART1->DR;
+		
+		//此处添加接收处理函数
+		
 	}
 	//发送（进入移位）中断
-	if( USART_GetITStatus(USART2,USART_IT_TXE ) )
+	if( USART_GetITStatus(USART1,USART_IT_TXE ) )
 	{
 				
-		USART2->DR = TxBuffer[TxCounter++]; //写DR清除中断标志          
-		if(TxCounter == count)
+		USART1->DR = TxBuffer1[TxCounter1++]; //写DR清除中断标志          
+		if(TxCounter1 == count1)
 		{
-			USART2->CR1 &= ~USART_CR1_TXEIE;		//关闭TXE（发送中断）中断
+			USART1->CR1 &= ~USART_CR1_TXEIE;		//关闭TXE（发送中断）中断
 		}
 
 		//USART_ClearITPendingBit(USART2,USART_IT_TXE);
@@ -516,12 +519,12 @@ void Usart1_Send(unsigned char *DataToSend ,u8 data_num)
 	u8 i;
 	for(i=0;i<data_num;i++)
 	{
-		TxBuffer[count++] = *(DataToSend+i);
+		TxBuffer1[count1++] = *(DataToSend+i);
 	}
 
-	if(!(USART2->CR1 & USART_CR1_TXEIE))
+	if(!(USART1->CR1 & USART_CR1_TXEIE))
 	{
-		USART_ITConfig(USART2, USART_IT_TXE, ENABLE); //打开发送中断
+		USART_ITConfig(USART1, USART_IT_TXE, ENABLE); //打开发送中断
 	}
 
 }
