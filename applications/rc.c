@@ -14,9 +14,9 @@
 #include "filter.h"
 #include "ak8975.h"
 #include "anotc_baro_ctrl.h"
+#include "fly_ctrl.h"
 
 s8 CH_in_Mapping[CH_NUM] = {0,1,2,3,4,5,6,7};    //通道映射
-//u8 rc_lose = 0;
 
 void CH_Mapping_Fun(u16 *in,u16 *Mapped_CH)
 {
@@ -28,10 +28,6 @@ void CH_Mapping_Fun(u16 *in,u16 *Mapped_CH)
 }
 
 s16 CH[CH_NUM];
-
-//float CH_Old[CH_NUM];
-//float CH_filter_Old[CH_NUM];
-//float CH_filter_D[CH_NUM];
 
 float CH_filter[CH_NUM];
 
@@ -95,38 +91,28 @@ void RC_Duty( float T , u16 tmp16_CH[CH_NUM] )
 			}
 			else
 			{
-				
 				//数据拷贝进 CH_TMP[i]
 				CH_TMP[i] = ( Mapped_CH[i] ); //映射拷贝数据，大约 1000~2000
 				
 				//此后使用 CH_TMP[i] 作为遥控器单通道数据
 				
-//				if( MAX_CH[i] > MIN_CH[i] )	//这些数据是在数组中预先设定的，没有对应的遥控器适配代码，或者说是个预留功能
-//				{
-					//限幅
-					//摇杆方向选择，用于适配遥控器各通道摇杆数值的正反
-					if( !CH_DIR[i] )	
-					{
-						CH[i] =   LIMIT ( (s16)( ( CH_TMP[i] - MIN_CH[i] )/(float)( MAX_CH[i] - MIN_CH[i] ) *1000 - CH_OFFSET ), -500, 500); //归一化，输出+-500
-					}
-					else
-					{
-						CH[i] = - LIMIT ( (s16)( ( CH_TMP[i] - MIN_CH[i] )/(float)( MAX_CH[i] - MIN_CH[i] ) *1000 - CH_OFFSET ), -500, 500); //归一化，输出+-500
-					}
-					
-					//从这里开始，信号数据传入 CH[i]
-					
-//				}	
-//				else
-//				{
-//					fly_ready = 0;
-//				}
+				//限幅
+				//摇杆方向选择，用于适配遥控器各通道摇杆数值的正反
+				if( !CH_DIR[i] )	
+				{
+					CH[i] =   LIMIT ( (s16)( ( CH_TMP[i] - MIN_CH[i] )/(float)( MAX_CH[i] - MIN_CH[i] ) *1000 - CH_OFFSET ), -500, 500); //归一化，输出+-500
+				}
+				else
+				{
+					CH[i] = - LIMIT ( (s16)( ( CH_TMP[i] - MIN_CH[i] )/(float)( MAX_CH[i] - MIN_CH[i] ) *1000 - CH_OFFSET ), -500, 500); //归一化，输出+-500
+				}
+				
+				//从这里开始，信号数据传入 CH[i]
 			}
-//			rc_lose = 0;
 		}	
 		else //未接接收机或无信号（遥控关闭或丢失信号）
 		{
-//			rc_lose = 1;
+			
 		}
 		
 		//从这里开始调用 CH[i] 获取数据
@@ -193,7 +179,7 @@ void Fly_Ready(float T,float height_speed_mm)
 	//对不同摇杆状态持续时间进行计数
 	if( CH_filter[2] < -400 )  				//下满足（油门小于10%）
 	{
-		thr_stick_low = 1;					//油门低标志置1
+		thr_stick_low = 1;	//油门低标志置1
 		if( fly_ready && ready_cnt != -1 )	//解锁完成，且已退出解锁上锁过程
 		{
 			//ready_cnt += 1000 *T;
@@ -220,9 +206,23 @@ void Fly_Ready(float T,float height_speed_mm)
 	}
 	else
 	{
-		ready_cnt=0;
 		thr_stick_low = 0;	//油门低标志置0
+		ready_cnt=0;
 	}
+	
+	if(ctrl_command == 4)	//起飞模式特殊处理
+	{
+		//用CH_ctrl[2]的油门值更新thr_stick_low状态，防止摇杆值低造成的意外上锁
+		if(CH_ctrl[2] < 400)
+		{
+			thr_stick_low = 1;	//油门低标志置1
+		}
+		else
+		{
+			thr_stick_low = 0;	//油门低标志置0
+		}
+	}
+
 
 	//对计数结果进行判断
 	if( ready_cnt > 300 ) // 600ms 
@@ -231,6 +231,7 @@ void Fly_Ready(float T,float height_speed_mm)
 		
 		ready_cnt = -1;
 		
+		//切换解锁状态（解锁时上锁，上锁时解锁）
 		if( !fly_ready )
 		{
 			fly_ready = 1;		//允许解锁
@@ -260,13 +261,12 @@ void Fly_Ready(float T,float height_speed_mm)
 		mag_cali_cnt = 0;
 	}
 	
-	
 	//解锁后一定时间没有起飞（同时满足油门低和高度低），则上锁
-	if(fly_ready && (thr_stick_low == 1) && (ABS(height_speed_mm)<300))
+	if(fly_ready && (thr_stick_low == 1) && (ABS(height_speed_mm)<300))	//解锁 油门低 垂直速度低
 	{
-		if(locked_cnt < 2000)
+		if(locked_cnt < 4000)	//4000ms = 4s
 		{
-			locked_cnt  += 1000*T;
+			locked_cnt  += 1000*T;	//T大约为0.002
 		}
 		else
 		{

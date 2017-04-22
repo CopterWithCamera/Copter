@@ -91,10 +91,10 @@ void fly_ctrl_takeoff(void)	//调用周期2ms
 			if(thr_take_off_f == 0)
 			{
 				thr_take_off_f = 1;	//起飞标志位置1（高度控制代码只有在起飞标志位置1时才会运行）
-				thr_take_off = 350; //直接赋值起飞基准油门
+				thr_take_off = 500; //直接赋值起飞基准油门
 			}
 			
-			height_speed_ctrl = 500;	//300mm/s上升
+			height_speed_ctrl = 500;	//500mm/s上升
 			
 			if(ultra.relative_height > 35)	//超过30cm（传感器离地面4-5cm）
 			{
