@@ -18,10 +18,10 @@
 #include "usbd_user_hid.h"
 
 u8 HID_SEND_TIMEOUT = 5;			//hid发送不足一帧时，等待HID_SEND_TIMEOUT周期进行发送
-u8 hid_datatemp[256];					//hid环形缓冲区
-u8 hid_datatemp_begin = 0;		//环形缓冲区数据指针，指向应当发送的数据
+u8 hid_datatemp[256];				//hid环形缓冲区
+u8 hid_datatemp_begin = 0;			//环形缓冲区数据指针，指向应当发送的数据
 u8 hid_datatemp_end = 0;			//环形缓冲区数据结尾
-u8 hid_data2send[64];					//hid发送缓存，一个hid数据帧64字节，第一字节表示有效数据字节数，0-63，后面是数据，最多63字节
+u8 hid_data2send[64];				//hid发送缓存，一个hid数据帧64字节，第一字节表示有效数据字节数，0-63，后面是数据，最多63字节
 
 void Usb_Hid_Init (void) 
 {

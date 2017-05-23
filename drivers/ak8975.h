@@ -20,10 +20,10 @@
 
 typedef struct 
 {
-	xyz_s16_t Mag_Adc;			//采样值
-	xyz_f_t Mag_Offset;		//偏移值
-	xyz_f_t 	Mag_Gain;			//比例缩放	
-  xyz_f_t 	Mag_Val;			//纠正后的值
+	xyz_s16_t	Mag_Adc;			//采样值
+	xyz_f_t		Mag_Offset;			//偏移值
+	xyz_f_t 	Mag_Gain;			//比例缩放
+	xyz_f_t 	Mag_Val;			//纠正后的值
 }ak8975_t;
 
 extern ak8975_t ak8975;

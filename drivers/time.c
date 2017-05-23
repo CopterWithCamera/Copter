@@ -49,7 +49,7 @@ void TIM_NVIC()
 {
     NVIC_InitTypeDef NVIC_InitStructure; 
     
-//    NVIC_PriorityGroupConfig(NVIC_PriorityGroup_0);  													
+//	NVIC_PriorityGroupConfig(NVIC_PriorityGroup_0);  													
     NVIC_InitStructure.NVIC_IRQChannel = TIM2_IRQn;	  
     NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = NVIC_TIME_P;
     NVIC_InitStructure.NVIC_IRQChannelSubPriority = NVIC_TIME_S;	
@@ -62,24 +62,24 @@ void TIM_INIT()
     TIM_CONF();
     TIM_NVIC();
 	
-		/* TIM2 重新开时钟，开始计时 */
-	  RCC_APB1PeriphClockCmd(SYS_RCC_TIMx , ENABLE);
+	/* TIM2 重新开时钟，开始计时 */
+	RCC_APB1PeriphClockCmd(SYS_RCC_TIMx , ENABLE);
 }
 
 
 volatile uint32_t sysTickUptime = 0;
 
 #define TICK_PER_SECOND 1000 
-#define TICK_US	(1000000/TICK_PER_SECOND)
+#define TICK_US	(1000000/TICK_PER_SECOND)	
 
-void  SysTick_Configuration(void)
+void  SysTick_Configuration(void)	
 {
 	RCC_ClocksTypeDef  rcc_clocks;
 	uint32_t         cnts;
 
 	RCC_GetClocksFreq(&rcc_clocks);
 
-	cnts = (uint32_t)rcc_clocks.HCLK_Frequency / TICK_PER_SECOND;
+	cnts = (uint32_t)rcc_clocks.HCLK_Frequency / TICK_PER_SECOND;	//1000us一次中断
 	cnts = cnts / 8;
 
 	SysTick_Config(cnts);
@@ -116,19 +116,19 @@ void sys_time()
 		return;
 	}
 	
-  if(time_1ms < 999)
+	if(time_1ms < 999)
 	{
-    time_1ms++;
+		time_1ms++;
 
 		Loop_check();
 	}
 	else
 	{
 		
-    time_1ms =0;
-	  if(time_1s<59)
-	  {
-      time_1s++;
+		time_1ms =0;
+		if(time_1s<59)
+		{
+			time_1s++;
 		}
 		else
 		{
@@ -153,8 +153,8 @@ void sys_time()
 	}
 }
 
-volatile float Cycle_T[GET_TIME_NUM][3];
-
+volatile float Cycle_T[GET_TIME_NUM][3];	//时间记录数组，记录old、now、new
+											//上次时间、本次时间、时间间隔
 enum
 {
 	NOW = 0,

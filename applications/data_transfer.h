@@ -45,6 +45,7 @@ void ANO_DT_Send_Power(u16 votage, u16 current);
 void ANO_DT_Send_MotoPWM(u16 m_1,u16 m_2,u16 m_3,u16 m_4,u16 m_5,u16 m_6,u16 m_7,u16 m_8);
 void ANO_DT_Send_PID(u8 group,float p1_p,float p1_i,float p1_d,float p2_p,float p2_i,float p2_d,float p3_p,float p3_i,float p3_d);
 void ANO_DT_Send_User(void);
+void ANO_DT_Send_User2(void);
 void ANO_DT_Send_Speed(float,float,float);
 void ANO_DT_Send_Location(u8 state,u8 sat_num,s32 lon,s32 lat,float back_home_angle);
 

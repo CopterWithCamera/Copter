@@ -18,9 +18,8 @@ u8 mpu6050_ok;
 void MPU6050_Read(void)
 {
     I2C_FastMode = 1;
-    IIC_Read_nByte(MPU6050_ADDR,MPU6050_RA_ACCEL_XOUT_H,14,mpu6050_buffer);
+    IIC_Read_nByte(MPU6050_ADDR,MPU6050_RA_ACCEL_XOUT_H,14,mpu6050_buffer);	//IIC连读模式，讲数据存入 mpu6050_buffer
 }
-
 
 /**************************实现函数********************************************
 *函数原型:		u8 IICwriteBit(u8 dev, u8 reg, u8 bitNum, u8 data)
@@ -61,6 +60,7 @@ void IICwriteBits(u8 dev,u8 reg,u8 bitStart,u8 length,u8 data)
     b |= data;
     IIC_Write_1Byte(dev, reg, b);
 }
+
 
 /**************************实现函数********************************************
 *函数原型:
@@ -162,8 +162,8 @@ void MPU6050_INT_Config()
     GPIO_Init(GPIOD, &GPIO_InitStructure);
 
     GPIO_SetBits(GPIOD, GPIO_Pin_7);
-
 }
+
 /**************************实现函数********************************************
 *函数原型:		void MPU6050_initialize(void)
 *功　　能:	    初始化 	MPU6050 以进入可用状态。
@@ -224,49 +224,52 @@ void MPU6050_Init(u16 lpf)
     Delay_ms(10);
 }
 
+//mpu6050校准函数（按照 mpu6050.Acc_CALIBRATE 和 mpu6050.Gyro_CALIBRATE 两个标志的情况执行具体校准过程）
 s32 sum_temp[7]= {0,0,0,0,0,0,0};
 u16 acc_sum_cnt = 0,gyro_sum_cnt = 0;
-
 void MPU6050_Data_Offset()
 {
 #ifdef ACC_ADJ_EN
 
-    if(mpu6050.Acc_CALIBRATE == 1)
+    if(mpu6050.Acc_CALIBRATE == 1)	//上位机通过数传发送加速度计校准指令，使 mpu6050.Acc_CALIBRATE = 1
     {
-        if(my_sqrt(my_pow(mpu6050.Acc_I16.x)+my_pow(mpu6050.Acc_I16.y)+my_pow(mpu6050.Acc_I16.z)) < 2500)
+		//对两种不同版本的mpu6050进行判断，这两个版本的输出数值的物理意义有差别
+        if(my_sqrt(my_pow(mpu6050.Acc_I16.x)+my_pow(mpu6050.Acc_I16.y)+my_pow(mpu6050.Acc_I16.z)) < 2500)	//加速度计输入原始数值较小
         {
             sensor_setup.Offset.mpu_flag = 1;
         }
-        else if(my_sqrt(my_pow(mpu6050.Acc_I16.x)+my_pow(mpu6050.Acc_I16.y)+my_pow(mpu6050.Acc_I16.z)) > 2600)
+        else if(my_sqrt(my_pow(mpu6050.Acc_I16.x)+my_pow(mpu6050.Acc_I16.y)+my_pow(mpu6050.Acc_I16.z)) > 2600)	//加速度计输入原始数值较大
         {
             sensor_setup.Offset.mpu_flag = 0;
         }
 
-        acc_sum_cnt++;
-        sum_temp[A_X] += mpu6050.Acc_I16.x;
+		//对当前状态数据取平均值，作为传感器的静态偏移
+        acc_sum_cnt++;													//累加次数计数
+        sum_temp[A_X] += mpu6050.Acc_I16.x;								//对输入数据数据进行累加（x,y,z,temperature）
         sum_temp[A_Y] += mpu6050.Acc_I16.y;
-        sum_temp[A_Z] += mpu6050.Acc_I16.z - 65536/16;   // +-8G
+        sum_temp[A_Z] += mpu6050.Acc_I16.z - 65536/16;   // +-8G		
         sum_temp[TEM] += mpu6050.Tempreature;
 
-        if( acc_sum_cnt >= OFFSET_AV_NUM )
+        if( acc_sum_cnt >= OFFSET_AV_NUM )								//到达累加次数，取平均，并退出校准流程
         {
-            mpu6050.Acc_Offset.x = sum_temp[A_X]/OFFSET_AV_NUM;
+            mpu6050.Acc_Offset.x = sum_temp[A_X]/OFFSET_AV_NUM;			//取平均
             mpu6050.Acc_Offset.y = sum_temp[A_Y]/OFFSET_AV_NUM;
             mpu6050.Acc_Offset.z = sum_temp[A_Z]/OFFSET_AV_NUM;
             mpu6050.Acc_Temprea_Offset = sum_temp[TEM]/OFFSET_AV_NUM;
-            acc_sum_cnt =0;
-            mpu6050.Acc_CALIBRATE = 0;
-			f.msg_id = 1;
+            acc_sum_cnt =0;												//累加计数变量清零
+            mpu6050.Acc_CALIBRATE = 0;									//退出校准状态
+			f.msg_id = 1;												// dt_flag_t f;	需要发送数据的标志
 			f.msg_data = 1;
-            Param_SaveAccelOffset(&mpu6050.Acc_Offset);
-            sum_temp[A_X] = sum_temp[A_Y] = sum_temp[A_Z] = sum_temp[TEM] = 0;
+            Param_SaveAccelOffset(&mpu6050.Acc_Offset);					//初始化结果存入flash中，掉电不丢失
+            sum_temp[A_X] = sum_temp[A_Y] = sum_temp[A_Z] = sum_temp[TEM] = 0;	//累加变量清零
         }
     }
 
 #endif
 
-    if(mpu6050.Gyro_CALIBRATE)
+    if(mpu6050.Gyro_CALIBRATE)	//mpu6050.Gyro_CALIBRATE 可能的取值是 0，1，2      0：正常状态，不需要校准    1：上位机发送了校准指令	2：解锁的一瞬间，认为此时角速度为0
     {
+		//累加，取平均
         gyro_sum_cnt++;
         sum_temp[G_X] += mpu6050.Gyro_I16.x;
         sum_temp[G_Y] += mpu6050.Gyro_I16.y;
@@ -280,14 +283,14 @@ void MPU6050_Data_Offset()
             mpu6050.Gyro_Offset.z = (float)sum_temp[G_Z]/OFFSET_AV_NUM;
             mpu6050.Gyro_Temprea_Offset = sum_temp[TEM]/OFFSET_AV_NUM;
             gyro_sum_cnt =0;
-            if(mpu6050.Gyro_CALIBRATE == 1)
+            if(mpu6050.Gyro_CALIBRATE == 1)		//陀螺仪的默认偏移设置由上位机发出的指令触发，则将测得数据保存到flash，并向上位机返回应答。
 			{
-                Param_SaveGyroOffset(&mpu6050.Gyro_Offset);
+                Param_SaveGyroOffset(&mpu6050.Gyro_Offset);		
 				f.msg_id = 2;
 				f.msg_data = 1;
 			}
-            mpu6050.Gyro_CALIBRATE = 0;
-            sum_temp[G_X] = sum_temp[G_Y] = sum_temp[G_Z] = sum_temp[TEM] = 0;
+            mpu6050.Gyro_CALIBRATE = 0;			//退出校准状态
+            sum_temp[G_X] = sum_temp[G_Y] = sum_temp[G_Z] = sum_temp[TEM] = 0;	//累加计数器清零
         }
     }
 }
@@ -297,11 +300,11 @@ void Transform(float itx,float ity,float itz,float *it_x,float *it_y,float *it_z
     *it_x = itx;
     *it_y = ity;
     *it_z = itz;
-
 }
 
 s16 FILT_BUF[ITEMS][(FILTER_NUM + 1)];
-uint8_t filter_cnt = 0,filter_cnt_old = 0;
+uint8_t filter_cnt = 0;
+//uint8_t filter_cnt_old = 0;
 
 float mpu6050_tmp[ITEMS];
 float mpu_fil_tmp[ITEMS];
@@ -311,13 +314,15 @@ void MPU6050_Data_Prepare(float T)
 {
     u8 i;
     s32 FILT_TMP[ITEMS] = {0,0,0,0,0,0,0};
-//	float auto_offset_temp[3];
     float Gyro_tmp[3];
 
-
     MPU6050_Data_Offset(); //校准函数
-
-    /*读取buffer原始数据*/
+	
+//======================================================================================
+//原始数据读取
+	
+    //读取buffer原始数据
+	
     mpu6050.Acc_I16.x = ((((int16_t)mpu6050_buffer[0]) << 8) | mpu6050_buffer[1]) ;
     mpu6050.Acc_I16.y = ((((int16_t)mpu6050_buffer[2]) << 8) | mpu6050_buffer[3]) ;
     mpu6050.Acc_I16.z = ((((int16_t)mpu6050_buffer[4]) << 8) | mpu6050_buffer[5]) ;
@@ -325,27 +330,21 @@ void MPU6050_Data_Prepare(float T)
     mpu6050.Gyro_I16.x = ((((int16_t)mpu6050_buffer[ 8]) << 8) | mpu6050_buffer[ 9]) ;
     mpu6050.Gyro_I16.y = ((((int16_t)mpu6050_buffer[10]) << 8) | mpu6050_buffer[11]) ;
     mpu6050.Gyro_I16.z = ((((int16_t)mpu6050_buffer[12]) << 8) | mpu6050_buffer[13]) ;
+	
+	mpu6050.Tempreature = ((((int16_t)mpu6050_buffer[6]) << 8) | mpu6050_buffer[7]); //tempreature
 
-    Gyro_tmp[0] = mpu6050.Gyro_I16.x ;//
-    Gyro_tmp[1] = mpu6050.Gyro_I16.y ;//
-    Gyro_tmp[2] = mpu6050.Gyro_I16.z ;//
+	//   原数据存入： 
+	//				mpu6050.Acc_I16
+	//				mpu6050.Gyro_I16
+	//				mpu6050.Tempreature
 
-    mpu6050.Tempreature = ((((int16_t)mpu6050_buffer[6]) << 8) | mpu6050_buffer[7]); //tempreature
-    mpu6050.TEM_LPF += 2 *3.14f *T *(mpu6050.Tempreature - mpu6050.TEM_LPF);
-    mpu6050.Ftempreature = mpu6050.TEM_LPF/340.0f + 36.5f;
+//======================================================================================
+//数据校准
 
-//======================================================================
-    if( ++filter_cnt > FILTER_NUM )
-    {
-        filter_cnt = 0;
-        filter_cnt_old = 1;
-    }
-    else
-    {
-        filter_cnt_old = (filter_cnt == FILTER_NUM)? 0 : (filter_cnt + 1);
-    }
-//10 170 4056
-    /* 得出校准后的数据 */
+	//10 170 4056
+    /* 得出校准后的数据（减去 offset 值） */
+	
+	//加速度计数据校准
     if(sensor_setup.Offset.mpu_flag == 0)
     {
         mpu6050_tmp[A_X] = (mpu6050.Acc_I16.x - mpu6050.Acc_Offset.x) ;
@@ -358,12 +357,35 @@ void MPU6050_Data_Prepare(float T)
         mpu6050_tmp[A_Y] = 2*(mpu6050.Acc_I16.y - mpu6050.Acc_Offset.y) ;
         mpu6050_tmp[A_Z] = 2*(mpu6050.Acc_I16.z - mpu6050.Acc_Offset.z - 2048) ;
     }
+	
+	//陀螺仪数据校准
+	Gyro_tmp[0] = mpu6050.Gyro_I16.x ;//
+    Gyro_tmp[1] = mpu6050.Gyro_I16.y ;//
+    Gyro_tmp[2] = mpu6050.Gyro_I16.z ;//
 
     mpu6050_tmp[G_X] = Gyro_tmp[0] - mpu6050.Gyro_Offset.x ;//
     mpu6050_tmp[G_Y] = Gyro_tmp[1] - mpu6050.Gyro_Offset.y ;//
     mpu6050_tmp[G_Z] = Gyro_tmp[2] - mpu6050.Gyro_Offset.z ;//
 
-
+	
+//======================================================================================
+//数据滤波
+	
+	//温度数据低通滤波
+    mpu6050.TEM_LPF += 2 *3.14f *T *(mpu6050.Tempreature - mpu6050.TEM_LPF);
+    mpu6050.Ftempreature = mpu6050.TEM_LPF/340.0f + 36.5f;
+	
+	//更新数组计数指针
+    if( ++filter_cnt > FILTER_NUM )
+    {
+        filter_cnt = 0;
+//        filter_cnt_old = 1;
+    }
+    else
+    {
+//        filter_cnt_old = (filter_cnt == FILTER_NUM)? 0 : (filter_cnt + 1);
+    }
+	
     /* 更新滤波滑动窗口数组 */
     FILT_BUF[A_X][filter_cnt] = mpu6050_tmp[A_X];
     FILT_BUF[A_Y][filter_cnt] = mpu6050_tmp[A_Y];
@@ -372,6 +394,7 @@ void MPU6050_Data_Prepare(float T)
     FILT_BUF[G_Y][filter_cnt] = mpu6050_tmp[G_Y];
     FILT_BUF[G_Z][filter_cnt] = mpu6050_tmp[G_Z];
 
+	//求和
     for(i=0; i<FILTER_NUM; i++)
     {
         FILT_TMP[A_X] += FILT_BUF[A_X][i];
@@ -382,26 +405,27 @@ void MPU6050_Data_Prepare(float T)
         FILT_TMP[G_Z] += FILT_BUF[G_Z][i];
     }
 
-
+	//算平均值
     mpu_fil_tmp[A_X] = (float)( FILT_TMP[A_X] )/(float)FILTER_NUM;
     mpu_fil_tmp[A_Y] = (float)( FILT_TMP[A_Y] )/(float)FILTER_NUM;
     mpu_fil_tmp[A_Z] = (float)( FILT_TMP[A_Z] )/(float)FILTER_NUM;
-
 
     mpu_fil_tmp[G_X] = (float)( FILT_TMP[G_X] )/(float)FILTER_NUM;
     mpu_fil_tmp[G_Y] = (float)( FILT_TMP[G_Y] )/(float)FILTER_NUM;
     mpu_fil_tmp[G_Z] = (float)( FILT_TMP[G_Z] )/(float)FILTER_NUM;
 
-
+//======================================================================================
+//坐标转换
+	
     /*坐标转换*/
+	//就是把处理后的数据存入 mpu6050.Acc 和 mpu6050.Gyro
     Transform(mpu_fil_tmp[A_X],mpu_fil_tmp[A_Y],mpu_fil_tmp[A_Z],&mpu6050.Acc.x,&mpu6050.Acc.y,&mpu6050.Acc.z);
     Transform(mpu_fil_tmp[G_X],mpu_fil_tmp[G_Y],mpu_fil_tmp[G_Z],&mpu6050.Gyro.x,&mpu6050.Gyro.y,&mpu6050.Gyro.z);
 
+	//单位转换为度
     mpu6050.Gyro_deg.x = mpu6050.Gyro.x *TO_ANGLE;
     mpu6050.Gyro_deg.y = mpu6050.Gyro.y *TO_ANGLE;
     mpu6050.Gyro_deg.z = mpu6050.Gyro.z *TO_ANGLE;
-
-
 
 //======================================================================
 }

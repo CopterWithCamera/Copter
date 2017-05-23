@@ -14,9 +14,9 @@
 #include "filter.h"
 #include "ak8975.h"
 #include "anotc_baro_ctrl.h"
+#include "fly_ctrl.h"
 
 s8 CH_in_Mapping[CH_NUM] = {0,1,2,3,4,5,6,7};    //通道映射
-u8 rc_lose = 0;
 
 void CH_Mapping_Fun(u16 *in,u16 *Mapped_CH)
 {
@@ -29,12 +29,10 @@ void CH_Mapping_Fun(u16 *in,u16 *Mapped_CH)
 
 s16 CH[CH_NUM];
 
-float CH_Old[CH_NUM];
 float CH_filter[CH_NUM];
-float CH_filter_Old[CH_NUM];
-float CH_filter_D[CH_NUM];
-u8 NS,CH_Error[CH_NUM];
-u16 NS_cnt,CLR_CH_Error[CH_NUM];
+
+u8 NS;
+u8 CH_Error[CH_NUM];u16 NS_cnt,CLR_CH_Error[CH_NUM];
  
 s16 MAX_CH[CH_NUM]  = {1900 ,1900 ,1900 ,1900 ,1900 ,1900 ,1900 ,1900 };	//摇杆最大
 s16 MIN_CH[CH_NUM]  = {1100 ,1100 ,1100 ,1100 ,1100 ,1100 ,1100 ,1100 };	//摇杆最小
@@ -50,6 +48,10 @@ void RC_Duty( float T , u16 tmp16_CH[CH_NUM] )
 	s16 CH_TMP[CH_NUM];
 	static u16 Mapped_CH[CH_NUM];
 
+	//按照 NS 的数值选择数据源
+	//把 tmp16_CH 或 RX_CH 中所有通道的数值放进 Mapped_CH 数组
+	
+	//初始值为0；接收机输入数据时被切换为1；接收机没有数据，数传输入数据时被切换为2
 	if( NS == 1 )
 	{
 		CH_Mapping_Fun(tmp16_CH,Mapped_CH);
@@ -59,9 +61,12 @@ void RC_Duty( float T , u16 tmp16_CH[CH_NUM] )
 		CH_Mapping_Fun(RX_CH,Mapped_CH);
 	}
 
+	//数值被存入 Mapped_CH[]
 	
 	for( i = 0;i < CH_NUM ; i++ )
 	{
+		//如果数值超出合理范围，CH_Error[i]=1;
+		//如果恢复正常后持续一段时间 CLR_CH_Error[i] > 200
 		if( (u16)Mapped_CH[i] > 2500 || (u16)Mapped_CH[i] < 500 )
 		{
 			CH_Error[i]=1;
@@ -77,69 +82,75 @@ void RC_Duty( float T , u16 tmp16_CH[CH_NUM] )
 			}
 		}
 
-		if( NS == 1 || NS == 2 )
+		if( NS == 1 || NS == 2 )	//信号都已经传入了，这一个判断没意义，应该是以前有用现在废弃的代码
 		{
 			if( CH_Error[i] ) //单通道数据错误
 			{
+				//本通道数据错误处理
 				
 			}
 			else
 			{
-				//CH_Max_Min_Record();
+				//数据拷贝进 CH_TMP[i]
 				CH_TMP[i] = ( Mapped_CH[i] ); //映射拷贝数据，大约 1000~2000
 				
-				if( MAX_CH[i] > MIN_CH[i] )
+				//此后使用 CH_TMP[i] 作为遥控器单通道数据
+				
+				//限幅
+				//摇杆方向选择，用于适配遥控器各通道摇杆数值的正反
+				if( !CH_DIR[i] )	
 				{
-					if( !CH_DIR[i] )
-					{
-						CH[i] =   LIMIT ( (s16)( ( CH_TMP[i] - MIN_CH[i] )/(float)( MAX_CH[i] - MIN_CH[i] ) *1000 - CH_OFFSET ), -500, 500); //归一化，输出+-500
-					}
-					else
-					{
-						CH[i] = - LIMIT ( (s16)( ( CH_TMP[i] - MIN_CH[i] )/(float)( MAX_CH[i] - MIN_CH[i] ) *1000 - CH_OFFSET ), -500, 500); //归一化，输出+-500
-					}
-				}	
+					CH[i] =   LIMIT ( (s16)( ( CH_TMP[i] - MIN_CH[i] )/(float)( MAX_CH[i] - MIN_CH[i] ) *1000 - CH_OFFSET ), -500, 500); //归一化，输出+-500
+				}
 				else
 				{
-					fly_ready = 0;
+					CH[i] = - LIMIT ( (s16)( ( CH_TMP[i] - MIN_CH[i] )/(float)( MAX_CH[i] - MIN_CH[i] ) *1000 - CH_OFFSET ), -500, 500); //归一化，输出+-500
 				}
+				
+				//从这里开始，信号数据传入 CH[i]
 			}
-			rc_lose = 0;
 		}	
 		else //未接接收机或无信号（遥控关闭或丢失信号）
 		{
-			rc_lose = 1;
+			
 		}
-//=================== filter ===================================
-//  全局输出，CH_filter[],0横滚，1俯仰，2油门，3航向 范围：+-500	
-//=================== filter =================================== 		
+		
+		//从这里开始调用 CH[i] 获取数据
 			
-			filter_A = 6.28f *10 *T;
 			
-			if( ABS(CH_TMP[i] - CH_filter[i]) <100 )
+		//=================== filter ===================================
+		//  全局输出，CH_filter[],0横滚，1俯仰，2油门，3航向 范围：+-500	
+		//=================== filter =================================== 		
+		
+		//单通道数据滤波
+		filter_A = 6.28f *10 *T;
+		
+		if( ABS(CH_TMP[i] - CH_filter[i]) < 100 )	//差值小于100
+		{
+			CH_filter[i] +=        filter_A *( CH[i] - CH_filter[i] ) ;
+		}
+		else
+		{
+			CH_filter[i] += 0.5f * filter_A *( CH[i] - CH_filter[i] ) ;	//如果变化量过大，就减小此数据对输出值的影响（滤波系数减小）
+		}
+		
+		
+		//如果输入信号的通道异常，就在数据输入端把油门值放到最低，保证安全.
+		//这里的通道异常判断是来自于一个对NS进行操作的看门狗的，在本文件下方
+		if(NS == 0) //无信号
+		{
+			if(!fly_ready)
 			{
-				CH_filter[i] += filter_A *(CH[i] - CH_filter[i]) ;
+				CH_filter[THR] = -500;
 			}
-			else
-			{
-				CH_filter[i] += 0.5f *filter_A *( CH[i] - CH_filter[i]) ;
-			}
-			
-			if(NS == 0) //无信号
-			{
-				if(!fly_ready)
-				{
-					CH_filter[THR] = -500;
-				}
-			}
-// 					CH_filter[i] = Fli_Tmp;
-			CH_filter_D[i] 	= ( CH_filter[i] - CH_filter_Old[i] );
-			CH_filter_Old[i] = CH_filter[i];
-			CH_Old[i] 		= CH[i];
+		}
 	}
+	
 	//======================================================================
 	Fly_Ready(T,wz_speed);		//解锁判断
 	//======================================================================
+	
+	//NS看门狗
 	if(++NS_cnt>200)  // 400ms  未插信号线。
 	{
 		NS_cnt = 0;
@@ -147,7 +158,17 @@ void RC_Duty( float T , u16 tmp16_CH[CH_NUM] )
 	}
 }
 
-u8 fly_ready = 0,thr_stick_low;
+//喂狗函数，在pwm_in和data_transfer两个地方调用
+void Feed_Rc_Dog(u8 ch_mode) //400ms内必须调用一次
+{
+	NS = ch_mode;
+	NS_cnt = 0;
+}
+
+//**************************************************************************************************
+
+u8 fly_ready = 0;	//0：锁定	1：解锁
+u8 thr_stick_low;
 s16 ready_cnt=0;
 
 s16 mag_cali_cnt;
@@ -155,66 +176,66 @@ s16 locked_cnt;
 extern u8 acc_ng_cali;
 void Fly_Ready(float T,float height_speed_mm)
 {
-	if( CH_filter[2] < -400 )  							//油门小于10%
+	//对不同摇杆状态持续时间进行计数
+	if( CH_filter[2] < -400 )  				//下满足（油门小于10%）
 	{
-		thr_stick_low = 1;
-		if( fly_ready && ready_cnt != -1 ) //解锁完成，且已退出解锁上锁过程
+		thr_stick_low = 1;	//油门低标志置1
+		if( fly_ready && ready_cnt != -1 )	//解锁完成，且已退出解锁上锁过程
 		{
 			//ready_cnt += 1000 *T;
 		}
-#if(USE_TOE_IN_UNLOCK)		
-		if( CH_filter[3] < -400 )							
-		{
-			if( CH_filter[1] > 400 )
-			{
-				if( CH_filter[0] > 400 )
-				{
-					if( ready_cnt != -1 )				   //外八满足且退出解锁上锁过程
-					{
-						ready_cnt += 3 *1000 *T;
-					}
-				}
-
-			}
-
-		}
-#else
-		if( CH_filter[3] < -400 )					      //左下满足		
+		
+		if( CH_filter[3] < -400 )				//左下满足		
 		{
 			if( ready_cnt != -1 && fly_ready )	//判断已经退出解锁上锁过程且已经解锁
 			{
 				ready_cnt += 1000 *T;
 			}
-
 		}
-		else if( CH_filter[3] > 400 )      			//右下满足
+		else if( CH_filter[3] > 400 )      		//右下满足
 		{
 			if( ready_cnt != -1 && !fly_ready )	//判断已经退出解锁上锁过程且已经上锁
 			{
 				ready_cnt += 1000 *T;
 			}
 		}
-#endif		
-		else if( ready_cnt == -1 )						//4通道(CH[3])回位
+		else if( ready_cnt == -1 )				//4通道(CH[3])回位
 		{
 			ready_cnt=0;
 		}
 	}
 	else
 	{
+		thr_stick_low = 0;	//油门低标志置0
 		ready_cnt=0;
-		thr_stick_low = 0;
+	}
+	
+	if(ctrl_command == 4)	//起飞模式特殊处理
+	{
+		//用CH_ctrl[2]的油门值更新thr_stick_low状态，防止摇杆值低造成的意外上锁
+		if(CH_ctrl[2] < 400)
+		{
+			thr_stick_low = 1;	//油门低标志置1
+		}
+		else
+		{
+			thr_stick_low = 0;	//油门低标志置0
+		}
 	}
 
-	
+
+	//对计数结果进行判断
 	if( ready_cnt > 300 ) // 600ms 
 	{
+		//满足解锁/上锁条件
+		
 		ready_cnt = -1;
-		//fly_ready = ( fly_ready==1 ) ? 0 : 1 ;
+		
+		//切换解锁状态（解锁时上锁，上锁时解锁）
 		if( !fly_ready )
 		{
-			fly_ready = 1;
-			 acc_ng_cali = mpu6050.Gyro_CALIBRATE = 2;
+			fly_ready = 1;		//允许解锁
+			acc_ng_cali = mpu6050.Gyro_CALIBRATE = 2;	//在解锁的一瞬间执行陀螺仪初始化，认为此时陀螺仪数值为静止时的偏移值
 		}
 		else
 		{
@@ -223,7 +244,7 @@ void Fly_Ready(float T,float height_speed_mm)
 		
 	}
 
-		//////
+	//左杆左下满足，右杆右上满足，进行地磁计（电子罗盘）校准
 	if(CH_filter[2] < -400 && CH_filter[3] < -400 && (CH_filter[0]>400&&CH_filter[1]>400))
 	{
 		if(mag_cali_cnt<2000)
@@ -234,24 +255,23 @@ void Fly_Ready(float T,float height_speed_mm)
 		{
 			Mag_CALIBRATED = 1;
 		}
-	
 	}
 	else
 	{
 		mag_cali_cnt = 0;
 	}
 	
-	if(fly_ready && (thr_stick_low ==1) && (ABS(height_speed_mm)<300))
+	//解锁后一定时间没有起飞（同时满足油门低和高度低），则上锁
+	if(fly_ready && (thr_stick_low == 1) && (ABS(height_speed_mm)<300))	//解锁 油门低 垂直速度低
 	{
-		if(locked_cnt < 2000)
+		if(locked_cnt < 4000)	//4000ms = 4s
 		{
-			locked_cnt  += 1000*T;
+			locked_cnt  += 1000*T;	//T大约为0.002
 		}
 		else
 		{
 			fly_ready = 0;
 		}
-		
 	}
 	else
 	{
@@ -259,50 +279,10 @@ void Fly_Ready(float T,float height_speed_mm)
 	}
 }
 
-void Feed_Rc_Dog(u8 ch_mode) //400ms内必须调用一次
-{
-	NS = ch_mode;
-	NS_cnt = 0;
-}
-
 //=================== filter ===================================
 //  全局输出，CH_filter[],0横滚，1俯仰，2油门，3航向 范围：+-500	
 //=================== filter =================================== 	
-//u8 height_ctrl_mode = 0;
 
-//extern u8 ultra_ok;
-//void Mode()
-//{
-////	if( !fly_ready || CH_filter[THR]<-400 ) //只在上锁时 以及 油门 低于10% 的时候，允许切换模式，否则只能向模式0切换。
-////	{
-//		if( CH_filter[AUX1] < -200 )
-//		{
-//			height_ctrl_mode = 0;
-//		}
-//		else if( CH_filter[AUX1] < 200 )
-//		{
-//			height_ctrl_mode = 1;
-//		}
-//		else
-//		{
-//			if(ultra_ok == 1)
-//			{
-//				height_ctrl_mode = 2;
-//			}
-//			else
-//			{
-//				height_ctrl_mode = 1;
-//			}
-//		}
-////	}
-////	else
-////	{
-////		if( CH_filter[AUX1] < -200 )
-////		{
-////			height_ctrl_mode = 0;
-////		}
-////	}
-//}
 
 /******************* (C) COPYRIGHT 2014 ANO TECH *****END OF FILE************/
 

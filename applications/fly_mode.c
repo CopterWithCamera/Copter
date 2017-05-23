@@ -1,56 +1,49 @@
 #include "fly_mode.h"
+#include "fly_ctrl.h"
 #include "rc.h"
+#include "ultrasonic.h"
 
-u8 mode_value[10];
-u8 mode_state,mode_state_old;
-void mode_check(float *ch_in,u8 *mode_value)
+u8 mode_state;
+void mode_check(float *ch_in)
 {
+	/*
+	mode_state:
+	0：手动
+	1：气压计
+	2：超声波+气压计
+	3：自动
+	*/
 	
-	if(*(ch_in+AUX1) <-200)
+	//根据AUX1通道（第5通道）的数值切换飞行模式
+	if(*(ch_in+AUX1) <-350)				//-499 -- -350
 	{
-		mode_state = 0;//0;
+		mode_state = 0;	//手动油门
 	}
-	else if(*(ch_in+AUX1) >200)
+	else if(*(ch_in+AUX1) < -150)		//-350 -- -150
 	{
-		mode_state = 2;
+		mode_state = 2;	//超声波+气压计融合
 	}
-	else
+	else if(*(ch_in+AUX1) < 0)			//-150 -- 0
 	{
-		mode_state = 1;
+		if(ultra.measure_ok == 1)		//只有在超声波传感器有数据时才允许自动控制（严重依赖超声波）
+		{
+			mode_state = 3;	//自动控制模式，有fly_ctrl.c中代码影响摇杆值
+		}
+	}
+	else if(*(ch_in+AUX1) < 150)		//0 -- 150
+	{
+		mode_state = 4;
+	}
+	else if(*(ch_in+AUX1) < 300)		//150 -- 300
+	{
+		mode_state = 5;
+	}
+	else								//300 -- 499
+	{
+		mode_state = 1;	//气压计定高
 	}
 	
-	//=========== GPS、气压定高 ===========
-	if(mode_state == 0 )
-	{
-		*(mode_value+GPS) = *(mode_value+BARO) = 0;
-	}
-	else
-	{
-		*(mode_value+GPS) = *(mode_value+BARO) = 1;
-	}
-	
-//	//=========== 返航模式 ===========
-//	if(fly_ready )
-//	{
-//		if(( mode_state == 2 && mode_state_old != 2) || rc_lose == 1)
-//		{
-
-//			*(mode_value+BACK_HOME) = 1;
-//			
-
-//		}
-//		else if(mode_state != 2)
-//		{
-//			*(mode_value+BACK_HOME) = 0;
-//		}
-//	}
-//	else
-//	{
-//		*(mode_value+BACK_HOME) = 0;
-//	}
-	
-	
- 
-	//===========   ===========
-	mode_state_old = mode_state; //历史模式
+	//fly_ctrl用的飞行模式控制，在mode_state=3时起作用
+	Ctrl_Mode(ch_in);
 }
+

@@ -21,9 +21,9 @@
 #include "ultrasonic.h"
 #include "height_ctrl.h"
 #include "fly_mode.h"
+#include "fly_ctrl.h"
 
 s16 loop_cnt;
-
 
 loop_t loop;
 
@@ -45,75 +45,90 @@ void Loop_check()  //TIME INTTERRUPT
 		loop.check_flag = 1;	//该标志位在循环的最后被清零
 	}
 	
-		LED_1ms_DRV( );								//20级led渐变显示
+	LED_1ms_DRV( );				//20级led渐变显示
 }
 
-void Duty_1ms()
-{
-	Get_Cycle_T(1)/1000000.0f;
-
-	ANO_DT_Data_Exchange();												//数传通信定时调用
-}
+//********************************************************************************************************
+//						线程
+//********************************************************************************************************
 
 float test[5];
+
+//1ms线程
+void Duty_1ms()
+{
+	test[4] = Get_Cycle_T(1)/1000000.0f;	//返回本次调用和上次调用的时间差，数据来自 GetSysTime_us()
+
+	ANO_DT_Data_Exchange();		//数传通信定时调用
+}
+
+//2ms线程
 void Duty_2ms()
 {
+	//获取本线程两次调用的时间差
 	float inner_loop_time;
+	inner_loop_time = Get_Cycle_T(0)/1000000.0f; 		//获取内环准确的执行周期（本次和上次调用的时间差，单位是s）
+	test[0] = GetSysTime_us()/1000000.0f;				//把GetSysTime_us所获取的数值存入，但似乎没有被调用，似乎是用来放在监视里看的。
 	
-	inner_loop_time = Get_Cycle_T(0)/1000000.0f; 						//获取内环准确的执行周期
-	
-	test[0] = GetSysTime_us()/1000000.0f;
-	
-	MPU6050_Read(); 															//读取mpu6轴传感器
-
-	MPU6050_Data_Prepare( inner_loop_time );			//mpu6轴传感器数据处理
-	
+	//mpu6050处理
+	MPU6050_Read(); 									//读取mpu6轴传感器
+	MPU6050_Data_Prepare( inner_loop_time );			//mpu6轴传感器数据处理   校准、滤波、坐标转换
+														
+	//姿态解算（使用MPU6050数据进行姿态解算）
 	/*IMU更新姿态。输入：半个执行周期，三轴陀螺仪数据（转换到度每秒），三轴加速度计数据（4096--1G）；输出：ROLPITYAW姿态角*/
- 	IMUupdate(0.5f *inner_loop_time,mpu6050.Gyro_deg.x, mpu6050.Gyro_deg.y, mpu6050.Gyro_deg.z, mpu6050.Acc.x, mpu6050.Acc.y, mpu6050.Acc.z,&Roll,&Pitch,&Yaw);
+ 	IMUupdate(0.5f *inner_loop_time,											//半周期时间
+				mpu6050.Gyro_deg.x, mpu6050.Gyro_deg.y, mpu6050.Gyro_deg.z, 	//三轴陀螺仪数据（转换到度每秒）
+				mpu6050.Acc.x, mpu6050.Acc.y, mpu6050.Acc.z,					//三轴加速度计数据（4096--1G）
+				&Roll,&Pitch,&Yaw);												//输出：ROL PIT YAW 姿态角
 
-	CTRL_1( inner_loop_time ); 										//内环角速度控制。输入：执行周期，期望角速度，测量角速度，角度前馈；输出：电机PWM占空比。<函数未封装>
+	CTRL_1( inner_loop_time ); 							//内环角速度控制。输入：执行周期，期望角速度，测量角速度，角度前馈；输出：电机PWM占空比。<函数未封装>
 	
-	RC_Duty( inner_loop_time , Rc_Pwm_In );				// 遥控器通道数据处理 ，输入：执行周期，接收机pwm捕获的数据。
-	
-	
+	RC_Duty( inner_loop_time , Rc_Pwm_In );				//遥控器通道数据处理 ，输入：执行周期，接收机pwm捕获的数据。
+	Fly_Ctrl();											//自动控制摇杆值，以RC_Duty输出为输入，所以需要和RC_Duty同频调用
 	
 	test[1] = GetSysTime_us()/1000000.0f;
 }
 
+//5ms线程
 void Duty_5ms()
 {
 	float outer_loop_time;
-	
-	outer_loop_time = Get_Cycle_T(2)/1000000.0f;								//获取外环准确的执行周期
-	
-	test[2] = GetSysTime_us()/1000000.0f;
+	outer_loop_time = Get_Cycle_T(2)/1000000.0f;		//获取外环准确的执行周期，Get_Cycle_T(2)返回值的单位是us，除以1000000后单位是s
+	test[2] = GetSysTime_us()/1000000.0f;				//存储获取到的时间，但没有被调用
 
- 	CTRL_2( outer_loop_time ); 											// 外环角度控制。输入：执行周期，期望角度（摇杆量），姿态角度；输出：期望角速度。<函数未封装>
+ 	CTRL_2( outer_loop_time ); 							//外环角度控制。输入：执行周期，期望角度（摇杆量），姿态角度；输出：期望角速度。<函数未封装>
 	
-	test[3] = GetSysTime_us()/1000000.0f;
+	test[3] = GetSysTime_us()/1000000.0f;				//存储获取到的时间，但没有被调用。应该是和test[2]一起使用，计算代码运行时间。
 }
 
+//10ms线程
 void Duty_10ms()
 {
-
-		
-	  ANO_AK8975_Read();			//获取电子罗盘数据	
+	ANO_AK8975_Read();			//获取电子罗盘数据	
 }
 
+//20ms线程
 void Duty_20ms()
 {
 	Parameter_Save();
 }
-
+//50ms线程
 void Duty_50ms()
 {
 	//Mode();	
-	mode_check(CH_filter,mode_value);
+	mode_check(CH_filter);
 	LED_Duty();								//LED任务
 	Ultra_Duty();
+	
 }
 
+//********************************************************************************************************
 
+
+
+
+
+//任务调度
 void Duty_Loop()   					//最短任务周期为1ms，总的代码执行时间需要小于1ms。
 {
 

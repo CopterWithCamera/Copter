@@ -1,0 +1,61 @@
+rc.c
+1.认为 rc_lose 是以前的遗留代码，所以注释掉 rc_lose 相关代码
+2.注释掉 if( MAX_CH[i] > MIN_CH[i] ) 判断代码，这段代码的功能没有实现，没有用处
+3.恢复 NS 相关判断，NS 的作用有两个 1.选择数据来源 2.遥控信号看门狗
+4.注释掉与此三个变量相关的代码，此部分代码为无用代码（已经废除，似乎在很早之前的版本里看到过这段代码起作用）
+//float CH_Old[CH_NUM];
+//float CH_filter_Old[CH_NUM];
+//float CH_filter_D[CH_NUM];
+5.删除八字解锁相关代码
+
+mpu6050.c
+1.注释掉 filter_cnt_old 相关赋值
+
+init.c
+1.串口2波特率改为115200
+
+crrl.c
+ctrl2中z轴期望角度的处理有疑问！
+
+height_ctrl.c
+1.注释掉半成品代码
+2.添加注释
+3.重新实现控制逻辑
+4.最大下降速度从3000mm改为1000mm
+
+data_transfer.c
+1.Usb_Hid_Send();增加宏定义控制，不需要USB数据发送时不编译本函数
+2.添加注释
+
+
+定高控制修改：
+1.删除fly_mode中关于GPS的赋值
+2.重新实现定高逻辑
+
+模式切换表示方式修改：
+在ctrl.c里把mode_value[BARO]替换为mode_state
+删除mode_value相关代码
+
+在数据回传中增加飞行模式回传
+
+增加飞行控制文件fly_ctrl.c和fly_ctrl.h
+
+ctrl.c用CH_ctrl替换CH_filter
+
+增加串口4驱动，还没有改完
+
+fly_mode.c,fly_ctrl_ctrl,c：
+1.通道五改为6种飞行模式切换
+
+2.通道六用于传入测试指令
+
+3.在通道七增加定高积分变量清零功能
+
+
+
+后续开发内容：
+4.目标高度输入
+5.添加LED灯颜色
+6.测一下那个水平速度的来源
+
+1.在串口1实现printf

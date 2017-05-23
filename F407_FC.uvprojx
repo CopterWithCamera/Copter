@@ -10,6 +10,7 @@
       <TargetName>Anopilot</TargetName>
       <ToolsetNumber>0x4</ToolsetNumber>
       <ToolsetName>ARM-ADS</ToolsetName>
+      <pCCUsed>5060422::V5.06 update 4 (build 422)::ARMCC</pCCUsed>
       <TargetOption>
         <TargetCommonOption>
           <Device>STM32F407VG</Device>
@@ -124,47 +125,6 @@
             <HexOffset>0</HexOffset>
             <Oh166RecLen>16</Oh166RecLen>
           </OPTHX>
-          <Simulator>
-            <UseSimulator>0</UseSimulator>
-            <LoadApplicationAtStartup>1</LoadApplicationAtStartup>
-            <RunToMain>1</RunToMain>
-            <RestoreBreakpoints>1</RestoreBreakpoints>
-            <RestoreWatchpoints>1</RestoreWatchpoints>
-            <RestoreMemoryDisplay>1</RestoreMemoryDisplay>
-            <RestoreFunctions>1</RestoreFunctions>
-            <RestoreToolbox>1</RestoreToolbox>
-            <LimitSpeedToRealTime>0</LimitSpeedToRealTime>
-            <RestoreSysVw>1</RestoreSysVw>
-          </Simulator>
-          <Target>
-            <UseTarget>1</UseTarget>
-            <LoadApplicationAtStartup>1</LoadApplicationAtStartup>
-            <RunToMain>1</RunToMain>
-            <RestoreBreakpoints>1</RestoreBreakpoints>
-            <RestoreWatchpoints>1</RestoreWatchpoints>
-            <RestoreMemoryDisplay>1</RestoreMemoryDisplay>
-            <RestoreFunctions>0</RestoreFunctions>
-            <RestoreToolbox>1</RestoreToolbox>
-            <RestoreTracepoints>0</RestoreTracepoints>
-            <RestoreSysVw>1</RestoreSysVw>
-          </Target>
-          <RunDebugAfterBuild>0</RunDebugAfterBuild>
-          <TargetSelection>6</TargetSelection>
-          <SimDlls>
-            <CpuDll></CpuDll>
-            <CpuDllArguments></CpuDllArguments>
-            <PeripheralDll></PeripheralDll>
-            <PeripheralDllArguments></PeripheralDllArguments>
-            <InitializationFile></InitializationFile>
-          </SimDlls>
-          <TargetDlls>
-            <CpuDll></CpuDll>
-            <CpuDllArguments></CpuDllArguments>
-            <PeripheralDll></PeripheralDll>
-            <PeripheralDllArguments></PeripheralDllArguments>
-            <InitializationFile></InitializationFile>
-            <Driver>Segger\JL2CM3.dll</Driver>
-          </TargetDlls>
         </DebugOption>
         <Utilities>
           <Flash1>
@@ -177,7 +137,7 @@
           </Flash1>
           <bUseTDR>1</bUseTDR>
           <Flash2>Segger\JL2CM3.dll</Flash2>
-          <Flash3></Flash3>
+          <Flash3>"" ()</Flash3>
           <Flash4></Flash4>
           <pFcarmOut></pFcarmOut>
           <pFcarmGrp></pFcarmGrp>
@@ -528,6 +488,26 @@
               <FilePath>.\applications\init.h</FilePath>
             </File>
             <File>
+              <FileName>fly_ctrl.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\applications\fly_ctrl.c</FilePath>
+            </File>
+            <File>
+              <FileName>fly_ctrl.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\applications\fly_ctrl.h</FilePath>
+            </File>
+            <File>
+              <FileName>fly_mode.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\applications\fly_mode.c</FilePath>
+            </File>
+            <File>
+              <FileName>fly_mode.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\applications\fly_mode.h</FilePath>
+            </File>
+            <File>
               <FileName>parameter.c</FileName>
               <FileType>1</FileType>
               <FilePath>.\applications\parameter.c</FilePath>
@@ -621,16 +601,6 @@
               <FileName>height_ctrl.h</FileName>
               <FileType>5</FileType>
               <FilePath>.\applications\height_ctrl.h</FilePath>
-            </File>
-            <File>
-              <FileName>fly_mode.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>.\applications\fly_mode.c</FilePath>
-            </File>
-            <File>
-              <FileName>fly_mode.h</FileName>
-              <FileType>5</FileType>
-              <FilePath>.\applications\fly_mode.h</FilePath>
             </File>
             <File>
               <FileName>anotc_baro_ctrl.c</FileName>
@@ -902,10 +872,31 @@
               <FileType>5</FileType>
               <FilePath>.\doc\record.txt</FilePath>
             </File>
+            <File>
+              <FileName>修改文档.txt</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\doc\修改文档.txt</FilePath>
+            </File>
+            <File>
+              <FileName>资料整理.txt</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\doc\资料整理.txt</FilePath>
+            </File>
+            <File>
+              <FileName>README.md</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\README.md</FilePath>
+            </File>
           </Files>
         </Group>
       </Groups>
     </Target>
   </Targets>
+
+  <RTE>
+    <apis/>
+    <components/>
+    <files/>
+  </RTE>
 
 </Project>

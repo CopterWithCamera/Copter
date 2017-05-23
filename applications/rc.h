@@ -13,7 +13,7 @@ extern s16 CH[];
 extern u8 fly_ready,NS,thr_stick_low  ;
 extern u8 height_ctrl_mode ;
 extern u16 RX_CH[];
-extern u8 rc_lose;
+//extern u8 rc_lose;
 
 #endif
 

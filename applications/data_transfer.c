@@ -19,6 +19,9 @@
 #include "usbd_user_hid.h"
 #include "ultrasonic.h"
 #include "anotc_baro_ctrl.h"
+#include "fly_mode.h"
+#include "height_ctrl.h"
+#include "fly_ctrl.h"
 
 
 /////////////////////////////////////////////////////////////////////////////////////
@@ -28,7 +31,7 @@
 #define BYTE2(dwTemp)       ( *( (char *)(&dwTemp) + 2) )
 #define BYTE3(dwTemp)       ( *( (char *)(&dwTemp) + 3) )
 
-dt_flag_t f;					//需要发送数据的标志
+dt_flag_t f;			//需要发送数据的标志
 u8 data_to_send[50];	//发送数据缓存
 u8 checkdata_to_send,checksum_to_send;
 
@@ -41,7 +44,7 @@ void ANO_DT_Send_Data(u8 *dataToSend , u8 length)
 	Usb_Hid_Adddata(data_to_send,length);
 #endif
 #ifdef ANO_DT_USE_USART2
-	Usart2_Send(data_to_send, length);
+	Usart1_Send(data_to_send, length);
 #endif
 }
 static void ANO_DT_Send_Check(u8 head, u8 check_sum)
@@ -52,7 +55,6 @@ static void ANO_DT_Send_Check(u8 head, u8 check_sum)
 	data_to_send[3]=2;
 	data_to_send[4]=head;
 	data_to_send[5]=check_sum;
-	
 	
 	u8 sum = 0;
 	for(u8 i=0;i<6;i++)
@@ -84,55 +86,63 @@ static void ANO_DT_Send_Msg(u8 id, u8 data)
 extern float ultra_dis_lpf;
 void ANO_DT_Data_Exchange(void)
 {
+//================================================================================
+//发送时间判断
+
 	static u8 cnt = 0;
 	static u8 senser_cnt 	= 10;
-	static u8 senser2_cnt = 50;
-	static u8 user_cnt 	  = 10;
+	static u8 senser2_cnt 	= 50;
+	static u8 user_cnt 	  	= 10;
 	static u8 status_cnt 	= 15;
 	static u8 rcdata_cnt 	= 20;
 	static u8 motopwm_cnt	= 20;
-	static u8 power_cnt		=	50;
-	static u8 speed_cnt   = 50;
-	static u8 location_cnt   = 200;
+	static u8 power_cnt		= 50;
+	static u8 speed_cnt   	= 50;
+	static u8 location_cnt  = 200;
 	
 	if((cnt % senser_cnt) == (senser_cnt-1))
 		f.send_senser = 1;
 
 	if((cnt % senser2_cnt) == (senser2_cnt-1))
-		f.send_senser2 = 1;	
+		f.send_senser2 = 1;
 
 	if((cnt % user_cnt) == (user_cnt-2))
 		f.send_user = 1;
 	
 	if((cnt % status_cnt) == (status_cnt-1))
-		f.send_status = 1;	
+		f.send_status = 1;
 	
 	if((cnt % rcdata_cnt) == (rcdata_cnt-1))
-		f.send_rcdata = 1;	
+		f.send_rcdata = 1;
 	
 	if((cnt % motopwm_cnt) == (motopwm_cnt-2))
-		f.send_motopwm = 1;	
+		f.send_motopwm = 1;
 	
 	if((cnt % power_cnt) == (power_cnt-2))
-		f.send_power = 1;		
+		f.send_power = 1;
 	
 	if((cnt % speed_cnt) == (speed_cnt-3))
-		f.send_speed = 1;		
+		f.send_speed = 1;
 	
 	if((cnt % location_cnt) == (location_cnt-3))
 	{
-		f.send_location += 1;		
+		f.send_location += 1;
 	}
 	
 	if(++cnt>200) cnt = 0;
+
+//========================================================================================================
+//发送内容判断
+	
 /////////////////////////////////////////////////////////////////////////////////////
-	if(f.msg_id)
+	if(f.msg_id)			//指令反馈信息
 	{
 		ANO_DT_Send_Msg(f.msg_id,f.msg_data);
 		f.msg_id = 0;
 	}
+	
 /////////////////////////////////////////////////////////////////////////////////////
-	if(f.send_check)
+	if(f.send_check)	//
 	{
 		f.send_check = 0;
 		ANO_DT_Send_Check(checkdata_to_send,checksum_to_send);
@@ -147,19 +157,21 @@ void ANO_DT_Data_Exchange(void)
 	else if(f.send_status)
 	{
 		f.send_status = 0;
-		ANO_DT_Send_Status(Roll,Pitch,Yaw,(0.1f *baro_fusion.fusion_displacement.out),0,fly_ready);	
+		ANO_DT_Send_Status(	Roll,	Pitch,	Yaw,	(0.1f *baro_fusion.fusion_displacement.out),	mode_state+1,	fly_ready);	
+		//					Roll	Pitch	Yaw		高度（气压计融合后的高度）						飞行模式		解锁状态
 	}	
 /////////////////////////////////////////////////////////////////////////////////////
 	else if(f.send_speed)
 	{
 		f.send_speed = 0;
-		ANO_DT_Send_Speed(0,0,wz_speed);
+		ANO_DT_Send_Speed(0,0,wz_speed);	//wz_speed 是气压计数据得出的相对准确的垂直速度
 	}
 /////////////////////////////////////////////////////////////////////////////////////
 	else if(f.send_user)
 	{
 		f.send_user = 0;
 		ANO_DT_Send_User();
+		ANO_DT_Send_User2();
 	}
 /////////////////////////////////////////////////////////////////////////////////////
 	else if(f.send_senser)
@@ -179,7 +191,7 @@ void ANO_DT_Data_Exchange(void)
 	else if(f.send_rcdata)
 	{
 		f.send_rcdata = 0;
-		ANO_DT_Send_RCData(CH[2]+1500,CH[3]+1500,CH[0]+1500,CH[1]+1500,CH[4]+1500,CH[5]+1500,CH[6]+1500,CH[7]+1500,0 +1500,0 +1500);
+		ANO_DT_Send_RCData(CH[2]+1500,CH[3]+1500,CH[0]+1500,CH[1]+1500,CH[4]+1500,CH[5]+1500,CH[6]+1500,CH[7]+1500,-500 +1500,-500 +1500);
 	}	
 /////////////////////////////////////////////////////////////////////////////////////	
 	else if(f.send_motopwm)
@@ -246,15 +258,16 @@ void ANO_DT_Data_Exchange(void)
 	{
 		
 		f.send_location = 0;
-		ANO_DT_Send_Location(0,0,0 *10000000,0  *10000000,0);
+		ANO_DT_Send_Location(	0,			ctrl_command,		3 *10000000,	4 *10000000,	0		);
+		//						定位状态	卫星数量			经度 			纬度 			回航角
 		
 	}
-/////////////////////////////////////////////////////////////////////////////////////
-/////////////////////////////////////////////////////////////////////////////////////
-/////////////////////////////////////////////////////////////////////////////////////
-/////////////////////////////////////////////////////////////////////////////////////
-	Usb_Hid_Send();					
-/////////////////////////////////////////////////////////////////////////////////////
+
+#ifdef ANO_DT_USE_USB_HID
+	Usb_Hid_Send();	
+#endif
+	
+
 }
 
 
@@ -287,7 +300,7 @@ void ANO_DT_Data_Receive_Prepare(u8 data)
 	else if(state==3&&data<50)
 	{
 		state = 4;
-		RxBuffer[3]=data;
+		RxBuffer[3]=data;	//Len存入数组
 		_data_len = data;
 		_data_cnt = 0;
 	}
@@ -295,13 +308,13 @@ void ANO_DT_Data_Receive_Prepare(u8 data)
 	{
 		_data_len--;
 		RxBuffer[4+_data_cnt++]=data;
-		if(_data_len==0)
+		if(_data_len==0)	//按照_data_len长度把数据存入数组
 			state = 5;
 	}
 	else if(state==5)
 	{
 		state = 0;
-		RxBuffer[4+_data_cnt]=data;
+		RxBuffer[4+_data_cnt]=data;		//SUM位
 		ANO_DT_Data_Receive_Anl(RxBuffer,_data_cnt+5);
 	}
 	else
@@ -319,40 +332,41 @@ void ANO_DT_Data_Receive_Anl(u8 *data_buf,u8 num)
 	u8 sum = 0;
 	for(u8 i=0;i<(num-1);i++)
 		sum += *(data_buf+i);
-	if(!(sum==*(data_buf+num-1)))		return;		//判断sum
+	if(!(sum==*(data_buf+num-1)))		return;						//判断sum
 	if(!(*(data_buf)==0xAA && *(data_buf+1)==0xAF))		return;		//判断帧头
 	
-	if(*(data_buf+2)==0X01)
+	if(*(data_buf+2)==0X01)		//命令集合1（功能字为01）
 	{
-		if(*(data_buf+4)==0X01)
+		if(*(data_buf+4)==0X01)				//0x01：ACC校准
 		{
 			mpu6050.Acc_CALIBRATE = 1;
-			//mpu6050.Cali_3d = 1;
 		}
-		else if(*(data_buf+4)==0X02)
-			mpu6050.Gyro_CALIBRATE = 1;
-		else if(*(data_buf+4)==0X03)
+		else if(*(data_buf+4)==0X02)		//0x02：GYRO校准
 		{
-			mpu6050.Acc_CALIBRATE = 1;		
+			mpu6050.Gyro_CALIBRATE = 1;
+		}
+		else if(*(data_buf+4)==0X03)		//0x03：
+		{
+			mpu6050.Acc_CALIBRATE = 1;
 			mpu6050.Gyro_CALIBRATE = 1;			
 		}
-		else if(*(data_buf+4)==0X04)
+		else if(*(data_buf+4)==0X04)		//0x04：MAG校准
 		{
-			Mag_CALIBRATED = 1;
+			Mag_CALIBRATED = 1;	
 		}
-		else if((*(data_buf+4)>=0X021)&&(*(data_buf+4)<=0X26))
+		else if((*(data_buf+4)>=0X021)&&(*(data_buf+4)<=0X26))	//0x21-0x26：六面校准第1-6步
 		{
 			//acc_3d_calibrate_f = 1;
 		}
-		else if(*(data_buf+4)==0X20)
+		else if(*(data_buf+4)==0X20)		//0x20：退出六面校准
 		{
 			//acc_3d_step = 0; //退出，6面校准步清0
 		}
 	}
 	
-	if(*(data_buf+2)==0X02)
+	if(*(data_buf+2)==0X02)		//命令集合2（功能字为02）
 	{
-		if(*(data_buf+4)==0X01)
+		if(*(data_buf+4)==0X01)		//读取PID
 		{
 			f.send_pid1 = 1;
 			f.send_pid2 = 1;
@@ -361,11 +375,11 @@ void ANO_DT_Data_Receive_Anl(u8 *data_buf,u8 num)
 			f.send_pid5 = 1;
 			f.send_pid6 = 1;
 		}
-		if(*(data_buf+4)==0X02)
+		if(*(data_buf+4)==0X02)		//读取飞行模式设置
 		{
 			
 		}
-		if(*(data_buf+4)==0XA0)		//读取版本信息
+		if(*(data_buf+4)==0XA0)		//读取下位机版本信息
 		{
 			f.send_version = 1;
 		}
@@ -375,11 +389,12 @@ void ANO_DT_Data_Receive_Anl(u8 *data_buf,u8 num)
 		}
 	}
 
-	if(*(data_buf+2)==0X03)
+	if(*(data_buf+2)==0X03)		//RCDATA（命令字03）
 	{
+		//如果NS模式不是1（不是接收机模式或接收机已经掉线），则用数传数据喂狗，喂狗时会把模式切换为数传数据模式
 		if( NS != 1 )
 		{
-			Feed_Rc_Dog(2);
+			Feed_Rc_Dog(2);	//数传
 		}
 
 		RX_CH[THR] = (vs16)(*(data_buf+4)<<8)|*(data_buf+5) ;
@@ -392,7 +407,7 @@ void ANO_DT_Data_Receive_Anl(u8 *data_buf,u8 num)
 		RX_CH[AUX4] = (vs16)(*(data_buf+18)<<8)|*(data_buf+19) ;
 	}
 
-	if(*(data_buf+2)==0X10)								//PID1
+	if(*(data_buf+2)==0X10)			//设置 PID1 组
     {
         ctrl_1.PID[PIDROLL].kp  = 0.001*( (vs16)(*(data_buf+4)<<8)|*(data_buf+5) );
         ctrl_1.PID[PIDROLL].ki  = 0.001*( (vs16)(*(data_buf+6)<<8)|*(data_buf+7) );
@@ -403,16 +418,16 @@ void ANO_DT_Data_Receive_Anl(u8 *data_buf,u8 num)
         ctrl_1.PID[PIDYAW].kp 	= 0.001*( (vs16)(*(data_buf+16)<<8)|*(data_buf+17) );
         ctrl_1.PID[PIDYAW].ki 	= 0.001*( (vs16)(*(data_buf+18)<<8)|*(data_buf+19) );
         ctrl_1.PID[PIDYAW].kd 	= 0.001*( (vs16)(*(data_buf+20)<<8)|*(data_buf+21) );
-				if(f.send_check == 0)
-				{
-					f.send_check = 1;
-					checkdata_to_send = *(data_buf+2);
-					checksum_to_send = sum;
-				}
-			  PID_Para_Init();
-				flash_save_en_cnt = 1;
+		if(f.send_check == 0)
+		{
+			f.send_check = 1;
+			checkdata_to_send = *(data_buf+2);
+			checksum_to_send = sum;
+		}
+		PID_Para_Init();
+		flash_save_en_cnt = 1;
     }
-    if(*(data_buf+2)==0X11)								//PID2
+    if(*(data_buf+2)==0X11)			//设置 PID2 组
     {
         ctrl_2.PID[PIDROLL].kp  = 0.001*( (vs16)(*(data_buf+4)<<8)|*(data_buf+5) );
         ctrl_2.PID[PIDROLL].ki  = 0.001*( (vs16)(*(data_buf+6)<<8)|*(data_buf+7) );
@@ -424,15 +439,15 @@ void ANO_DT_Data_Receive_Anl(u8 *data_buf,u8 num)
         ctrl_2.PID[PIDYAW].ki 	= 0.001*( (vs16)(*(data_buf+18)<<8)|*(data_buf+19) );
         ctrl_2.PID[PIDYAW].kd 	= 0.001*( (vs16)(*(data_buf+20)<<8)|*(data_buf+21) );
         if(f.send_check == 0)
-				{
-					f.send_check = 1;
-					checkdata_to_send = *(data_buf+2);
-					checksum_to_send = sum;
-				}
-				PID_Para_Init();
-				flash_save_en_cnt = 1;
+		{
+			f.send_check = 1;
+			checkdata_to_send = *(data_buf+2);
+			checksum_to_send = sum;
+		}
+		PID_Para_Init();
+		flash_save_en_cnt = 1;
     }
-    if(*(data_buf+2)==0X12)								//PID3
+    if(*(data_buf+2)==0X12)			//设置 PID3 组
     {	
         pid_setup.groups.hc_sp.kp  = 0.001*( (vs16)(*(data_buf+4)<<8)|*(data_buf+5) );
         pid_setup.groups.hc_sp.ki  = 0.001*( (vs16)(*(data_buf+6)<<8)|*(data_buf+7) );
@@ -454,7 +469,7 @@ void ANO_DT_Data_Receive_Anl(u8 *data_buf,u8 num)
 				PID_Para_Init();
 				flash_save_en_cnt = 1;
     }
-	if(*(data_buf+2)==0X13)								//PID4
+	if(*(data_buf+2)==0X13)			//PID4
 	{
 		    pid_setup.groups.ctrl4.kp  = 0.001*( (vs16)(*(data_buf+4)<<8)|*(data_buf+5) );
         pid_setup.groups.ctrl4.ki  = 0.001*( (vs16)(*(data_buf+6)<<8)|*(data_buf+7) );
@@ -476,7 +491,7 @@ void ANO_DT_Data_Receive_Anl(u8 *data_buf,u8 num)
 		PID_Para_Init();
 		flash_save_en_cnt = 1;
 	}
-	if(*(data_buf+2)==0X14)								//PID5
+	if(*(data_buf+2)==0X14)			//PID5
 	{
 		if(f.send_check == 0)
 		{
@@ -485,7 +500,7 @@ void ANO_DT_Data_Receive_Anl(u8 *data_buf,u8 num)
 			checksum_to_send = sum;
 		}
 	}
-	if(*(data_buf+2)==0X15)								//PID6
+	if(*(data_buf+2)==0X15)			//PID6
 	{
 		if(f.send_check == 0)
 		{
@@ -496,6 +511,10 @@ void ANO_DT_Data_Receive_Anl(u8 *data_buf,u8 num)
 	}
 }
 
+//=====================================================================================
+//数据发送函数
+
+//VER
 void ANO_DT_Send_Version(u8 hardware_type, u16 hardware_ver,u16 software_ver,u16 protocol_ver,u16 bootloader_ver)
 {
 	u8 _cnt=0;
@@ -524,6 +543,7 @@ void ANO_DT_Send_Version(u8 hardware_type, u16 hardware_ver,u16 software_ver,u16
 	ANO_DT_Send_Data(data_to_send, _cnt);
 }
 
+//飞行速度
 void ANO_DT_Send_Speed(float x_s,float y_s,float z_s)
 {
 	u8 _cnt=0;
@@ -556,6 +576,7 @@ void ANO_DT_Send_Speed(float x_s,float y_s,float z_s)
 
 }
 
+//GPSDATA
 void ANO_DT_Send_Location(u8 state,u8 sat_num,s32 lon,s32 lat,float back_home_angle)
 {
 	u8 _cnt=0;
@@ -567,23 +588,23 @@ void ANO_DT_Send_Location(u8 state,u8 sat_num,s32 lon,s32 lat,float back_home_an
 	data_to_send[_cnt++]=0x04;
 	data_to_send[_cnt++]=0;
 	
-	data_to_send[_cnt++]=state;
-	data_to_send[_cnt++]=sat_num;
+	data_to_send[_cnt++]=state;		//当前位置信息
+	data_to_send[_cnt++]=sat_num;	//卫星数量
 	
-	_temp2 = lon;//经度
+	_temp2 = lon;					//经度，类型是s32，单位是*10000000
 	data_to_send[_cnt++]=BYTE3(_temp2);
 	data_to_send[_cnt++]=BYTE2(_temp2);	
 	data_to_send[_cnt++]=BYTE1(_temp2);
 	data_to_send[_cnt++]=BYTE0(_temp2);
 	
-	_temp2 = lat;//纬度
+	_temp2 = lat;					//纬度，类型是s32，单位是*10000000
 	data_to_send[_cnt++]=BYTE3(_temp2);
 	data_to_send[_cnt++]=BYTE2(_temp2);	
 	data_to_send[_cnt++]=BYTE1(_temp2);
 	data_to_send[_cnt++]=BYTE0(_temp2);
 	
 	
-	_temp = (s16)(100 *back_home_angle);
+	_temp = (s16)(100 *back_home_angle);//回航角（±180），单位是（度）*10
 	data_to_send[_cnt++]=BYTE1(_temp);
 	data_to_send[_cnt++]=BYTE0(_temp);
 	
@@ -599,7 +620,7 @@ void ANO_DT_Send_Location(u8 state,u8 sat_num,s32 lon,s32 lat,float back_home_an
 
 }
 
-
+//STATUS（三轴姿态、气压计高度（cm）、飞行模式、解锁状态）
 void ANO_DT_Send_Status(float angle_rol, float angle_pit, float angle_yaw, s32 alt, u8 fly_model, u8 armed)
 {
 	u8 _cnt=0;
@@ -639,6 +660,8 @@ void ANO_DT_Send_Status(float angle_rol, float angle_pit, float angle_yaw, s32 a
 	
 	ANO_DT_Send_Data(data_to_send, _cnt);
 }
+
+//SENSER
 void ANO_DT_Send_Senser(s16 a_x,s16 a_y,s16 a_z,s16 g_x,s16 g_y,s16 g_z,s16 m_x,s16 m_y,s16 m_z)
 {
 	u8 _cnt=0;
@@ -692,6 +715,9 @@ void ANO_DT_Send_Senser(s16 a_x,s16 a_y,s16 a_z,s16 g_x,s16 g_y,s16 g_z,s16 m_x,
 	
 	ANO_DT_Send_Data(data_to_send, _cnt);
 }
+
+//SENSER2
+//气压计高度、超声波高度
 void ANO_DT_Send_Senser2(s32 bar_alt,u16 csb_alt)
 {
 	u8 _cnt=0;
@@ -718,6 +744,8 @@ void ANO_DT_Send_Senser2(s32 bar_alt,u16 csb_alt)
 	
 	ANO_DT_Send_Data(data_to_send, _cnt);
 }
+
+//RCDATA
 void ANO_DT_Send_RCData(u16 thr,u16 yaw,u16 rol,u16 pit,u16 aux1,u16 aux2,u16 aux3,u16 aux4,u16 aux5,u16 aux6)
 {
 	u8 _cnt=0;
@@ -757,6 +785,8 @@ void ANO_DT_Send_RCData(u16 thr,u16 yaw,u16 rol,u16 pit,u16 aux1,u16 aux2,u16 au
 	
 	ANO_DT_Send_Data(data_to_send, _cnt);
 }
+
+//POWER
 void ANO_DT_Send_Power(u16 votage, u16 current)
 {
 	u8 _cnt=0;
@@ -784,6 +814,8 @@ void ANO_DT_Send_Power(u16 votage, u16 current)
 	
 	ANO_DT_Send_Data(data_to_send, _cnt);
 }
+
+//MOTO
 void ANO_DT_Send_MotoPWM(u16 m_1,u16 m_2,u16 m_3,u16 m_4,u16 m_5,u16 m_6,u16 m_7,u16 m_8)
 {
 	u8 _cnt=0;
@@ -820,6 +852,8 @@ void ANO_DT_Send_MotoPWM(u16 m_1,u16 m_2,u16 m_3,u16 m_4,u16 m_5,u16 m_6,u16 m_7
 	
 	ANO_DT_Send_Data(data_to_send, _cnt);
 }
+
+//PID
 void ANO_DT_Send_PID(u8 group,float p1_p,float p1_i,float p1_d,float p2_p,float p2_i,float p2_d,float p3_p,float p3_i,float p3_d)
 {
 	u8 _cnt=0;
@@ -870,10 +904,7 @@ void ANO_DT_Send_PID(u8 group,float p1_p,float p1_i,float p1_d,float p2_p,float 
 	ANO_DT_Send_Data(data_to_send, _cnt);
 }
 
-
-extern float yaw_mag,airframe_x_sp,airframe_y_sp,wx_sp,wy_sp;
-extern float werr_x_gps,werr_y_gps,aerr_x_gps,aerr_y_gps;
-
+extern float set_speed,set_height_e;
 void ANO_DT_Send_User()
 {
 	u8 _cnt=0;
@@ -884,37 +915,48 @@ void ANO_DT_Send_User()
 	data_to_send[_cnt++]=0xf1; //用户数据
 	data_to_send[_cnt++]=0;
 	
-	
-	_temp = (s16)baro_p.displacement;            //1
+	_temp = (s16)hc_value.m_acc * 1000;							//地理坐标系Z轴加速度  					//1	
 	data_to_send[_cnt++]=BYTE1(_temp);
 	data_to_send[_cnt++]=BYTE0(_temp);
 
-	_temp = (s16)wz_speed;
+	_temp = (s16)hc_value.fusion_acc * 1000;						//经过修正的地理坐标系Z轴加速度			//2
 	data_to_send[_cnt++]=BYTE1(_temp);
 	data_to_send[_cnt++]=BYTE0(_temp);
 	
-	_temp = (s16)baro_p.speed;
+	_temp = (s16)ctrl_command * 1000;								//指令号								//3
 	data_to_send[_cnt++]=BYTE1(_temp);
 	data_to_send[_cnt++]=BYTE0(_temp);	
 	
-	_temp = (s16)baro_fusion.fusion_acceleration.out;
+	_temp = (s16)set_speed* 1000;									//摇杆表示的速度期望/控制期望速度		//4
 	data_to_send[_cnt++]=BYTE1(_temp);
 	data_to_send[_cnt++]=BYTE0(_temp);
 	
-  _temp = (s16)baro_fusion.fusion_displacement.out;              //5
+	_temp = (s16)hc_value.m_speed* 1000;							//垂直速度								//5
 	data_to_send[_cnt++]=BYTE1(_temp);
 	data_to_send[_cnt++]=BYTE0(_temp);
 	
-	_temp = (s16)(ultra.height *10);              //6
+	_temp = (s16)(ultra.relative_height *10);				//超声波高度				     		//6
 	data_to_send[_cnt++]=BYTE1(_temp);
 	data_to_send[_cnt++]=BYTE0(_temp);
 
-	_temp = (s16)(10000 * reference_v.z);              //7
+	_temp = (s16)(baro_fusion.fusion_displacement.out)* 1000;   	//气压计融合高度           				//7
+	data_to_send[_cnt++]=BYTE1(_temp);
+	data_to_send[_cnt++]=BYTE0(_temp);
+	
+	_temp = (s16)(sonar_fusion.fusion_displacement.out)* 1000;	//超声波融合高度              			//8
+	data_to_send[_cnt++]=BYTE1(_temp);
+	data_to_send[_cnt++]=BYTE0(_temp);
+	
+	_temp = (s16)(baro_p.displacement)* 1000;						//气压计高度	              			//9
+	data_to_send[_cnt++]=BYTE1(_temp);
+	data_to_send[_cnt++]=BYTE0(_temp);
+	
+	_temp = (s16)(sonar.displacement)* 1000;						//超声波融合高度              			//10
 	data_to_send[_cnt++]=BYTE1(_temp);
 	data_to_send[_cnt++]=BYTE0(_temp);
 
 	
-	data_to_send[3] = _cnt-4;
+	data_to_send[3] = _cnt-4;							//LEN位，在这里补上
 	
 	u8 sum = 0;
 	for(u8 i=0;i<_cnt;i++)
@@ -925,5 +967,38 @@ void ANO_DT_Send_User()
 	ANO_DT_Send_Data(data_to_send, _cnt);
 }
 
+//向地面站辅助程序发送信息
+void ANO_DT_Send_User2()
+{
+	u8 _cnt=0;
+	vs16 _temp;
+	
+	data_to_send[_cnt++]=0xAA; 
+	data_to_send[_cnt++]=0xAA;
+	data_to_send[_cnt++]=0xf2; //用户数据2（对地面站辅助程序）
+	data_to_send[_cnt++]=0;
+	
+	_temp = (s16)mode_state;				//飞行模式
+	data_to_send[_cnt++]=BYTE1(_temp);
+	data_to_send[_cnt++]=BYTE0(_temp);
+
+	_temp = (s16)ctrl_command;				//指令编号
+	data_to_send[_cnt++]=BYTE1(_temp);
+	data_to_send[_cnt++]=BYTE0(_temp);
+	
+	_temp = (s16)fly_ready;					//解锁状态
+	data_to_send[_cnt++]=BYTE1(_temp);
+	data_to_send[_cnt++]=BYTE0(_temp);
+	
+	data_to_send[3] = _cnt-4;				//LEN位，在这里补上
+	
+	u8 sum = 0;
+	for(u8 i=0;i<_cnt;i++)
+		sum += data_to_send[i];
+	
+	data_to_send[_cnt++]=sum;
+
+	ANO_DT_Send_Data(data_to_send, _cnt);
+}
 
 /******************* (C) COPYRIGHT 2014 ANO TECH *****END OF FILE************/

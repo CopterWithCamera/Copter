@@ -5,20 +5,17 @@
 
 #include "include.h"
 
-#define GYRO_DEATH_ZOOM 20   //  20 / 65536
+#define GYRO_DEATH_ZOOM 	20   //  20 / 65536
 
-#define OFFSET_AV_NUM 50
-#define FILTER_NUM 10
-
-
-
+#define OFFSET_AV_NUM 		50
+#define FILTER_NUM 			10
 
 typedef struct 
 {
 	char Acc_CALIBRATE;
 	char Gyro_CALIBRATE;
 	char Cali_3d;
-  xyz_s16_t Acc_I16;
+	xyz_s16_t Acc_I16;
 	xyz_s16_t Gyro_I16;
 
 	xyz_f_t Acc;
@@ -47,7 +44,7 @@ extern float mpu6050_tmp[ITEMS];
 extern u8 acc_3d_calibrate_f,acc_3d_step;
 
 
-#define MPU6050_ADDR         			  MPU6050_ADDRESS_AD0_LOW
+#define MPU6050_ADDR         		MPU6050_ADDRESS_AD0_LOW
 
 #define MPU6050_ADDRESS_AD0_LOW     0x68 // address pin low (GND), default for InvenSense evaluation board
 #define MPU6050_ADDRESS_AD0_HIGH    0x69 // address pin high (VCC)

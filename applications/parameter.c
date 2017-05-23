@@ -301,8 +301,8 @@ void Para_ResetToFactorySetup(void)
 
 void PID_Para_Init()
 {
-	Ctrl_Para_Init();
-	h_pid_init();
+	Ctrl_Para_Init();	//姿态PID参数初始化（ctrl.c）
+	h_pid_init();		//高度PID参数初始化
 
 }
 

@@ -121,18 +121,19 @@ void simple_3d_trans(_xyz_f_t *ref, _xyz_f_t *in, _xyz_f_t *out) //小范围内�
 {
 	static s8 pn;
 	static float h_tmp_x,h_tmp_y;
+	     
+	h_tmp_x = my_sqrt(my_pow(ref->z) + my_pow(ref->y));	//    √(z^2 + y^2)
+	h_tmp_y = my_sqrt(my_pow(ref->z) + my_pow(ref->x));	//    √(z^2 + x^2)
 	
-	h_tmp_x = my_sqrt(my_pow(ref->z) + my_pow(ref->y));
-	h_tmp_y = my_sqrt(my_pow(ref->z) + my_pow(ref->x));
+	pn = ref->z < 0 ? -1 : 1;
 	
-	pn = ref->z < 0? -1 : 1;
+	//磁通量的主要方向是地理坐标系的水平方向，需要补充补偿的是机体坐标系倾斜导致的部分地理坐标系水平磁通量泄露到机体坐标系的Z轴上的量
+	out->x = ( h_tmp_x *in->x - pn *ref->x *in->z ) ;	//地理坐标系X轴数值补偿
+	out->y = ( pn *h_tmp_y *in->y - ref->y *in->z ) ;	//地理坐标系Y轴数值补偿
 	
-	  out->x = ( h_tmp_x *in->x - pn *ref->x *in->z ) ;
-		out->y = ( pn *h_tmp_y *in->y - ref->y *in->z ) ;
+//	out->x = h_tmp_x *in->x - ref->x *in->z;
+//	out->y = ref->z *in->y - ref->y *in->z;
 	
-// 	 out->x = h_tmp_x *in->x - ref->x *in->z;
-// 	 out->y = ref->z *in->y - ref->y *in->z;
-	
-	out->z = ref->x *in->x + ref->y *in->y + ref->z *in->z ;
+	out->z = ref->x *in->x + ref->y *in->y + ref->z *in->z ;	//地理坐标系Z轴数值补偿
 
 }

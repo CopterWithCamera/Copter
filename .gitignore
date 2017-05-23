@@ -22,3 +22,7 @@ JLinkLog.txt
 *.iex
 *.htm
 *.map
+*.uvguix.*
+*.ANO
+*.hex
+*.scvd

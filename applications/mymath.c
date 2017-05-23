@@ -283,6 +283,17 @@ float my_deadzone_n(float x,float zone)
   return (t);
 
 }
+
+/* 
+ * 设置死区
+ * ref：死区中点
+ * zoom：死区宽度
+ * 使用方法：
+ * 例：ref = 0，zoom = 30，
+ *     如果输入数据x取值在 -30 ~ +30 之间，则处于死区中，输出值为ref = 0
+ *     如果 x > 30 ，输出数据会减去死区宽度，相当于30这个点是0点
+ *     如果 x < -30 ，输出数据的绝对值会减去死区宽度，相当于-30这个点是0点
+ */
 float my_deathzoom(float x,float ref,float zoom)//my_deadzone
 {
 	float t;
@@ -305,6 +316,11 @@ float my_deathzoom(float x,float ref,float zoom)//my_deadzone
   return (t);
 }
 
+/*
+ * 死区设置
+ * 如果在死区里，则为ref
+ * 如果不在死去里，则为原来值，不用减去死区宽度
+ */
 float my_deathzoom_2(float x,float ref,float zoom)
 {
 	float t;
@@ -327,7 +343,7 @@ double To_180_degrees_db(double x)
 	return (x>180?(x-360):(x<-180?(x+360):x));
 }
 
-float To_180_degrees(float x)
+float To_180_degrees(float x)	//能够自动加减360°
 {
 	return (x>180?(x-360):(x<-180?(x+360):x));
 }
