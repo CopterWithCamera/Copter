@@ -22,6 +22,7 @@
 
 #define USE_TOE_IN_UNLOCK 	0 	// 0：默认解锁方式，1：外八解锁方式
 #define ANO_DT_USE_USART2 		//开启串口2数传功能
+#define ANO_DT_USE_USART1 		//开启串口1数传功能
 #define ANO_DT_USE_USB_HID		//开启飞控USBHID连接上位机功能
 //=======================================
 /***************中断优先级******************/

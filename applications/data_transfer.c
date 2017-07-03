@@ -43,8 +43,11 @@ void ANO_DT_Send_Data(u8 *dataToSend , u8 length)
 #ifdef ANO_DT_USE_USB_HID
 	Usb_Hid_Adddata(data_to_send,length);
 #endif
-#ifdef ANO_DT_USE_USART2
+#ifdef ANO_DT_USE_USART1
 	Usart1_Send(data_to_send, length);
+#endif
+#ifdef ANO_DT_USE_USART2
+	Usart2_Send(data_to_send, length);
 #endif
 }
 static void ANO_DT_Send_Check(u8 head, u8 check_sum)

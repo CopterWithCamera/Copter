@@ -464,7 +464,7 @@ void Usart1_IRQ(void)
 {
 	u8 com_data;
 	
-	if(USART2->SR & USART_SR_ORE)//ORE中断
+	if(USART1->SR & USART_SR_ORE)//ORE中断
 	{
 		com_data = USART1->DR;
 	}
