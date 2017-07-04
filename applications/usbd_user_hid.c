@@ -128,15 +128,17 @@ int usbd_hid_get_report (U8 rtype, U8 rid, U8 *buf, U8 req)
   return (0);
 }
 
-void usbd_hid_set_report (U8 rtype, U8 rid, U8 *buf, int len, U8 req) {
-
-  switch (rtype) {
-    case HID_REPORT_OUTPUT:
-      for(u8 i = 1; i<=(*(buf)); i++)
+void usbd_hid_set_report (U8 rtype, U8 rid, U8 *buf, int len, U8 req) 
+{
+	switch (rtype) 
+	{
+		case HID_REPORT_OUTPUT:
+			for(u8 i = 1; i<=(*(buf)); i++)
 				ANO_DT_Data_Receive_Prepare(*(buf+i));		//hid接收到数据会调用此函数
-      break;
-    case HID_REPORT_FEATURE:
-      //feat = buf[0];
-      break;
-  }
+		break;
+		
+		case HID_REPORT_FEATURE:
+			//feat = buf[0];
+		break;
+	}
 }

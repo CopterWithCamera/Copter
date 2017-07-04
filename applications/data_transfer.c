@@ -23,6 +23,20 @@
 #include "height_ctrl.h"
 #include "fly_ctrl.h"
 
+//发送函数表
+void ANO_DT_Data_Receive_Anl(u8 *data_buf,u8 num);
+void ANO_DT_Send_Version(u8 hardware_type, u16 hardware_ver,u16 software_ver,u16 protocol_ver,u16 bootloader_ver);
+void ANO_DT_Send_Status(float angle_rol, float angle_pit, float angle_yaw, s32 alt, u8 fly_model, u8 armed);
+void ANO_DT_Send_Senser(s16 a_x,s16 a_y,s16 a_z,s16 g_x,s16 g_y,s16 g_z,s16 m_x,s16 m_y,s16 m_z);
+void ANO_DT_Send_Senser2(s32 bar_alt,u16 csb_alt);
+void ANO_DT_Send_RCData(u16 thr,u16 yaw,u16 rol,u16 pit,u16 aux1,u16 aux2,u16 aux3,u16 aux4,u16 aux5,u16 aux6);
+void ANO_DT_Send_Power(u16 votage, u16 current);
+void ANO_DT_Send_MotoPWM(u16 m_1,u16 m_2,u16 m_3,u16 m_4,u16 m_5,u16 m_6,u16 m_7,u16 m_8);
+void ANO_DT_Send_PID(u8 group,float p1_p,float p1_i,float p1_d,float p2_p,float p2_i,float p2_d,float p3_p,float p3_i,float p3_d);
+void ANO_DT_Send_User(void);
+void ANO_DT_Send_User2(void);
+void ANO_DT_Send_Speed(float,float,float);
+void ANO_DT_Send_Location(u8 state,u8 sat_num,s32 lon,s32 lat,float back_home_angle);
 
 /////////////////////////////////////////////////////////////////////////////////////
 //数据拆分宏定义，在发送大于1字节的数据类型时，比如int16、float等，需要把数据拆分成单独字节进行发送
@@ -32,7 +46,7 @@
 #define BYTE3(dwTemp)       ( *( (char *)(&dwTemp) + 3) )
 
 dt_flag_t f;			//需要发送数据的标志
-u8 data_to_send[50];	//发送数据缓存
+u8 data_to_send[50];	//用于临时存储发送数据帧的字符串
 u8 checkdata_to_send,checksum_to_send;
 
 /////////////////////////////////////////////////////////////////////////////////////
@@ -40,16 +54,15 @@ u8 checkdata_to_send,checksum_to_send;
 //移植时，用户应根据自身应用的情况，根据使用的通信方式，实现此函数
 void ANO_DT_Send_Data(u8 *dataToSend , u8 length)
 {
-#ifdef ANO_DT_USE_USB_HID
-	Usb_Hid_Adddata(data_to_send,length);
-#endif
-#ifdef ANO_DT_USE_USART1
-	Usart1_Send(data_to_send, length);
-#endif
-#ifdef ANO_DT_USE_USART2
-	Usart2_Send(data_to_send, length);
-#endif
+	#ifdef ANO_DT_USE_USB_HID
+		Usb_Hid_Adddata(data_to_send,length);	//将数据存入USB_HID的缓存数组
+	#endif
+
+	#ifdef ANO_DT_USE_USART2
+		Usart2_Send(data_to_send, length);
+	#endif
 }
+
 static void ANO_DT_Send_Check(u8 head, u8 check_sum)
 {
 	data_to_send[0]=0xAA;
@@ -66,6 +79,7 @@ static void ANO_DT_Send_Check(u8 head, u8 check_sum)
 
 	ANO_DT_Send_Data(data_to_send, 7);
 }
+
 static void ANO_DT_Send_Msg(u8 id, u8 data)
 {
 	data_to_send[0]=0xAA;
@@ -83,26 +97,30 @@ static void ANO_DT_Send_Msg(u8 id, u8 data)
 
 	ANO_DT_Send_Data(data_to_send, 7);
 }
+
 /////////////////////////////////////////////////////////////////////////////////////
 //Data_Exchange函数处理各种数据发送请求，比如想实现每5ms发送一次传感器数据至上位机，即在此函数内实现
-//此函数应由用户每1ms调用一次
+//此函数中数据发送内容都是按照此函数调用周期的倍数运行的，可以理解为每隔多少个此函数调用周期发一次对应内容
 extern float ultra_dis_lpf;
-void ANO_DT_Data_Exchange(void)
+void ANO_DT_Data_Exchange(void)	//当前调用周期1ms
 {
 //================================================================================
 //发送时间判断
 
-	static u8 cnt = 0;
+	static u8 cnt = 0;					//计数器变量
+	
+	//定时调用周期表
 	static u8 senser_cnt 	= 10;
 	static u8 senser2_cnt 	= 50;
 	static u8 user_cnt 	  	= 10;
 	static u8 status_cnt 	= 15;
-	static u8 rcdata_cnt 	= 20;
-	static u8 motopwm_cnt	= 20;
-	static u8 power_cnt		= 50;
-	static u8 speed_cnt   	= 50;
-	static u8 location_cnt  = 200;
+	static u8 rcdata_cnt 	= 20;	//RC接收机数值
+	static u8 motopwm_cnt	= 20;	//输出PWM数值
+	static u8 power_cnt		= 50;	//电压和电流数据
+	static u8 speed_cnt   	= 50;	//当前速度数值
+//	static u8 location_cnt  = 200;	//位置信息
 	
+	//调用周期处理
 	if((cnt % senser_cnt) == (senser_cnt-1))
 		f.send_senser = 1;
 
@@ -127,104 +145,106 @@ void ANO_DT_Data_Exchange(void)
 	if((cnt % speed_cnt) == (speed_cnt-3))
 		f.send_speed = 1;
 	
-	if((cnt % location_cnt) == (location_cnt-3))
-	{
-		f.send_location += 1;
-	}
+//	if((cnt % location_cnt) == (location_cnt-3))
+//	{
+//		f.send_location += 1;
+//	}
 	
 	if(++cnt>200) cnt = 0;
 
 //========================================================================================================
 //发送内容判断
 	
-/////////////////////////////////////////////////////////////////////////////////////
-	if(f.msg_id)			//指令反馈信息
+	if(f.msg_id)		//指令反馈信息，用于需要返回命令结果的指令（用于传感器校准）
 	{
 		ANO_DT_Send_Msg(f.msg_id,f.msg_data);
 		f.msg_id = 0;
 	}
-	
-/////////////////////////////////////////////////////////////////////////////////////
+
 	if(f.send_check)	//
 	{
 		f.send_check = 0;
 		ANO_DT_Send_Check(checkdata_to_send,checksum_to_send);
 	}
-/////////////////////////////////////////////////////////////////////////////////////
-	else if(f.send_version)
+
+	else if(f.send_version)	//读取下位机版本命令，由数传指令置1
 	{
 		f.send_version = 0;
 		ANO_DT_Send_Version(4,300,100,400,0);
 	}
-/////////////////////////////////////////////////////////////////////////////////////
-	else if(f.send_status)
+
+//=================================================================================================================================
+//                                                 定时发送数据
+//=================================================================================================================================
+	
+	else if(f.send_status)	//定时周期表控制发送
 	{
 		f.send_status = 0;
 		ANO_DT_Send_Status(	Roll,	Pitch,	Yaw,	(0.1f *baro_fusion.fusion_displacement.out),	mode_state+1,	fly_ready);	
-		//					Roll	Pitch	Yaw		高度（气压计融合后的高度）						飞行模式		解锁状态
+		//					Roll	Pitch	Yaw		高度（气压计融合后的高度）						飞行模式			解锁状态
 	}	
-/////////////////////////////////////////////////////////////////////////////////////
-	else if(f.send_speed)
+	else if(f.send_speed)	//定时周期表控制发送
 	{
 		f.send_speed = 0;
 		ANO_DT_Send_Speed(0,0,wz_speed);	//wz_speed 是气压计数据得出的相对准确的垂直速度
 	}
-/////////////////////////////////////////////////////////////////////////////////////
-	else if(f.send_user)
+	else if(f.send_user)	//定时周期表控制发送
 	{
 		f.send_user = 0;
 		ANO_DT_Send_User();
 		ANO_DT_Send_User2();
 	}
-/////////////////////////////////////////////////////////////////////////////////////
-	else if(f.send_senser)
+	else if(f.send_senser)	//定时周期表控制发送
 	{
 		f.send_senser = 0;
-		ANO_DT_Send_Senser(mpu6050.Acc.x,mpu6050.Acc.y,mpu6050.Acc.z,
-												mpu6050.Gyro.x,mpu6050.Gyro.y,mpu6050.Gyro.z,
-												ak8975.Mag_Val.x,ak8975.Mag_Val.y,ak8975.Mag_Val.z);
+		ANO_DT_Send_Senser(mpu6050.Acc.x,mpu6050.Acc.y,mpu6050.Acc.z,mpu6050.Gyro.x,mpu6050.Gyro.y,mpu6050.Gyro.z,ak8975.Mag_Val.x,ak8975.Mag_Val.y,ak8975.Mag_Val.z);
 	}	
-/////////////////////////////////////////////////////////////////////////////////////
-	else if(f.send_senser2)
+	else if(f.send_senser2)	//定时周期表控制发送
 	{
 		f.send_senser2 = 0;
 		ANO_DT_Send_Senser2(baro.height,ultra.height);//原始数据
-	}	
-/////////////////////////////////////////////////////////////////////////////////////
-	else if(f.send_rcdata)
+	}
+	else if(f.send_rcdata)	//定时周期表控制发送
 	{
 		f.send_rcdata = 0;
 		ANO_DT_Send_RCData(CH[2]+1500,CH[3]+1500,CH[0]+1500,CH[1]+1500,CH[4]+1500,CH[5]+1500,CH[6]+1500,CH[7]+1500,-500 +1500,-500 +1500);
-	}	
-/////////////////////////////////////////////////////////////////////////////////////	
-	else if(f.send_motopwm)
+	}
+	else if(f.send_motopwm)	//定时周期表控制发送
 	{
 		f.send_motopwm = 0;
-#if MAXMOTORS == 8
-		ANO_DT_Send_MotoPWM(motor_out[0],motor_out[1],motor_out[2],motor_out[3],motor_out[4],motor_out[5],motor_out[6],motor_out[7]);
-#elif MAXMOTORS == 6
-		ANO_DT_Send_MotoPWM(motor_out[0],motor_out[1],motor_out[2],motor_out[3],motor_out[4],motor_out[5],0,0);
-#elif MAXMOTORS == 4
-		ANO_DT_Send_MotoPWM(motor_out[0],motor_out[1],motor_out[2],motor_out[3],0,0,0,0);
-#else
-		
-#endif
-	}	
-/////////////////////////////////////////////////////////////////////////////////////
-	else if(f.send_power)
+		#if MAXMOTORS == 8
+				ANO_DT_Send_MotoPWM(motor_out[0],motor_out[1],motor_out[2],motor_out[3],motor_out[4],motor_out[5],motor_out[6],motor_out[7]);
+		#elif MAXMOTORS == 6
+				ANO_DT_Send_MotoPWM(motor_out[0],motor_out[1],motor_out[2],motor_out[3],motor_out[4],motor_out[5],0,0);
+		#elif MAXMOTORS == 4
+				ANO_DT_Send_MotoPWM(motor_out[0],motor_out[1],motor_out[2],motor_out[3],0,0,0,0);
+		#endif
+	}
+	else if(f.send_power)	//定时周期表控制发送
 	{
 		f.send_power = 0;
 		ANO_DT_Send_Power(123,456);
 	}
-/////////////////////////////////////////////////////////////////////////////////////
+//	else if(f.send_location == 2)
+//	{
+//		
+//		f.send_location = 0;
+//		ANO_DT_Send_Location(	0,			ctrl_command,		3 *10000000,	4 *10000000,	0		);
+//		//						定位状态	卫星数量			经度 			纬度 			回航角
+//		
+//	}
+	
+//=================================================================================================================================
+//									响应读取PID返回指令
+//=================================================================================================================================
+	
 	else if(f.send_pid1)
 	{
 		f.send_pid1 = 0;
 		ANO_DT_Send_PID(1,ctrl_1.PID[PIDROLL].kp,ctrl_1.PID[PIDROLL].ki,ctrl_1.PID[PIDROLL].kd,
 											ctrl_1.PID[PIDPITCH].kp,ctrl_1.PID[PIDPITCH].ki,ctrl_1.PID[PIDPITCH].kd,
 											ctrl_1.PID[PIDYAW].kp,ctrl_1.PID[PIDYAW].ki,ctrl_1.PID[PIDYAW].kd);
-	}	
-/////////////////////////////////////////////////////////////////////////////////////
+	}
 	else if(f.send_pid2)
 	{
 		f.send_pid2 = 0;
@@ -232,7 +252,6 @@ void ANO_DT_Data_Exchange(void)
 											ctrl_2.PID[PIDPITCH].kp,ctrl_2.PID[PIDPITCH].ki,ctrl_2.PID[PIDPITCH].kd,
 											ctrl_2.PID[PIDYAW].kp,ctrl_2.PID[PIDYAW].ki,ctrl_2.PID[PIDYAW].kd);
 	}
-/////////////////////////////////////////////////////////////////////////////////////
 	else if(f.send_pid3)
 	{
 		f.send_pid3 = 0;
@@ -257,17 +276,12 @@ void ANO_DT_Data_Exchange(void)
 		f.send_pid6 = 0;
 		ANO_DT_Send_PID(6,0,0,0,0,0,0,0,0,0);
 	}
-	else if(f.send_location == 2)
-	{
-		
-		f.send_location = 0;
-		ANO_DT_Send_Location(	0,			ctrl_command,		3 *10000000,	4 *10000000,	0		);
-		//						定位状态	卫星数量			经度 			纬度 			回航角
-		
-	}
+	
+//=================================================================================================================================
+
 
 #ifdef ANO_DT_USE_USB_HID
-	Usb_Hid_Send();	
+	Usb_Hid_Send();			//定时调用USB_HID的发送函数
 #endif
 	
 
@@ -300,7 +314,7 @@ void ANO_DT_Data_Receive_Prepare(u8 data)
 		state=3;
 		RxBuffer[2]=data;
 	}
-	else if(state==3&&data<50)
+	else if(state==3&&data<50)	//最大帧长度为49字节
 	{
 		state = 4;
 		RxBuffer[3]=data;	//Len存入数组
@@ -336,7 +350,7 @@ void ANO_DT_Data_Receive_Anl(u8 *data_buf,u8 num)
 	for(u8 i=0;i<(num-1);i++)
 		sum += *(data_buf+i);
 	if(!(sum==*(data_buf+num-1)))		return;						//判断sum
-	if(!(*(data_buf)==0xAA && *(data_buf+1)==0xAF))		return;		//判断帧头
+	if(!(*(data_buf)==0xAA && *(data_buf+1)==0xAF))		return;		//判断帧头	（只接受 0xAA 0xAF 帧头）
 	
 	if(*(data_buf+2)==0X01)		//命令集合1（功能字为01）
 	{
