@@ -23,21 +23,6 @@
 #include "height_ctrl.h"
 #include "fly_ctrl.h"
 
-//发送函数表
-void ANO_DT_Data_Receive_Anl(u8 *data_buf,u8 num);
-void ANO_DT_Send_Version(u8 hardware_type, u16 hardware_ver,u16 software_ver,u16 protocol_ver,u16 bootloader_ver);
-void ANO_DT_Send_Status(float angle_rol, float angle_pit, float angle_yaw, s32 alt, u8 fly_model, u8 armed);
-void ANO_DT_Send_Senser(s16 a_x,s16 a_y,s16 a_z,s16 g_x,s16 g_y,s16 g_z,s16 m_x,s16 m_y,s16 m_z);
-void ANO_DT_Send_Senser2(s32 bar_alt,u16 csb_alt);
-void ANO_DT_Send_RCData(u16 thr,u16 yaw,u16 rol,u16 pit,u16 aux1,u16 aux2,u16 aux3,u16 aux4,u16 aux5,u16 aux6);
-void ANO_DT_Send_Power(u16 votage, u16 current);
-void ANO_DT_Send_MotoPWM(u16 m_1,u16 m_2,u16 m_3,u16 m_4,u16 m_5,u16 m_6,u16 m_7,u16 m_8);
-void ANO_DT_Send_PID(u8 group,float p1_p,float p1_i,float p1_d,float p2_p,float p2_i,float p2_d,float p3_p,float p3_i,float p3_d);
-void ANO_DT_Send_User(void);
-void ANO_DT_Send_User2(void);
-void ANO_DT_Send_Speed(float,float,float);
-void ANO_DT_Send_Location(u8 state,u8 sat_num,s32 lon,s32 lat,float back_home_angle);
-
 /////////////////////////////////////////////////////////////////////////////////////
 //数据拆分宏定义，在发送大于1字节的数据类型时，比如int16、float等，需要把数据拆分成单独字节进行发送
 #define BYTE0(dwTemp)       ( *( (char *)(&dwTemp)		) )
@@ -47,9 +32,11 @@ void ANO_DT_Send_Location(u8 state,u8 sat_num,s32 lon,s32 lat,float back_home_an
 
 dt_flag_t f;			//需要发送数据的标志
 u8 data_to_send[50];	//用于临时存储发送数据帧的字符串
-u8 checkdata_to_send,checksum_to_send;
 
-/////////////////////////////////////////////////////////////////////////////////////
+//校验包中数据的临时保存变量，校验包发送标志置1的同时要向这两个变量中写入校验值
+u8 checkdata_to_send,checksum_to_send;	//checkdata_to_send取的是当前发送数组的*(data_buf+2)数据，就是第三个数据（从0开始数数到2），相当于随机取一个数用于校验
+										//checksum_to_send就是总和校验
+
 //Send_Data函数是协议中所有发送数据功能使用到的发送函数
 //移植时，用户应根据自身应用的情况，根据使用的通信方式，实现此函数
 void ANO_DT_Send_Data(u8 *dataToSend , u8 length)
@@ -63,6 +50,7 @@ void ANO_DT_Send_Data(u8 *dataToSend , u8 length)
 	#endif
 }
 
+//发送校验数组的函数，主要被PID发送函数调用
 static void ANO_DT_Send_Check(u8 head, u8 check_sum)
 {
 	data_to_send[0]=0xAA;
@@ -80,6 +68,7 @@ static void ANO_DT_Send_Check(u8 head, u8 check_sum)
 	ANO_DT_Send_Data(data_to_send, 7);
 }
 
+//这个函数是对于与最新的匿名地面站（2017年4月）新加的函数，用于发送反馈，告知地面站发出的指令是否收到
 static void ANO_DT_Send_Msg(u8 id, u8 data)
 {
 	data_to_send[0]=0xAA;
@@ -96,436 +85,6 @@ static void ANO_DT_Send_Msg(u8 id, u8 data)
 	data_to_send[6]=sum;
 
 	ANO_DT_Send_Data(data_to_send, 7);
-}
-
-/////////////////////////////////////////////////////////////////////////////////////
-//Data_Exchange函数处理各种数据发送请求，比如想实现每5ms发送一次传感器数据至上位机，即在此函数内实现
-//此函数中数据发送内容都是按照此函数调用周期的倍数运行的，可以理解为每隔多少个此函数调用周期发一次对应内容
-extern float ultra_dis_lpf;
-void ANO_DT_Data_Exchange(void)	//当前调用周期1ms
-{
-//================================================================================
-//发送时间判断
-
-	static u8 cnt = 0;					//计数器变量
-	
-	//定时调用周期表
-	static u8 senser_cnt 	= 10;
-	static u8 senser2_cnt 	= 50;
-	static u8 user_cnt 	  	= 10;
-	static u8 status_cnt 	= 15;
-	static u8 rcdata_cnt 	= 20;	//RC接收机数值
-	static u8 motopwm_cnt	= 20;	//输出PWM数值
-	static u8 power_cnt		= 50;	//电压和电流数据
-	static u8 speed_cnt   	= 50;	//当前速度数值
-//	static u8 location_cnt  = 200;	//位置信息
-	
-	//调用周期处理
-	if((cnt % senser_cnt) == (senser_cnt-1))
-		f.send_senser = 1;
-
-	if((cnt % senser2_cnt) == (senser2_cnt-1))
-		f.send_senser2 = 1;
-
-	if((cnt % user_cnt) == (user_cnt-2))
-		f.send_user = 1;
-	
-	if((cnt % status_cnt) == (status_cnt-1))
-		f.send_status = 1;
-	
-	if((cnt % rcdata_cnt) == (rcdata_cnt-1))
-		f.send_rcdata = 1;
-	
-	if((cnt % motopwm_cnt) == (motopwm_cnt-2))
-		f.send_motopwm = 1;
-	
-	if((cnt % power_cnt) == (power_cnt-2))
-		f.send_power = 1;
-	
-	if((cnt % speed_cnt) == (speed_cnt-3))
-		f.send_speed = 1;
-	
-//	if((cnt % location_cnt) == (location_cnt-3))
-//	{
-//		f.send_location += 1;
-//	}
-	
-	if(++cnt>200) cnt = 0;
-
-//========================================================================================================
-//发送内容判断
-	
-	if(f.msg_id)		//指令反馈信息，用于需要返回命令结果的指令（用于传感器校准）
-	{
-		ANO_DT_Send_Msg(f.msg_id,f.msg_data);
-		f.msg_id = 0;
-	}
-
-	if(f.send_check)	//
-	{
-		f.send_check = 0;
-		ANO_DT_Send_Check(checkdata_to_send,checksum_to_send);
-	}
-
-	else if(f.send_version)	//读取下位机版本命令，由数传指令置1
-	{
-		f.send_version = 0;
-		ANO_DT_Send_Version(4,300,100,400,0);
-	}
-
-//=================================================================================================================================
-//                                                 定时发送数据
-//=================================================================================================================================
-	
-	else if(f.send_status)	//定时周期表控制发送
-	{
-		f.send_status = 0;
-		ANO_DT_Send_Status(	Roll,	Pitch,	Yaw,	(0.1f *baro_fusion.fusion_displacement.out),	mode_state+1,	fly_ready);	
-		//					Roll	Pitch	Yaw		高度（气压计融合后的高度）						飞行模式			解锁状态
-	}	
-	else if(f.send_speed)	//定时周期表控制发送
-	{
-		f.send_speed = 0;
-		ANO_DT_Send_Speed(0,0,wz_speed);	//wz_speed 是气压计数据得出的相对准确的垂直速度
-	}
-	else if(f.send_user)	//定时周期表控制发送
-	{
-		f.send_user = 0;
-		ANO_DT_Send_User();
-		ANO_DT_Send_User2();
-	}
-	else if(f.send_senser)	//定时周期表控制发送
-	{
-		f.send_senser = 0;
-		ANO_DT_Send_Senser(mpu6050.Acc.x,mpu6050.Acc.y,mpu6050.Acc.z,mpu6050.Gyro.x,mpu6050.Gyro.y,mpu6050.Gyro.z,ak8975.Mag_Val.x,ak8975.Mag_Val.y,ak8975.Mag_Val.z);
-	}	
-	else if(f.send_senser2)	//定时周期表控制发送
-	{
-		f.send_senser2 = 0;
-		ANO_DT_Send_Senser2(baro.height,ultra.height);//原始数据
-	}
-	else if(f.send_rcdata)	//定时周期表控制发送
-	{
-		f.send_rcdata = 0;
-		ANO_DT_Send_RCData(CH[2]+1500,CH[3]+1500,CH[0]+1500,CH[1]+1500,CH[4]+1500,CH[5]+1500,CH[6]+1500,CH[7]+1500,-500 +1500,-500 +1500);
-	}
-	else if(f.send_motopwm)	//定时周期表控制发送
-	{
-		f.send_motopwm = 0;
-		#if MAXMOTORS == 8
-				ANO_DT_Send_MotoPWM(motor_out[0],motor_out[1],motor_out[2],motor_out[3],motor_out[4],motor_out[5],motor_out[6],motor_out[7]);
-		#elif MAXMOTORS == 6
-				ANO_DT_Send_MotoPWM(motor_out[0],motor_out[1],motor_out[2],motor_out[3],motor_out[4],motor_out[5],0,0);
-		#elif MAXMOTORS == 4
-				ANO_DT_Send_MotoPWM(motor_out[0],motor_out[1],motor_out[2],motor_out[3],0,0,0,0);
-		#endif
-	}
-	else if(f.send_power)	//定时周期表控制发送
-	{
-		f.send_power = 0;
-		ANO_DT_Send_Power(123,456);
-	}
-//	else if(f.send_location == 2)
-//	{
-//		
-//		f.send_location = 0;
-//		ANO_DT_Send_Location(	0,			ctrl_command,		3 *10000000,	4 *10000000,	0		);
-//		//						定位状态	卫星数量			经度 			纬度 			回航角
-//		
-//	}
-	
-//=================================================================================================================================
-//									响应读取PID返回指令
-//=================================================================================================================================
-	
-	else if(f.send_pid1)
-	{
-		f.send_pid1 = 0;
-		ANO_DT_Send_PID(1,ctrl_1.PID[PIDROLL].kp,ctrl_1.PID[PIDROLL].ki,ctrl_1.PID[PIDROLL].kd,
-											ctrl_1.PID[PIDPITCH].kp,ctrl_1.PID[PIDPITCH].ki,ctrl_1.PID[PIDPITCH].kd,
-											ctrl_1.PID[PIDYAW].kp,ctrl_1.PID[PIDYAW].ki,ctrl_1.PID[PIDYAW].kd);
-	}
-	else if(f.send_pid2)
-	{
-		f.send_pid2 = 0;
-		ANO_DT_Send_PID(2,ctrl_2.PID[PIDROLL].kp,ctrl_2.PID[PIDROLL].ki,ctrl_2.PID[PIDROLL].kd,
-											ctrl_2.PID[PIDPITCH].kp,ctrl_2.PID[PIDPITCH].ki,ctrl_2.PID[PIDPITCH].kd,
-											ctrl_2.PID[PIDYAW].kp,ctrl_2.PID[PIDYAW].ki,ctrl_2.PID[PIDYAW].kd);
-	}
-	else if(f.send_pid3)
-	{
-		f.send_pid3 = 0;
-		ANO_DT_Send_PID(3,pid_setup.groups.hc_sp.kp,pid_setup.groups.hc_sp.ki,pid_setup.groups.hc_sp.kd,
-											pid_setup.groups.hc_height.kp,pid_setup.groups.hc_height.ki,pid_setup.groups.hc_height.kd,
-											pid_setup.groups.ctrl3.kp,pid_setup.groups.ctrl3.ki,pid_setup.groups.ctrl3.kd);
-	}
-	else if(f.send_pid4)
-	{
-		f.send_pid4 = 0;
-		ANO_DT_Send_PID(4,pid_setup.groups.ctrl4.kp,pid_setup.groups.ctrl4.ki,pid_setup.groups.ctrl4.kd,
-											0						,0						,0						,
-											0						,0						,0						);
-	}
-	else if(f.send_pid5)
-	{
-		f.send_pid5 = 0;
-		ANO_DT_Send_PID(5,0,0,0,0,0,0,0,0,0);
-	}
-	else if(f.send_pid6)
-	{
-		f.send_pid6 = 0;
-		ANO_DT_Send_PID(6,0,0,0,0,0,0,0,0,0);
-	}
-	
-//=================================================================================================================================
-
-
-#ifdef ANO_DT_USE_USB_HID
-	Usb_Hid_Send();			//定时调用USB_HID的发送函数
-#endif
-	
-
-}
-
-
-
-/////////////////////////////////////////////////////////////////////////////////////
-//Data_Receive_Prepare函数是协议预解析，根据协议的格式，将收到的数据进行一次格式性解析，格式正确的话再进行数据解析
-//移植时，此函数应由用户根据自身使用的通信方式自行调用，比如串口每收到一字节数据，则调用此函数一次
-//此函数解析出符合格式的数据帧后，会自行调用数据解析函数
-void ANO_DT_Data_Receive_Prepare(u8 data)
-{
-	static u8 RxBuffer[50];
-	static u8 _data_len = 0,_data_cnt = 0;
-	static u8 state = 0;
-	
-	if(state==0&&data==0xAA)
-	{
-		state=1;
-		RxBuffer[0]=data;
-	}
-	else if(state==1&&data==0xAF)
-	{
-		state=2;
-		RxBuffer[1]=data;
-	}
-	else if(state==2&&data<0XF1)
-	{
-		state=3;
-		RxBuffer[2]=data;
-	}
-	else if(state==3&&data<50)	//最大帧长度为49字节
-	{
-		state = 4;
-		RxBuffer[3]=data;	//Len存入数组
-		_data_len = data;
-		_data_cnt = 0;
-	}
-	else if(state==4&&_data_len>0)
-	{
-		_data_len--;
-		RxBuffer[4+_data_cnt++]=data;
-		if(_data_len==0)	//按照_data_len长度把数据存入数组
-			state = 5;
-	}
-	else if(state==5)
-	{
-		state = 0;
-		RxBuffer[4+_data_cnt]=data;		//SUM位
-		ANO_DT_Data_Receive_Anl(RxBuffer,_data_cnt+5);
-	}
-	else
-		state = 0;
-}
-/////////////////////////////////////////////////////////////////////////////////////
-//Data_Receive_Anl函数是协议数据解析函数，函数参数是符合协议格式的一个数据帧，该函数会首先对协议数据进行校验
-//校验通过后对数据进行解析，实现相应功能
-//此函数可以不用用户自行调用，由函数Data_Receive_Prepare自动调用
-u16 flash_save_en_cnt = 0;
-u16 RX_CH[CH_NUM];
-
-void ANO_DT_Data_Receive_Anl(u8 *data_buf,u8 num)
-{
-	u8 sum = 0;
-	for(u8 i=0;i<(num-1);i++)
-		sum += *(data_buf+i);
-	if(!(sum==*(data_buf+num-1)))		return;						//判断sum
-	if(!(*(data_buf)==0xAA && *(data_buf+1)==0xAF))		return;		//判断帧头	（只接受 0xAA 0xAF 帧头）
-	
-	if(*(data_buf+2)==0X01)		//命令集合1（功能字为01）
-	{
-		if(*(data_buf+4)==0X01)				//0x01：ACC校准
-		{
-			mpu6050.Acc_CALIBRATE = 1;
-		}
-		else if(*(data_buf+4)==0X02)		//0x02：GYRO校准
-		{
-			mpu6050.Gyro_CALIBRATE = 1;
-		}
-		else if(*(data_buf+4)==0X03)		//0x03：
-		{
-			mpu6050.Acc_CALIBRATE = 1;
-			mpu6050.Gyro_CALIBRATE = 1;			
-		}
-		else if(*(data_buf+4)==0X04)		//0x04：MAG校准
-		{
-			Mag_CALIBRATED = 1;	
-		}
-		else if((*(data_buf+4)>=0X021)&&(*(data_buf+4)<=0X26))	//0x21-0x26：六面校准第1-6步
-		{
-			//acc_3d_calibrate_f = 1;
-		}
-		else if(*(data_buf+4)==0X20)		//0x20：退出六面校准
-		{
-			//acc_3d_step = 0; //退出，6面校准步清0
-		}
-	}
-	
-	if(*(data_buf+2)==0X02)		//命令集合2（功能字为02）
-	{
-		if(*(data_buf+4)==0X01)		//读取PID
-		{
-			f.send_pid1 = 1;
-			f.send_pid2 = 1;
-			f.send_pid3 = 1;
-			f.send_pid4 = 1;
-			f.send_pid5 = 1;
-			f.send_pid6 = 1;
-		}
-		if(*(data_buf+4)==0X02)		//读取飞行模式设置
-		{
-			
-		}
-		if(*(data_buf+4)==0XA0)		//读取下位机版本信息
-		{
-			f.send_version = 1;
-		}
-		if(*(data_buf+4)==0XA1)		//恢复默认参数
-		{
-			Para_ResetToFactorySetup();
-		}
-	}
-
-	if(*(data_buf+2)==0X03)		//RCDATA（命令字03）
-	{
-		//如果NS模式不是1（不是接收机模式或接收机已经掉线），则用数传数据喂狗，喂狗时会把模式切换为数传数据模式
-		if( NS != 1 )
-		{
-			Feed_Rc_Dog(2);	//数传
-		}
-
-		RX_CH[THR] = (vs16)(*(data_buf+4)<<8)|*(data_buf+5) ;
-		RX_CH[YAW] = (vs16)(*(data_buf+6)<<8)|*(data_buf+7) ;
-		RX_CH[ROL] = (vs16)(*(data_buf+8)<<8)|*(data_buf+9) ;
-		RX_CH[PIT] = (vs16)(*(data_buf+10)<<8)|*(data_buf+11) ;
-		RX_CH[AUX1] = (vs16)(*(data_buf+12)<<8)|*(data_buf+13) ;
-		RX_CH[AUX2] = (vs16)(*(data_buf+14)<<8)|*(data_buf+15) ;
-		RX_CH[AUX3] = (vs16)(*(data_buf+16)<<8)|*(data_buf+17) ;
-		RX_CH[AUX4] = (vs16)(*(data_buf+18)<<8)|*(data_buf+19) ;
-	}
-
-	if(*(data_buf+2)==0X10)			//设置 PID1 组
-    {
-        ctrl_1.PID[PIDROLL].kp  = 0.001*( (vs16)(*(data_buf+4)<<8)|*(data_buf+5) );
-        ctrl_1.PID[PIDROLL].ki  = 0.001*( (vs16)(*(data_buf+6)<<8)|*(data_buf+7) );
-        ctrl_1.PID[PIDROLL].kd  = 0.001*( (vs16)(*(data_buf+8)<<8)|*(data_buf+9) );
-        ctrl_1.PID[PIDPITCH].kp = 0.001*( (vs16)(*(data_buf+10)<<8)|*(data_buf+11) );
-        ctrl_1.PID[PIDPITCH].ki = 0.001*( (vs16)(*(data_buf+12)<<8)|*(data_buf+13) );
-        ctrl_1.PID[PIDPITCH].kd = 0.001*( (vs16)(*(data_buf+14)<<8)|*(data_buf+15) );
-        ctrl_1.PID[PIDYAW].kp 	= 0.001*( (vs16)(*(data_buf+16)<<8)|*(data_buf+17) );
-        ctrl_1.PID[PIDYAW].ki 	= 0.001*( (vs16)(*(data_buf+18)<<8)|*(data_buf+19) );
-        ctrl_1.PID[PIDYAW].kd 	= 0.001*( (vs16)(*(data_buf+20)<<8)|*(data_buf+21) );
-		if(f.send_check == 0)
-		{
-			f.send_check = 1;
-			checkdata_to_send = *(data_buf+2);
-			checksum_to_send = sum;
-		}
-		PID_Para_Init();
-		flash_save_en_cnt = 1;
-    }
-    if(*(data_buf+2)==0X11)			//设置 PID2 组
-    {
-        ctrl_2.PID[PIDROLL].kp  = 0.001*( (vs16)(*(data_buf+4)<<8)|*(data_buf+5) );
-        ctrl_2.PID[PIDROLL].ki  = 0.001*( (vs16)(*(data_buf+6)<<8)|*(data_buf+7) );
-        ctrl_2.PID[PIDROLL].kd  = 0.001*( (vs16)(*(data_buf+8)<<8)|*(data_buf+9) );
-        ctrl_2.PID[PIDPITCH].kp = 0.001*( (vs16)(*(data_buf+10)<<8)|*(data_buf+11) );
-        ctrl_2.PID[PIDPITCH].ki = 0.001*( (vs16)(*(data_buf+12)<<8)|*(data_buf+13) );
-        ctrl_2.PID[PIDPITCH].kd = 0.001*( (vs16)(*(data_buf+14)<<8)|*(data_buf+15) );
-        ctrl_2.PID[PIDYAW].kp 	= 0.001*( (vs16)(*(data_buf+16)<<8)|*(data_buf+17) );
-        ctrl_2.PID[PIDYAW].ki 	= 0.001*( (vs16)(*(data_buf+18)<<8)|*(data_buf+19) );
-        ctrl_2.PID[PIDYAW].kd 	= 0.001*( (vs16)(*(data_buf+20)<<8)|*(data_buf+21) );
-        if(f.send_check == 0)
-		{
-			f.send_check = 1;
-			checkdata_to_send = *(data_buf+2);
-			checksum_to_send = sum;
-		}
-		PID_Para_Init();
-		flash_save_en_cnt = 1;
-    }
-    if(*(data_buf+2)==0X12)			//设置 PID3 组
-    {	
-        pid_setup.groups.hc_sp.kp  = 0.001*( (vs16)(*(data_buf+4)<<8)|*(data_buf+5) );
-        pid_setup.groups.hc_sp.ki  = 0.001*( (vs16)(*(data_buf+6)<<8)|*(data_buf+7) );
-        pid_setup.groups.hc_sp.kd  = 0.001*( (vs16)(*(data_buf+8)<<8)|*(data_buf+9) );
-			
-        pid_setup.groups.hc_height.kp = 0.001*( (vs16)(*(data_buf+10)<<8)|*(data_buf+11) );
-        pid_setup.groups.hc_height.ki = 0.001*( (vs16)(*(data_buf+12)<<8)|*(data_buf+13) );
-        pid_setup.groups.hc_height.kd = 0.001*( (vs16)(*(data_buf+14)<<8)|*(data_buf+15) );
-			
-        pid_setup.groups.ctrl3.kp 	= 0.001*( (vs16)(*(data_buf+16)<<8)|*(data_buf+17) );
-        pid_setup.groups.ctrl3.ki 	= 0.001*( (vs16)(*(data_buf+18)<<8)|*(data_buf+19) );
-        pid_setup.groups.ctrl3.kd 	= 0.001*( (vs16)(*(data_buf+20)<<8)|*(data_buf+21) );
-        if(f.send_check == 0)
-				{
-					f.send_check = 1;
-					checkdata_to_send = *(data_buf+2);
-					checksum_to_send = sum;
-				}
-				PID_Para_Init();
-				flash_save_en_cnt = 1;
-    }
-	if(*(data_buf+2)==0X13)			//PID4
-	{
-		    pid_setup.groups.ctrl4.kp  = 0.001*( (vs16)(*(data_buf+4)<<8)|*(data_buf+5) );
-        pid_setup.groups.ctrl4.ki  = 0.001*( (vs16)(*(data_buf+6)<<8)|*(data_buf+7) );
-        pid_setup.groups.ctrl4.kd  = 0.001*( (vs16)(*(data_buf+8)<<8)|*(data_buf+9) );
-			
-//         pid_setup.groups.hc_height.kp = 0.001*( (vs16)(*(data_buf+10)<<8)|*(data_buf+11) );
-//         pid_setup.groups.hc_height.ki = 0.001*( (vs16)(*(data_buf+12)<<8)|*(data_buf+13) );
-//         pid_setup.groups.hc_height.kd = 0.001*( (vs16)(*(data_buf+14)<<8)|*(data_buf+15) );
-// 			
-//         pid_setup.groups.ctrl3.kp 	= 0.001*( (vs16)(*(data_buf+16)<<8)|*(data_buf+17) );
-//         pid_setup.groups.ctrl3.ki 	= 0.001*( (vs16)(*(data_buf+18)<<8)|*(data_buf+19) );
-//         pid_setup.groups.ctrl3.kd 	= 0.001*( (vs16)(*(data_buf+20)<<8)|*(data_buf+21) );
-		if(f.send_check == 0)
-		{
-			f.send_check = 1;
-			checkdata_to_send = *(data_buf+2);
-			checksum_to_send = sum;
-		}
-		PID_Para_Init();
-		flash_save_en_cnt = 1;
-	}
-	if(*(data_buf+2)==0X14)			//PID5
-	{
-		if(f.send_check == 0)
-		{
-			f.send_check = 1;
-			checkdata_to_send = *(data_buf+2);
-			checksum_to_send = sum;
-		}
-	}
-	if(*(data_buf+2)==0X15)			//PID6
-	{
-		if(f.send_check == 0)
-		{
-			f.send_check = 1;
-			checkdata_to_send = *(data_buf+2);
-			checksum_to_send = sum;
-		}
-	}
 }
 
 //=====================================================================================
@@ -972,7 +531,6 @@ void ANO_DT_Send_User()
 	data_to_send[_cnt++]=BYTE1(_temp);
 	data_to_send[_cnt++]=BYTE0(_temp);
 
-	
 	data_to_send[3] = _cnt-4;							//LEN位，在这里补上
 	
 	u8 sum = 0;
@@ -1016,6 +574,470 @@ void ANO_DT_Send_User2()
 	data_to_send[_cnt++]=sum;
 
 	ANO_DT_Send_Data(data_to_send, _cnt);
+}
+
+//**************************************************************************************************\
+//							对外数据输入输出函数，总调用接口
+//**************************************************************************************************\
+
+//Data_Exchange函数处理各种数据发送请求，比如想实现每5ms发送一次传感器数据至上位机，即在此函数内实现
+//此函数中数据发送内容都是按照此函数调用周期的倍数运行的，可以理解为每隔多少个此函数调用周期发一次对应内容
+extern float ultra_dis_lpf;
+void ANO_DT_Data_Exchange(void)	//当前调用周期1ms
+{
+//================================================================================
+//发送时间判断
+
+	static u8 cnt = 0;					//计数器变量
+	
+	//定时调用周期表
+	static u8 senser_cnt 	= 10;
+	static u8 senser2_cnt 	= 50;
+	static u8 user_cnt 	  	= 10;
+	static u8 status_cnt 	= 15;
+	static u8 rcdata_cnt 	= 20;	//RC接收机数值
+	static u8 motopwm_cnt	= 20;	//输出PWM数值
+	static u8 power_cnt		= 50;	//电压和电流数据
+	static u8 speed_cnt   	= 50;	//当前速度数值
+//	static u8 location_cnt  = 200;	//位置信息
+	
+	//调用周期处理（这代码写的很别扭，但是大约能够实现每隔一定周期调用一次的功能）
+//	if((cnt % senser_cnt) == (senser_cnt-1))
+//		f.send_senser = 1;
+
+//	if((cnt % senser2_cnt) == (senser2_cnt-1))
+//		f.send_senser2 = 1;
+
+//	if((cnt % user_cnt) == (user_cnt-2))
+//		f.send_user = 1;
+//	
+//	if((cnt % status_cnt) == (status_cnt-1))
+//		f.send_status = 1;
+//	
+//	if((cnt % rcdata_cnt) == (rcdata_cnt-1))
+//		f.send_rcdata = 1;
+//	
+//	if((cnt % motopwm_cnt) == (motopwm_cnt-2))
+//		f.send_motopwm = 1;
+//	
+//	if((cnt % power_cnt) == (power_cnt-2))
+//		f.send_power = 1;
+//	
+//	if((cnt % speed_cnt) == (speed_cnt-3))
+//		f.send_speed = 1;
+
+//	if((cnt % location_cnt) == (location_cnt-3))
+//	{
+//		f.send_location += 1;
+//	}
+
+//	if(++cnt>200) cnt = 0;
+	
+	//=================================================
+	//简化的定时调用代码，不知道好不好用
+	
+	if((cnt % senser_cnt) == 1)
+		f.send_senser = 1;
+
+	if((cnt % senser2_cnt) == 1)
+		f.send_senser2 = 1;
+
+	if((cnt % user_cnt) == 1)
+		f.send_user = 1;
+	
+	if((cnt % status_cnt) == 1)
+		f.send_status = 1;
+	
+	if((cnt % rcdata_cnt) == 1)
+		f.send_rcdata = 1;
+	
+	if((cnt % motopwm_cnt) == 1)
+		f.send_motopwm = 1;
+	
+	if((cnt % power_cnt) == 1)
+		f.send_power = 1;
+	
+	if((cnt % speed_cnt) == 1)
+		f.send_speed = 1;
+	
+	if(++cnt>200) cnt = 0;
+
+//========================================================================================================
+//发送内容判断
+	
+	//指令反馈信息，用于需要返回命令结果的指令（用于传感器校准）
+	if(f.msg_id)		//只要msg_id不为0，就好直接发送此编号的返回信息
+	{
+		ANO_DT_Send_Msg(f.msg_id,f.msg_data);
+		f.msg_id = 0;
+	}
+
+	//如果有校验包，则先发校验包
+	if(f.send_check)
+	{
+		f.send_check = 0;
+		ANO_DT_Send_Check(checkdata_to_send,checksum_to_send);
+	}
+	else 
+	{
+		//根据命令返回数据的优先级应该相对较高，索性全部排在前面
+		
+		//没有校验包时按照优先级先后顺序把到达发送时间的数据存入发送队列
+		if(f.send_version)	//读取下位机版本命令，由数传指令置1，当前源码中只有PID指令才会要求发送校验包
+		{
+			f.send_version = 0;
+			ANO_DT_Send_Version(4,300,100,400,0);
+		}
+		//根据命令要求发送PID
+		else if(f.send_pid1)
+		{
+			f.send_pid1 = 0;
+			ANO_DT_Send_PID(1,ctrl_1.PID[PIDROLL].kp,ctrl_1.PID[PIDROLL].ki,ctrl_1.PID[PIDROLL].kd,
+												ctrl_1.PID[PIDPITCH].kp,ctrl_1.PID[PIDPITCH].ki,ctrl_1.PID[PIDPITCH].kd,
+												ctrl_1.PID[PIDYAW].kp,ctrl_1.PID[PIDYAW].ki,ctrl_1.PID[PIDYAW].kd);
+		}
+		else if(f.send_pid2)
+		{
+			f.send_pid2 = 0;
+			ANO_DT_Send_PID(2,ctrl_2.PID[PIDROLL].kp,ctrl_2.PID[PIDROLL].ki,ctrl_2.PID[PIDROLL].kd,
+												ctrl_2.PID[PIDPITCH].kp,ctrl_2.PID[PIDPITCH].ki,ctrl_2.PID[PIDPITCH].kd,
+												ctrl_2.PID[PIDYAW].kp,ctrl_2.PID[PIDYAW].ki,ctrl_2.PID[PIDYAW].kd);
+		}
+		else if(f.send_pid3)
+		{
+			f.send_pid3 = 0;
+			ANO_DT_Send_PID(3,pid_setup.groups.hc_sp.kp,pid_setup.groups.hc_sp.ki,pid_setup.groups.hc_sp.kd,
+												pid_setup.groups.hc_height.kp,pid_setup.groups.hc_height.ki,pid_setup.groups.hc_height.kd,
+												pid_setup.groups.ctrl3.kp,pid_setup.groups.ctrl3.ki,pid_setup.groups.ctrl3.kd);
+		}
+		else if(f.send_pid4)
+		{
+			f.send_pid4 = 0;
+			ANO_DT_Send_PID(4,pid_setup.groups.ctrl4.kp,pid_setup.groups.ctrl4.ki,pid_setup.groups.ctrl4.kd,
+												0						,0						,0						,
+												0						,0						,0						);
+		}
+		else if(f.send_pid5)
+		{
+			f.send_pid5 = 0;
+			ANO_DT_Send_PID(5,0,0,0,0,0,0,0,0,0);
+		}
+		else if(f.send_pid6)
+		{
+			f.send_pid6 = 0;
+			ANO_DT_Send_PID(6,0,0,0,0,0,0,0,0,0);
+		}
+		
+	//=================================================================================================================================
+	//                               	定时发送数据（9-1=8个）（优先级低于按照指令回传的数据）
+	//=================================================================================================================================
+		
+		else if(f.send_status)	//姿态+高度+飞行模式+安全锁状态
+		{
+			f.send_status = 0;
+			ANO_DT_Send_Status(	Roll,	Pitch,	Yaw,	(0.1f *baro_fusion.fusion_displacement.out),	mode_state+1,	fly_ready);	
+			//					Roll	Pitch	Yaw		高度（气压计融合后的高度）						飞行模式			安全锁状态
+		}	
+		else if(f.send_speed)	//x，y，z轴速度
+		{
+			f.send_speed = 0;
+			ANO_DT_Send_Speed(0,0,wz_speed);	//wz_speed 是气压计数据得出的相对准确的垂直速度
+		}
+		else if(f.send_user)	//用户数据
+		{
+			f.send_user = 0;
+			ANO_DT_Send_User();
+			ANO_DT_Send_User2();
+		}
+		else if(f.send_senser)	//9轴姿态传感器数值
+		{
+			f.send_senser = 0;
+			ANO_DT_Send_Senser(mpu6050.Acc.x,mpu6050.Acc.y,mpu6050.Acc.z,mpu6050.Gyro.x,mpu6050.Gyro.y,mpu6050.Gyro.z,ak8975.Mag_Val.x,ak8975.Mag_Val.y,ak8975.Mag_Val.z);
+		}	
+		else if(f.send_senser2)	//气压计高度、超声高度
+		{
+			f.send_senser2 = 0;
+			ANO_DT_Send_Senser2(baro.height,ultra.height);//原始数据
+		}
+		else if(f.send_rcdata)	//限幅、归一化后的输入摇杆值
+		{
+			f.send_rcdata = 0;
+			ANO_DT_Send_RCData(CH[2]+1500,CH[3]+1500,CH[0]+1500,CH[1]+1500,CH[4]+1500,CH[5]+1500,CH[6]+1500,CH[7]+1500,-500 +1500,-500 +1500);
+		}
+		else if(f.send_motopwm)	//当前PWM输出值
+		{
+			f.send_motopwm = 0;
+			#if MAXMOTORS == 8
+					ANO_DT_Send_MotoPWM(motor_out[0],motor_out[1],motor_out[2],motor_out[3],motor_out[4],motor_out[5],motor_out[6],motor_out[7]);
+			#elif MAXMOTORS == 6
+					ANO_DT_Send_MotoPWM(motor_out[0],motor_out[1],motor_out[2],motor_out[3],motor_out[4],motor_out[5],0,0);
+			#elif MAXMOTORS == 4
+					ANO_DT_Send_MotoPWM(motor_out[0],motor_out[1],motor_out[2],motor_out[3],0,0,0,0);
+			#endif
+		}
+		else if(f.send_power)	//电压电流
+		{
+			f.send_power = 0;
+			ANO_DT_Send_Power(123,456);
+		}
+	//	else if(f.send_location == 2)
+	//	{
+	//		
+	//		f.send_location = 0;
+	//		ANO_DT_Send_Location(	0,			ctrl_command,		3 *10000000,	4 *10000000,	0		);
+	//		//						定位状态	卫星数量			经度 			纬度 			回航角
+	//		
+	//	}
+		
+	}
+	
+//=================================================================================================================================
+
+
+#ifdef ANO_DT_USE_USB_HID
+	Usb_Hid_Send();			//定时调用USB_HID的发送函数
+#endif
+	
+
+}
+
+//Data_Receive_Anl函数是协议数据解析函数，函数参数是符合协议格式的一个数据帧，该函数会首先对协议数据进行校验
+//校验通过后对数据进行解析，实现相应功能
+//此函数可以不用用户自行调用，由函数Data_Receive_Prepare自动调用
+u16 flash_save_en_cnt = 0;
+u16 RX_CH[CH_NUM];
+
+void ANO_DT_Data_Receive_Anl(u8 *data_buf,u8 num)
+{
+	u8 sum = 0;
+	for(u8 i=0;i<(num-1);i++)
+		sum += *(data_buf+i);
+	if(!(sum==*(data_buf+num-1)))		return;						//判断sum
+	if(!(*(data_buf)==0xAA && *(data_buf+1)==0xAF))		return;		//判断帧头	（只接受 0xAA 0xAF 帧头）
+	
+	if(*(data_buf+2)==0X01)		//命令集合1（功能字为01）
+	{
+		if(*(data_buf+4)==0X01)				//0x01：ACC校准
+		{
+			mpu6050.Acc_CALIBRATE = 1;
+		}
+		else if(*(data_buf+4)==0X02)		//0x02：GYRO校准
+		{
+			mpu6050.Gyro_CALIBRATE = 1;
+		}
+		else if(*(data_buf+4)==0X03)		//0x03：
+		{
+			mpu6050.Acc_CALIBRATE = 1;
+			mpu6050.Gyro_CALIBRATE = 1;			
+		}
+		else if(*(data_buf+4)==0X04)		//0x04：MAG校准
+		{
+			Mag_CALIBRATED = 1;	
+		}
+		else if((*(data_buf+4)>=0X021)&&(*(data_buf+4)<=0X26))	//0x21-0x26：六面校准第1-6步
+		{
+			//acc_3d_calibrate_f = 1;
+		}
+		else if(*(data_buf+4)==0X20)		//0x20：退出六面校准
+		{
+			//acc_3d_step = 0; //退出，6面校准步清0
+		}
+	}
+	
+	if(*(data_buf+2)==0X02)		//命令集合2（功能字为02）
+	{
+		if(*(data_buf+4)==0X01)		//读取PID
+		{
+			f.send_pid1 = 1;
+			f.send_pid2 = 1;
+			f.send_pid3 = 1;
+			f.send_pid4 = 1;
+			f.send_pid5 = 1;
+			f.send_pid6 = 1;
+		}
+		if(*(data_buf+4)==0X02)		//读取飞行模式设置
+		{
+			
+		}
+		if(*(data_buf+4)==0XA0)		//读取下位机版本信息
+		{
+			f.send_version = 1;
+		}
+		if(*(data_buf+4)==0XA1)		//恢复默认参数
+		{
+			Para_ResetToFactorySetup();
+		}
+	}
+
+	if(*(data_buf+2)==0X03)		//RCDATA（命令字03）
+	{
+		//如果NS模式不是1（不是接收机模式或接收机已经掉线），则用数传数据喂狗，喂狗时会把模式切换为数传数据模式
+		if( NS != 1 )
+		{
+			Feed_Rc_Dog(2);	//数传
+		}
+
+		RX_CH[THR] = (vs16)(*(data_buf+4)<<8)|*(data_buf+5) ;
+		RX_CH[YAW] = (vs16)(*(data_buf+6)<<8)|*(data_buf+7) ;
+		RX_CH[ROL] = (vs16)(*(data_buf+8)<<8)|*(data_buf+9) ;
+		RX_CH[PIT] = (vs16)(*(data_buf+10)<<8)|*(data_buf+11) ;
+		RX_CH[AUX1] = (vs16)(*(data_buf+12)<<8)|*(data_buf+13) ;
+		RX_CH[AUX2] = (vs16)(*(data_buf+14)<<8)|*(data_buf+15) ;
+		RX_CH[AUX3] = (vs16)(*(data_buf+16)<<8)|*(data_buf+17) ;
+		RX_CH[AUX4] = (vs16)(*(data_buf+18)<<8)|*(data_buf+19) ;
+	}
+
+	if(*(data_buf+2)==0X10)			//设置 PID1 组
+    {
+        ctrl_1.PID[PIDROLL].kp  = 0.001*( (vs16)(*(data_buf+4)<<8)|*(data_buf+5) );
+        ctrl_1.PID[PIDROLL].ki  = 0.001*( (vs16)(*(data_buf+6)<<8)|*(data_buf+7) );
+        ctrl_1.PID[PIDROLL].kd  = 0.001*( (vs16)(*(data_buf+8)<<8)|*(data_buf+9) );
+        ctrl_1.PID[PIDPITCH].kp = 0.001*( (vs16)(*(data_buf+10)<<8)|*(data_buf+11) );
+        ctrl_1.PID[PIDPITCH].ki = 0.001*( (vs16)(*(data_buf+12)<<8)|*(data_buf+13) );
+        ctrl_1.PID[PIDPITCH].kd = 0.001*( (vs16)(*(data_buf+14)<<8)|*(data_buf+15) );
+        ctrl_1.PID[PIDYAW].kp 	= 0.001*( (vs16)(*(data_buf+16)<<8)|*(data_buf+17) );
+        ctrl_1.PID[PIDYAW].ki 	= 0.001*( (vs16)(*(data_buf+18)<<8)|*(data_buf+19) );
+        ctrl_1.PID[PIDYAW].kd 	= 0.001*( (vs16)(*(data_buf+20)<<8)|*(data_buf+21) );
+		if(f.send_check == 0)
+		{
+			f.send_check = 1;
+			checkdata_to_send = *(data_buf+2);
+			checksum_to_send = sum;
+		}
+		PID_Para_Init();
+		flash_save_en_cnt = 1;
+    }
+    if(*(data_buf+2)==0X11)			//设置 PID2 组
+    {
+        ctrl_2.PID[PIDROLL].kp  = 0.001*( (vs16)(*(data_buf+4)<<8)|*(data_buf+5) );
+        ctrl_2.PID[PIDROLL].ki  = 0.001*( (vs16)(*(data_buf+6)<<8)|*(data_buf+7) );
+        ctrl_2.PID[PIDROLL].kd  = 0.001*( (vs16)(*(data_buf+8)<<8)|*(data_buf+9) );
+        ctrl_2.PID[PIDPITCH].kp = 0.001*( (vs16)(*(data_buf+10)<<8)|*(data_buf+11) );
+        ctrl_2.PID[PIDPITCH].ki = 0.001*( (vs16)(*(data_buf+12)<<8)|*(data_buf+13) );
+        ctrl_2.PID[PIDPITCH].kd = 0.001*( (vs16)(*(data_buf+14)<<8)|*(data_buf+15) );
+        ctrl_2.PID[PIDYAW].kp 	= 0.001*( (vs16)(*(data_buf+16)<<8)|*(data_buf+17) );
+        ctrl_2.PID[PIDYAW].ki 	= 0.001*( (vs16)(*(data_buf+18)<<8)|*(data_buf+19) );
+        ctrl_2.PID[PIDYAW].kd 	= 0.001*( (vs16)(*(data_buf+20)<<8)|*(data_buf+21) );
+        if(f.send_check == 0)
+		{
+			f.send_check = 1;
+			checkdata_to_send = *(data_buf+2);
+			checksum_to_send = sum;
+		}
+		PID_Para_Init();
+		flash_save_en_cnt = 1;
+    }
+    if(*(data_buf+2)==0X12)			//设置 PID3 组
+    {	
+        pid_setup.groups.hc_sp.kp  = 0.001*( (vs16)(*(data_buf+4)<<8)|*(data_buf+5) );
+        pid_setup.groups.hc_sp.ki  = 0.001*( (vs16)(*(data_buf+6)<<8)|*(data_buf+7) );
+        pid_setup.groups.hc_sp.kd  = 0.001*( (vs16)(*(data_buf+8)<<8)|*(data_buf+9) );
+			
+        pid_setup.groups.hc_height.kp = 0.001*( (vs16)(*(data_buf+10)<<8)|*(data_buf+11) );
+        pid_setup.groups.hc_height.ki = 0.001*( (vs16)(*(data_buf+12)<<8)|*(data_buf+13) );
+        pid_setup.groups.hc_height.kd = 0.001*( (vs16)(*(data_buf+14)<<8)|*(data_buf+15) );
+			
+        pid_setup.groups.ctrl3.kp 	= 0.001*( (vs16)(*(data_buf+16)<<8)|*(data_buf+17) );
+        pid_setup.groups.ctrl3.ki 	= 0.001*( (vs16)(*(data_buf+18)<<8)|*(data_buf+19) );
+        pid_setup.groups.ctrl3.kd 	= 0.001*( (vs16)(*(data_buf+20)<<8)|*(data_buf+21) );
+        if(f.send_check == 0)
+		{
+			f.send_check = 1;
+			checkdata_to_send = *(data_buf+2);
+			checksum_to_send = sum;
+		}
+		PID_Para_Init();
+		flash_save_en_cnt = 1;
+    }
+	if(*(data_buf+2)==0X13)			//PID4
+	{
+		    pid_setup.groups.ctrl4.kp  = 0.001*( (vs16)(*(data_buf+4)<<8)|*(data_buf+5) );
+        pid_setup.groups.ctrl4.ki  = 0.001*( (vs16)(*(data_buf+6)<<8)|*(data_buf+7) );
+        pid_setup.groups.ctrl4.kd  = 0.001*( (vs16)(*(data_buf+8)<<8)|*(data_buf+9) );
+			
+//         pid_setup.groups.hc_height.kp = 0.001*( (vs16)(*(data_buf+10)<<8)|*(data_buf+11) );
+//         pid_setup.groups.hc_height.ki = 0.001*( (vs16)(*(data_buf+12)<<8)|*(data_buf+13) );
+//         pid_setup.groups.hc_height.kd = 0.001*( (vs16)(*(data_buf+14)<<8)|*(data_buf+15) );
+// 			
+//         pid_setup.groups.ctrl3.kp 	= 0.001*( (vs16)(*(data_buf+16)<<8)|*(data_buf+17) );
+//         pid_setup.groups.ctrl3.ki 	= 0.001*( (vs16)(*(data_buf+18)<<8)|*(data_buf+19) );
+//         pid_setup.groups.ctrl3.kd 	= 0.001*( (vs16)(*(data_buf+20)<<8)|*(data_buf+21) );
+		if(f.send_check == 0)
+		{
+			f.send_check = 1;
+			checkdata_to_send = *(data_buf+2);
+			checksum_to_send = sum;
+		}
+		PID_Para_Init();
+		flash_save_en_cnt = 1;
+	}
+	if(*(data_buf+2)==0X14)			//PID5
+	{
+		if(f.send_check == 0)
+		{
+			f.send_check = 1;
+			checkdata_to_send = *(data_buf+2);
+			checksum_to_send = sum;
+		}
+	}
+	if(*(data_buf+2)==0X15)			//PID6
+	{
+		if(f.send_check == 0)
+		{
+			f.send_check = 1;
+			checkdata_to_send = *(data_buf+2);
+			checksum_to_send = sum;
+		}
+	}
+}
+
+
+//Data_Receive_Prepare函数是协议预解析，根据协议的格式，将收到的数据进行一次格式性解析，格式正确的话再进行数据解析
+//移植时，此函数应由用户根据自身使用的通信方式自行调用，比如串口每收到一字节数据，则调用此函数一次
+//此函数解析出符合格式的数据帧后，会自行调用数据解析函数
+void ANO_DT_Data_Receive_Prepare(u8 data)
+{
+	static u8 RxBuffer[50];
+	static u8 _data_len = 0,_data_cnt = 0;
+	static u8 state = 0;
+	
+	if(state==0&&data==0xAA)
+	{
+		state=1;
+		RxBuffer[0]=data;
+	}
+	else if(state==1&&data==0xAF)
+	{
+		state=2;
+		RxBuffer[1]=data;
+	}
+	else if(state==2&&data<0XF1)
+	{
+		state=3;
+		RxBuffer[2]=data;
+	}
+	else if(state==3&&data<50)	//最大帧长度为49字节
+	{
+		state = 4;
+		RxBuffer[3]=data;	//Len存入数组
+		_data_len = data;
+		_data_cnt = 0;
+	}
+	else if(state==4&&_data_len>0)
+	{
+		_data_len--;
+		RxBuffer[4+_data_cnt++]=data;
+		if(_data_len==0)	//按照_data_len长度把数据存入数组
+			state = 5;
+	}
+	else if(state==5)
+	{
+		state = 0;
+		RxBuffer[4+_data_cnt]=data;		//SUM位
+		ANO_DT_Data_Receive_Anl(RxBuffer,_data_cnt+5);
+	}
+	else
+		state = 0;
 }
 
 /******************* (C) COPYRIGHT 2014 ANO TECH *****END OF FILE************/

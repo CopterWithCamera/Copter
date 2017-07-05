@@ -473,19 +473,9 @@
               <FilePath>.\applications\scheduler.c</FilePath>
             </File>
             <File>
-              <FileName>scheduler.h</FileName>
-              <FileType>5</FileType>
-              <FilePath>.\applications\scheduler.h</FilePath>
-            </File>
-            <File>
               <FileName>init.c</FileName>
               <FileType>1</FileType>
               <FilePath>.\applications\init.c</FilePath>
-            </File>
-            <File>
-              <FileName>init.h</FileName>
-              <FileType>5</FileType>
-              <FilePath>.\applications\init.h</FilePath>
             </File>
             <File>
               <FileName>fly_ctrl.c</FileName>
@@ -493,19 +483,9 @@
               <FilePath>.\applications\fly_ctrl.c</FilePath>
             </File>
             <File>
-              <FileName>fly_ctrl.h</FileName>
-              <FileType>5</FileType>
-              <FilePath>.\applications\fly_ctrl.h</FilePath>
-            </File>
-            <File>
               <FileName>fly_mode.c</FileName>
               <FileType>1</FileType>
               <FilePath>.\applications\fly_mode.c</FilePath>
-            </File>
-            <File>
-              <FileName>fly_mode.h</FileName>
-              <FileType>5</FileType>
-              <FilePath>.\applications\fly_mode.h</FilePath>
             </File>
             <File>
               <FileName>parameter.c</FileName>
@@ -513,19 +493,9 @@
               <FilePath>.\applications\parameter.c</FilePath>
             </File>
             <File>
-              <FileName>parameter.h</FileName>
-              <FileType>5</FileType>
-              <FilePath>.\applications\parameter.h</FilePath>
-            </File>
-            <File>
               <FileName>ctrl.c</FileName>
               <FileType>1</FileType>
               <FilePath>.\applications\ctrl.c</FilePath>
-            </File>
-            <File>
-              <FileName>ctrl.h</FileName>
-              <FileType>5</FileType>
-              <FilePath>.\applications\ctrl.h</FilePath>
             </File>
             <File>
               <FileName>imu.c</FileName>
@@ -533,19 +503,9 @@
               <FilePath>.\applications\imu.c</FilePath>
             </File>
             <File>
-              <FileName>imu.h</FileName>
-              <FileType>5</FileType>
-              <FilePath>.\applications\imu.h</FilePath>
-            </File>
-            <File>
               <FileName>mymath.c</FileName>
               <FileType>1</FileType>
               <FilePath>.\applications\mymath.c</FilePath>
-            </File>
-            <File>
-              <FileName>mymath.h</FileName>
-              <FileType>5</FileType>
-              <FilePath>.\applications\mymath.h</FilePath>
             </File>
             <File>
               <FileName>data_transfer.c</FileName>
@@ -553,19 +513,39 @@
               <FilePath>.\applications\data_transfer.c</FilePath>
             </File>
             <File>
-              <FileName>data_transfer.h</FileName>
-              <FileType>5</FileType>
-              <FilePath>.\applications\data_transfer.h</FilePath>
-            </File>
-            <File>
               <FileName>rc.c</FileName>
               <FileType>1</FileType>
               <FilePath>.\applications\rc.c</FilePath>
             </File>
             <File>
-              <FileName>rc.h</FileName>
-              <FileType>5</FileType>
-              <FilePath>.\applications\rc.h</FilePath>
+              <FileName>filter.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\applications\filter.c</FilePath>
+            </File>
+            <File>
+              <FileName>height_ctrl.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\applications\height_ctrl.c</FilePath>
+            </File>
+            <File>
+              <FileName>anotc_baro_ctrl.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\applications\anotc_baro_ctrl.c</FilePath>
+            </File>
+            <File>
+              <FileName>PID.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\applications\PID.c</FilePath>
+            </File>
+          </Files>
+        </Group>
+        <Group>
+          <GroupName>Drivers</GroupName>
+          <Files>
+            <File>
+              <FileName>version.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\applications\version.c</FilePath>
             </File>
             <File>
               <FileName>usb_config.c</FileName>
@@ -578,64 +558,9 @@
               <FilePath>.\applications\usbd_user_hid.c</FilePath>
             </File>
             <File>
-              <FileName>version.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>.\applications\version.c</FilePath>
-            </File>
-            <File>
-              <FileName>filter.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>.\applications\filter.c</FilePath>
-            </File>
-            <File>
-              <FileName>filter.h</FileName>
-              <FileType>5</FileType>
-              <FilePath>.\applications\filter.h</FilePath>
-            </File>
-            <File>
-              <FileName>height_ctrl.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>.\applications\height_ctrl.c</FilePath>
-            </File>
-            <File>
-              <FileName>height_ctrl.h</FileName>
-              <FileType>5</FileType>
-              <FilePath>.\applications\height_ctrl.h</FilePath>
-            </File>
-            <File>
-              <FileName>anotc_baro_ctrl.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>.\applications\anotc_baro_ctrl.c</FilePath>
-            </File>
-            <File>
-              <FileName>anotc_baro_ctrl.h</FileName>
-              <FileType>5</FileType>
-              <FilePath>.\applications\anotc_baro_ctrl.h</FilePath>
-            </File>
-            <File>
-              <FileName>PID.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>.\applications\PID.c</FilePath>
-            </File>
-            <File>
-              <FileName>PID.h</FileName>
-              <FileType>5</FileType>
-              <FilePath>.\applications\PID.h</FilePath>
-            </File>
-          </Files>
-        </Group>
-        <Group>
-          <GroupName>Drivers</GroupName>
-          <Files>
-            <File>
               <FileName>time.c</FileName>
               <FileType>1</FileType>
               <FilePath>.\drivers\time.c</FilePath>
-            </File>
-            <File>
-              <FileName>time.h</FileName>
-              <FileType>5</FileType>
-              <FilePath>.\drivers\time.h</FilePath>
             </File>
             <File>
               <FileName>pwm_in.c</FileName>
@@ -643,19 +568,9 @@
               <FilePath>.\drivers\pwm_in.c</FilePath>
             </File>
             <File>
-              <FileName>pwm_in.h</FileName>
-              <FileType>5</FileType>
-              <FilePath>.\drivers\pwm_in.h</FilePath>
-            </File>
-            <File>
               <FileName>pwm_out.c</FileName>
               <FileType>1</FileType>
               <FilePath>.\drivers\pwm_out.c</FilePath>
-            </File>
-            <File>
-              <FileName>pwm_out.h</FileName>
-              <FileType>5</FileType>
-              <FilePath>.\drivers\pwm_out.h</FilePath>
             </File>
             <File>
               <FileName>i2c_soft.c</FileName>
@@ -663,19 +578,9 @@
               <FilePath>.\drivers\i2c_soft.c</FilePath>
             </File>
             <File>
-              <FileName>i2c_soft.h</FileName>
-              <FileType>5</FileType>
-              <FilePath>.\drivers\i2c_soft.h</FilePath>
-            </File>
-            <File>
               <FileName>mpu6050.c</FileName>
               <FileType>1</FileType>
               <FilePath>.\drivers\mpu6050.c</FilePath>
-            </File>
-            <File>
-              <FileName>mpu6050.h</FileName>
-              <FileType>5</FileType>
-              <FilePath>.\drivers\mpu6050.h</FilePath>
             </File>
             <File>
               <FileName>ak8975.c</FileName>
@@ -683,19 +588,9 @@
               <FilePath>.\drivers\ak8975.c</FilePath>
             </File>
             <File>
-              <FileName>ak8975.h</FileName>
-              <FileType>5</FileType>
-              <FilePath>.\drivers\ak8975.h</FilePath>
-            </File>
-            <File>
               <FileName>led.c</FileName>
               <FileType>1</FileType>
               <FilePath>.\drivers\led.c</FilePath>
-            </File>
-            <File>
-              <FileName>led.h</FileName>
-              <FileType>5</FileType>
-              <FilePath>.\drivers\led.h</FilePath>
             </File>
             <File>
               <FileName>ms5611.c</FileName>
@@ -703,19 +598,9 @@
               <FilePath>.\drivers\ms5611.c</FilePath>
             </File>
             <File>
-              <FileName>ms5611.h</FileName>
-              <FileType>5</FileType>
-              <FilePath>.\drivers\ms5611.h</FilePath>
-            </File>
-            <File>
               <FileName>usart.c</FileName>
               <FileType>1</FileType>
               <FilePath>.\drivers\usart.c</FilePath>
-            </File>
-            <File>
-              <FileName>usart.h</FileName>
-              <FileType>5</FileType>
-              <FilePath>.\drivers\usart.h</FilePath>
             </File>
             <File>
               <FileName>usbd_STM32F4xx_FS.c</FileName>
@@ -731,11 +616,6 @@
               <FileName>ultrasonic.c</FileName>
               <FileType>1</FileType>
               <FilePath>.\drivers\ultrasonic.c</FilePath>
-            </File>
-            <File>
-              <FileName>ultrasonic.h</FileName>
-              <FileType>5</FileType>
-              <FilePath>.\drivers\ultrasonic.h</FilePath>
             </File>
           </Files>
         </Group>
