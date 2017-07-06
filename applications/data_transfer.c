@@ -480,58 +480,51 @@ void ANO_DT_Send_PID(u8 group,float p1_p,float p1_i,float p1_d,float p2_p,float 
 	ANO_DT_Send_Data(data_to_send, _cnt);
 }
 
-extern float set_speed,set_height_e;
-void ANO_DT_Send_User()
+User_Data1 mydata;	//数据发送结构体变量，在data_transfer.h中有引用
+void ANO_DT_Send_User()					//此函数发送s16类型的数据
 {
 	u8 _cnt=0;
 	vs16 _temp;
 	
+	//帧头 AA AA F1
 	data_to_send[_cnt++]=0xAA; 
 	data_to_send[_cnt++]=0xAA;
 	data_to_send[_cnt++]=0xf1; //用户数据
 	data_to_send[_cnt++]=0;
 	
-	_temp = (s16)hc_value.m_acc * 1000;							//地理坐标系Z轴加速度  					//1	
+	_temp = mydata.d1;							 						//1
 	data_to_send[_cnt++]=BYTE1(_temp);
 	data_to_send[_cnt++]=BYTE0(_temp);
 
-	_temp = (s16)hc_value.fusion_acc * 1000;						//经过修正的地理坐标系Z轴加速度			//2
+	_temp = mydata.d2;													//2
 	data_to_send[_cnt++]=BYTE1(_temp);
 	data_to_send[_cnt++]=BYTE0(_temp);
 	
-	_temp = (s16)ctrl_command * 1000;								//指令号								//3
+	_temp = mydata.d3;													//3
 	data_to_send[_cnt++]=BYTE1(_temp);
 	data_to_send[_cnt++]=BYTE0(_temp);	
 	
-	_temp = (s16)set_speed* 1000;									//摇杆表示的速度期望/控制期望速度		//4
+	_temp = mydata.d4;													//4
 	data_to_send[_cnt++]=BYTE1(_temp);
 	data_to_send[_cnt++]=BYTE0(_temp);
 	
-	_temp = (s16)hc_value.m_speed* 1000;							//垂直速度								//5
+	_temp = mydata.d5;													//5
 	data_to_send[_cnt++]=BYTE1(_temp);
 	data_to_send[_cnt++]=BYTE0(_temp);
 	
-	_temp = (s16)(ultra.relative_height *10);				//超声波高度				     		//6
+	_temp = mydata.d6;								     				//6
 	data_to_send[_cnt++]=BYTE1(_temp);
 	data_to_send[_cnt++]=BYTE0(_temp);
 
-	_temp = (s16)(baro_fusion.fusion_displacement.out)* 1000;   	//气压计融合高度           				//7
+	_temp = mydata.d7;					   	           					//7
 	data_to_send[_cnt++]=BYTE1(_temp);
 	data_to_send[_cnt++]=BYTE0(_temp);
 	
-	_temp = (s16)(sonar_fusion.fusion_displacement.out)* 1000;	//超声波融合高度              			//8
-	data_to_send[_cnt++]=BYTE1(_temp);
-	data_to_send[_cnt++]=BYTE0(_temp);
-	
-	_temp = (s16)(baro_p.displacement)* 1000;						//气压计高度	              			//9
-	data_to_send[_cnt++]=BYTE1(_temp);
-	data_to_send[_cnt++]=BYTE0(_temp);
-	
-	_temp = (s16)(sonar.displacement)* 1000;						//超声波融合高度              			//10
+	_temp = mydata.d8; 										 			//8
 	data_to_send[_cnt++]=BYTE1(_temp);
 	data_to_send[_cnt++]=BYTE0(_temp);
 
-	data_to_send[3] = _cnt-4;							//LEN位，在这里补上
+	data_to_send[3] = _cnt-4;											//LEN位，在这里补上（自动计算包长位）
 	
 	u8 sum = 0;
 	for(u8 i=0;i<_cnt;i++)
@@ -806,7 +799,6 @@ void ANO_DT_Data_Exchange(void)	//当前调用周期1ms
 //此函数可以不用用户自行调用，由函数Data_Receive_Prepare自动调用
 u16 flash_save_en_cnt = 0;
 u16 RX_CH[CH_NUM];
-
 void ANO_DT_Data_Receive_Anl(u8 *data_buf,u8 num)
 {
 	u8 sum = 0;

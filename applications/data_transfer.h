@@ -30,8 +30,21 @@ typedef struct
 
 } dt_flag_t;
 
-extern dt_flag_t f;
+//用户数据1发送内容结构体
+typedef struct
+{
+	s16 d1;
+	s16 d2;
+	s16 d3;
+	s16 d4;
+	s16 d5;
+	s16 d6;
+	s16 d7;
+	s16 d8;
+}User_Data1;
 
+extern dt_flag_t f;	//发送数据的标志位
+extern User_Data1 mydata;	//用户数据1发送内容
 
 void ANO_DT_Data_Exchange(void);
 void ANO_DT_Data_Receive_Prepare(u8 data);
