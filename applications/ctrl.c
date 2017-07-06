@@ -210,6 +210,7 @@ void CTRL_1(float T)  //x roll,y pitch,z yaw
 //						ctrl_1在总输   根据本次计算中外环error值计算出的外环输出值的	归一化后的外环输出值	  ctrl_1计算结果在	   							  P				 D				  I	
 //						出的占比	   影响权重										  （被认为是期望角速度值）	  总输出值的占比
 
+	//油门控制
 	Thr_Ctrl(T);// 油门控制，这里面包含高度控制闭环
 				// 输出 thr_value
 	

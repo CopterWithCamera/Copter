@@ -584,76 +584,71 @@ void ANO_DT_Data_Exchange(void)	//当前调用周期1ms
 	static u8 cnt = 0;					//计数器变量
 	
 	//定时调用周期表
-	static u8 senser_cnt 	= 10;
-	static u8 senser2_cnt 	= 50;
-	static u8 user_cnt 	  	= 10;
-	static u8 status_cnt 	= 15;
-	static u8 rcdata_cnt 	= 20;	//RC接收机数值
-	static u8 motopwm_cnt	= 20;	//输出PWM数值
-	static u8 power_cnt		= 50;	//电压和电流数据
-	static u8 speed_cnt   	= 50;	//当前速度数值
+	static u8 senser_cnt 	= 10;	//9轴姿态传感器数值
+	static u8 senser2_cnt 	= 70;	//气压计高度、超声高度
+	static u8 user_cnt 	  	= 20;	//用户数据
+	static u8 status_cnt 	= 15;	//姿态+高度+飞行模式+安全锁
+	static u8 rcdata_cnt 	= 40;	//RC接收机数值
+	static u8 motopwm_cnt	= 40;	//输出PWM数值
+	static u8 power_cnt		= 100;	//电压和电流数据
+	static u8 speed_cnt   	= 100;	//当前速度数值
 //	static u8 location_cnt  = 200;	//位置信息
 	
 	//调用周期处理（这代码写的很别扭，但是大约能够实现每隔一定周期调用一次的功能）
-//	if((cnt % senser_cnt) == (senser_cnt-1))
-//		f.send_senser = 1;
+	if((cnt % senser_cnt) == (senser_cnt-1))
+		f.send_senser = 1;
 
-//	if((cnt % senser2_cnt) == (senser2_cnt-1))
-//		f.send_senser2 = 1;
+	if((cnt % senser2_cnt) == (senser2_cnt-1))
+		f.send_senser2 = 1;
 
-//	if((cnt % user_cnt) == (user_cnt-2))
-//		f.send_user = 1;
-//	
-//	if((cnt % status_cnt) == (status_cnt-1))
-//		f.send_status = 1;
-//	
-//	if((cnt % rcdata_cnt) == (rcdata_cnt-1))
-//		f.send_rcdata = 1;
-//	
-//	if((cnt % motopwm_cnt) == (motopwm_cnt-2))
-//		f.send_motopwm = 1;
-//	
-//	if((cnt % power_cnt) == (power_cnt-2))
-//		f.send_power = 1;
-//	
-//	if((cnt % speed_cnt) == (speed_cnt-3))
-//		f.send_speed = 1;
+	if((cnt % user_cnt) == (user_cnt-2))
+		f.send_user = 1;
+	
+	if((cnt % status_cnt) == (status_cnt-1))
+		f.send_status = 1;
+	
+	if((cnt % rcdata_cnt) == (rcdata_cnt-1))
+		f.send_rcdata = 1;
+	
+	if((cnt % motopwm_cnt) == (motopwm_cnt-2))
+		f.send_motopwm = 1;
+	
+	if((cnt % power_cnt) == (power_cnt-2))
+		f.send_power = 1;
+	
+	if((cnt % speed_cnt) == (speed_cnt-3))
+		f.send_speed = 1;
 
-//	if((cnt % location_cnt) == (location_cnt-3))
-//	{
-//		f.send_location += 1;
-//	}
-
-//	if(++cnt>200) cnt = 0;
+	if(++cnt>200) cnt = 0;
 	
 	//=================================================
 	//简化的定时调用代码，不知道好不好用
 	
-	if((cnt % senser_cnt) == 1)
-		f.send_senser = 1;
+//	if((cnt % senser_cnt) == 1)
+//		f.send_senser = 1;
 
-	if((cnt % senser2_cnt) == 1)
-		f.send_senser2 = 1;
+//	if((cnt % senser2_cnt) == 1)
+//		f.send_senser2 = 1;
 
-	if((cnt % user_cnt) == 1)
-		f.send_user = 1;
-	
-	if((cnt % status_cnt) == 1)
-		f.send_status = 1;
-	
-	if((cnt % rcdata_cnt) == 1)
-		f.send_rcdata = 1;
-	
-	if((cnt % motopwm_cnt) == 1)
-		f.send_motopwm = 1;
-	
-	if((cnt % power_cnt) == 1)
-		f.send_power = 1;
-	
-	if((cnt % speed_cnt) == 1)
-		f.send_speed = 1;
-	
-	if(++cnt>200) cnt = 0;
+//	if((cnt % user_cnt) == 1)
+//		f.send_user = 1;
+//	
+//	if((cnt % status_cnt) == 1)
+//		f.send_status = 1;
+//	
+//	if((cnt % rcdata_cnt) == 1)
+//		f.send_rcdata = 1;
+//	
+//	if((cnt % motopwm_cnt) == 1)
+//		f.send_motopwm = 1;
+//	
+//	if((cnt % power_cnt) == 1)
+//		f.send_power = 1;
+//	
+//	if((cnt % speed_cnt) == 1)
+//		f.send_speed = 1;
+//	
+//	if(++cnt>200) cnt = 0;
 
 //========================================================================================================
 //发送内容判断
