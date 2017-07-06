@@ -29,27 +29,31 @@ xyz_f_t except_A = {0,0,0};				//角度期望
 
 xyz_f_t ctrl_angle_offset = {0,0,0};	
 
-
+//=================== filter ===================================
+//  全局输出，CH_filter[],0横滚，1俯仰，2油门，3航向 范围：+-500	
+//	CH_filter[]的输入数值在输出前是经过限幅的
+//=================== filter =================================== 
 
 void CTRL_2(float T)
 {
 
-//=========================== 期望角度 ========================================
-	
-	//=================== filter ===================================
-	//  全局输出，CH_filter[],0横滚，1俯仰，2油门，3航向 范围：+-500	
-	//	CH_filter[]的输入数值在输出前是经过限幅的
-	//=================== filter =================================== 
-	
-	//将±30这个区域设置为死区
-	//并把输入的 -500 -- +500 这个区间的遥控器数值归一化，然后乘上最大期望值，使输入值成为当前期望值对最大期望值的占比
-	
-	//x轴、y轴处理
-//	except_A.x  = MAX_CTRL_ANGLE  *( my_deathzoom( ( CH_filter[ROL]) ,0,30 )/500.0f );
-//	except_A.y  = MAX_CTRL_ANGLE  *( my_deathzoom( ( CH_filter[PIT]) ,0,30 )/500.0f );
-	
-	except_A.x  = MAX_CTRL_ANGLE  *( my_deathzoom( ( CH_ctrl[ROL]) ,0,30 )/500.0f );
-	except_A.y  = MAX_CTRL_ANGLE  *( my_deathzoom( ( CH_ctrl[PIT]) ,0,30 )/500.0f );
+	//=========================== 期望角度 ========================================
+
+	//根据飞行模式选取控制数据
+	if(mode_state == 3)	//自动控制模式下没有死区
+	{
+		//无死区
+		except_A.x  = MAX_CTRL_ANGLE  *( CH_ctrl[ROL]/500.0f );
+		except_A.y  = MAX_CTRL_ANGLE  *( CH_ctrl[PIT]/500.0f );
+	}
+	else	//手飞模式正常有死区
+	{
+		//使用遥控器输出值CH_filter[]
+		//将±30这个区域设置为死区
+		//并把输入的 -500 -- +500 这个区间的遥控器数值归一化，然后乘上最大期望值，使输入值成为当前期望值对最大期望值的占比
+		except_A.x  = MAX_CTRL_ANGLE  *( my_deathzoom( ( CH_filter[ROL]) ,0,30 )/500.0f );
+		except_A.y  = MAX_CTRL_ANGLE  *( my_deathzoom( ( CH_filter[PIT]) ,0,30 )/500.0f );
+	}
 	
 	//z轴处理，将输入值转化为期望角速度
 	if( Thr_Low == 0 )	//这东西顶多跟起不起飞有关系，跟油门低不低有啥关系？？
@@ -270,7 +274,7 @@ void Thr_Ctrl(float T)
 		{
 			thr = LIMIT(thr,0,300);	//非定高模式丢信号，油门300，基本上就是悬停或者慢速下降
 		}
-		thr_value = Height_Ctrl(T,thr,fly_ready,0);   //实际使用值
+		thr_value = Height_Ctrl(T,thr,fly_ready,0);   //直接使用油门摇杆值
 	}
 	
 	thr_value = LIMIT(thr_value,0,10 *MAX_THR *MAX_PWM/100);	//油门值限幅		//thr_value直接被用于计算电机输出（是最终的油门输出值）

@@ -134,11 +134,11 @@ static int32_t Para_WriteSettingToFile(void)
 		{
 			/* 重新进行挂载 */
 			result = f_mount(&fs, "0:", 0);			/* Mount a logical drive */
-	   if (result != FR_OK)
-      {
-			 	/* 卸载文件系统 */
-	      f_mount(NULL, "0:", 0);
-			 return -2 ;
+			if (result != FR_OK)
+			{
+				/* 卸载文件系统 */
+				f_mount(NULL, "0:", 0);
+				return -2 ;
 			}
 		}
 	}
@@ -148,7 +148,7 @@ static int32_t Para_WriteSettingToFile(void)
 	if (result != FR_OK)
 	{
 		/* 卸载文件系统 */
-	  f_mount(NULL, "0:", 0);
+		f_mount(NULL, "0:", 0);
 		return -3;
 	}
 
@@ -156,8 +156,8 @@ static int32_t Para_WriteSettingToFile(void)
 	result = f_open(&file, SENSOR_SETUP_FILE, FA_CREATE_ALWAYS | FA_WRITE);
 	if (result !=  FR_OK)
 	{
-	  /* 卸载文件系统 */
-	  f_mount(NULL, "0:", 0);
+		/* 卸载文件系统 */
+		f_mount(NULL, "0:", 0);
 		return -4;
 	}
 
@@ -166,39 +166,41 @@ static int32_t Para_WriteSettingToFile(void)
 	if (result == FR_OK)
 	{
 		/* 关闭文件*/
-	 f_close(&file);
+		f_close(&file);
 		/* 打开文件 */
-	 result = f_open(&file, PID_SETUP_FILE, FA_CREATE_ALWAYS | FA_WRITE);
-	  if (result !=  FR_OK)
-	 {
+		result = f_open(&file, PID_SETUP_FILE, FA_CREATE_ALWAYS | FA_WRITE);
+		if (result !=  FR_OK)
+		{
 		/* 卸载文件系统 */
-	  f_mount(NULL, "0:", 0);
+		f_mount(NULL, "0:", 0);
 		return -4;
-	 }
+		}
 		/* 写入PID配置文件 */
-	 result = f_write(&file, &pid_setup.raw_data, sizeof(pid_setup), &bw);
-    if(result == FR_OK)
+		result = f_write(&file, &pid_setup.raw_data, sizeof(pid_setup), &bw);
+		if(result == FR_OK)
 		{
-	 		/* 关闭文件*/
-	    f_close(&file);
-		 	/* 卸载文件系统 */
-	   f_mount(NULL, "0:", 0);
+			/* 关闭文件*/
+			f_close(&file);
+			/* 卸载文件系统 */
+			f_mount(NULL, "0:", 0);
 			return 1;
-		}else
+		}
+		else
 		{
-		  /* 关闭文件*/
-	   f_close(&file);
-		 	/* 卸载文件系统 */
-	    f_mount(NULL, "0:", 0);
+			/* 关闭文件*/
+			f_close(&file);
+			/* 卸载文件系统 */
+			f_mount(NULL, "0:", 0);
 			return -4;
 		}
-	}else
-  {
-	  /* 关闭文件*/
-	  f_close(&file);
+	}
+	else
+	{
+		/* 关闭文件*/
+		f_close(&file);
 		/* 卸载文件系统 */
-	  f_mount(NULL, "0:", 0);
-	 return -5;
+		f_mount(NULL, "0:", 0);
+		return -5;
 	}
 
 }
@@ -214,7 +216,7 @@ static void  Param_SetSettingToFC(void)
 	mpu6050.Acc_Temprea_Offset = sensor_setup.Offset.Acc_Temperature;
 	mpu6050.Gyro_Temprea_Offset = sensor_setup.Offset.Gyro_Temperature;
   
-  memcpy(&ctrl_1.PID[PIDROLL],&pid_setup.groups.ctrl1.roll,sizeof(pid_t));
+	memcpy(&ctrl_1.PID[PIDROLL],&pid_setup.groups.ctrl1.roll,sizeof(pid_t));
 	memcpy(&ctrl_1.PID[PIDPITCH],&pid_setup.groups.ctrl1.pitch,sizeof(pid_t));
 	memcpy(&ctrl_1.PID[PIDYAW],&pid_setup.groups.ctrl1.yaw,sizeof(pid_t));
 	
@@ -369,7 +371,7 @@ extern u16 flash_save_en_cnt;
 
 void Parameter_Save()
 {
-  if( flash_save_en_cnt !=0 )
+	if( flash_save_en_cnt !=0 )
 	{
 		flash_save_en_cnt++;
 	}
@@ -377,7 +379,7 @@ void Parameter_Save()
 	if( flash_save_en_cnt > 60 ) // 20 *60 = 1200ms
 	{
 		flash_save_en_cnt = 0;
-		if( !fly_ready )
+		if( !fly_ready )	//只有在上锁后才会调用函数存储PID数据
 		{
 			Param_SavePID();
 		}

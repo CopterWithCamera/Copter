@@ -15,7 +15,7 @@
 
 	/*
 	
-	USART1：调试端口
+	USART1：调试端口（printf可用）
 	USART2：数传
 	UART5：超声波（按要求加了延迟）
 
@@ -374,20 +374,23 @@ void Usart1_IRQ(void)
 	
 }
 
+//=============================================================================================
+//printf功能实现，通过USART1
+
 //重定向c库函数printf到串口DEBUG_USART，重定向后可使用printf函数
 int fputc(int ch, FILE *f)
 {
 	unsigned char temp = (unsigned char)ch;
-	Usart2_Send(&temp,1);
+	Usart1_Send(&temp,1);
 	return (ch);
 }
 
-///重定向c库函数scanf到串口DEBUG_USART，重写向后可使用scanf、getchar等函数
+//重定向c库函数scanf到串口DEBUG_USART，重写向后可使用scanf、getchar等函数
 int fgetc(FILE *f)
 {
 	/* 等待串口输入数据 */
-	while (USART_GetFlagStatus(USART1, USART_FLAG_RXNE) == RESET);
-	return (int)USART_ReceiveData(USART1);
+	while (USART_GetFlagStatus(USART2, USART_FLAG_RXNE) == RESET);
+	return (int)USART_ReceiveData(USART2);
 }
 
 /******************* (C) COPYRIGHT 2014 ANO TECH *****END OF FILE************/

@@ -84,7 +84,6 @@ void Duty_2ms()
 	CTRL_1( inner_loop_time ); 							//内环角速度控制。输入：执行周期，期望角速度，测量角速度，角度前馈；输出：电机PWM占空比。<函数未封装>
 	
 	RC_Duty( inner_loop_time , Rc_Pwm_In );				//遥控器通道数据处理 ，输入：执行周期，接收机pwm捕获的数据。
-	Fly_Ctrl();											//自动控制摇杆值，以RC_Duty输出为输入，所以需要和RC_Duty同频调用
 	
 	test[1] = GetSysTime_us()/1000000.0f;
 }
@@ -96,9 +95,10 @@ void Duty_5ms()
 	outer_loop_time = Get_Cycle_T(2)/1000000.0f;		//获取外环准确的执行周期，Get_Cycle_T(2)返回值的单位是us，除以1000000后单位是s
 	test[2] = GetSysTime_us()/1000000.0f;				//存储获取到的时间，但没有被调用
 
- 	CTRL_2( outer_loop_time ); 							//外环角度控制。输入：执行周期，期望角度（摇杆量），姿态角度；输出：期望角速度。<函数未封装>
+	Fly_Ctrl();									//运算自动控制模式下飞行时的最外环控制值
+ 	CTRL_2( outer_loop_time ); 					//外环角度控制。输入：执行周期，期望角度（摇杆量），姿态角度；输出：期望角速度。<函数未封装>
 	
-	test[3] = GetSysTime_us()/1000000.0f;				//存储获取到的时间，但没有被调用。应该是和test[2]一起使用，计算代码运行时间。
+	test[3] = GetSysTime_us()/1000000.0f;		//存储获取到的时间，但没有被调用。应该是和test[2]一起使用，计算代码运行时间。
 }
 
 //10ms线程
@@ -112,13 +112,13 @@ void Duty_20ms()
 {
 	Parameter_Save();
 }
+
 //50ms线程
 void Duty_50ms()
 {
-	//Mode();	
-	mode_check(CH_filter);
-	LED_Duty();								//LED任务
-	Ultra_Duty();
+	mode_check(CH_filter);	//根据辅助通道状态切换当前模式
+	LED_Duty();				//根据标志位和飞机模式情况控制LED闪烁
+	Ultra_Duty();			//定时向超声波传感器写入测距指令
 }
 
 //********************************************************************************************************

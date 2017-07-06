@@ -313,7 +313,7 @@ float my_deathzoom(float x,float ref,float zoom)//my_deadzone
 			t = ref;
 		}
 	}
-  return (t);
+	return (t);
 }
 
 /*

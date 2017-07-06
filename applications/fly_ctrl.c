@@ -2,6 +2,14 @@
 #include "rc.h"
 #include "fly_mode.h"
 #include "ultrasonic.h"
+#include "mymath.h"
+
+//定义辅助通道对应飞行模式的宏
+
+#define	FUNCTION_1					hand_ctrl()
+#define FUNCTION_2					height_lock()
+#define FUNCTION_3					fly_ctrl_land()
+
 
 //=================== filter ===================================
 //  全局输出，CH_filter[],0横滚，1俯仰，2油门，3航向 范围：+-500	
@@ -9,16 +17,17 @@
 
 float CH_ctrl[CH_NUM];	//具体输入给ctrl的遥控器值
 
-//0：手飞
+//手飞
 void hand_ctrl(void)
 {
-	CH_ctrl[0] = CH_filter[0];	//0：横滚
-	CH_ctrl[1] = CH_filter[1];	//1：俯仰
-	CH_ctrl[2] = CH_filter[2];	//2：油门
-	CH_ctrl[3] = CH_filter[3];	//3：航向	
+	//手飞模式下俯仰和横滚加死区
+	CH_ctrl[0] = my_deathzoom( ( CH_filter[ROL]) ,0,30 );	//0：横滚 ROL
+	CH_ctrl[1] = my_deathzoom( ( CH_filter[PIT]) ,0,30 );	//1：俯仰 PIT
+	CH_ctrl[2] = CH_filter[2];	//2：油门 THR
+	CH_ctrl[3] = CH_filter[3];	//3：航向 YAW
 }
 
-//1：高度锁定
+//高度锁定
 void height_lock(void)
 {
 	CH_ctrl[0] = CH_filter[0];	//0：横滚
@@ -29,7 +38,7 @@ void height_lock(void)
 
 }
 
-//2：高度姿态锁定
+//高度姿态锁定
 void height_attitude_lock(void)
 {
 	CH_ctrl[0] = 0;	//0：横滚
@@ -38,9 +47,8 @@ void height_attitude_lock(void)
 	CH_ctrl[2] = 0;	//2：油门（油门位于中值，含义为高度保持）
 }
 
-//3：降落
+//降落
 float height_speed_ctrl = 0;
-
 void fly_ctrl_land(void)	//调用周期2ms
 {
 	static u16 lock_time = 0;
@@ -78,7 +86,7 @@ void fly_ctrl_land(void)	//调用周期2ms
 	
 }
 
-//4：起飞
+//起飞
 u8 takeoff_allow = 0;	//允许起飞标志，允许时可以运行起飞控制函数；1 -- 可以起飞，0 -- 起飞完成或不能起飞
 void fly_ctrl_takeoff(void)	//调用周期2ms
 {
@@ -120,26 +128,26 @@ void fly_ctrl_takeoff(void)	//调用周期2ms
 
 //========================================================================================================
 
-//识别控制指令
+//识别控制指令（在mode_check函数中调用，处理辅助通道数值）
 u8 ctrl_command;
 u8 ctrl_command_old;
 void Ctrl_Mode(float *ch_in)
 {
-	//更新ctrl_command_old
+	//更新历史模式
 	ctrl_command_old = ctrl_command;
 	
 	//根据AUX2通道（第6通道）的数值输入自动控制指令
-	if(*(ch_in+AUX2) <-200)			//最低
+	if(*(ch_in+AUX2) <-200)		//三挡开关在最上
 	{
-		ctrl_command = 0;
+		ctrl_command = 1;	
 	}
-	else if(*(ch_in+AUX2) <200)		//中间
+	else if(*(ch_in+AUX2) <200)		//三挡开关在中间
 	{
-		ctrl_command = 3;
+		ctrl_command = 2;	
 	}
-	else							//最高
+	else							//三挡开关在最下
 	{
-		ctrl_command = 4;
+		ctrl_command = 3;	
 	}
 	
 	//自动回位开关
@@ -155,92 +163,56 @@ void Ctrl_Mode(float *ch_in)
 	}
 }
 
-//飞行自动控制函数
-void Fly_Ctrl(void)	//调用周期2ms
-{
-	uint8_t i;
-	
-	/*
-	
-	说明：
-	
+/* ************************************************************
+	飞行自动控制函数
+
+	根据ctrl_command调用不同的自动控制函数
+
 	mode_state：
-	0：手动
-	1：气压计
-	2：超声波+气压计
-	3：自动
-	
+	0：手动				1：气压计
+	2：超声波+气压计		3：自动
+
 	ctrl_command：
-	0：正常的手动飞行模式（超声波+气压计定高）
-	1：高度锁定
-	2：高度锁定+姿态归零
-	3：降落模式
+	0：正常的手动飞行模式（超声波+气压计定高）		1：高度锁定
+	2：高度锁定+姿态归零							3：降落模式
+												
+*************************************************************** */
+
+void Fly_Ctrl(void)	
+{
 	
-	*/
+	//调用周期5ms
+	
+	if(mode_state != 3)
+	{
+		//只有自动模式才会执行自动控制代码
+		return;
+	}
 	
 	//在上锁时认为已经降落，清除一些标志位，为下次起飞做准备
 	if(fly_ready == 0)
 	{
 		takeoff_allow = 1;	//允许起飞（只有没有离地前才允许执行起飞函数）
+	}
+	
+	switch(ctrl_command)
+	{
+		case 1:
+			FUNCTION_1;
+		break;
 		
+		case 2:
+			FUNCTION_2;
+		break;
+		
+		case 3:
+			FUNCTION_3;
+		break;
+		
+		default:
+			hand_ctrl();	//默认（意外）情况下手飞
+		break;
 	}
-	
-	//模式0 1 2都是手动飞行的模式，相当于遥控飞机
-	//只有切换到模式3时，才会有自动控制介入
-	if(mode_state == 0 || mode_state == 1 || mode_state == 2)	//	手动|气压计|超声波+气压计
-	{
-		//通道赋值拷贝
-		for(i=0;i<CH_NUM;i++)
-		{
-			CH_ctrl[i] = CH_filter[i];	//CH_filter[i]为经过处理的信号输入值，来源可以是接收机，也可以是数传
-		}
-	}
-	else if(mode_state == 3)	//自动（高度控制已经默认是超声波+气压计定高）
-	{
-		//0
-		if(ctrl_command == 0)
-		{
-			hand_ctrl();				//正常的手动飞行模式
-				
-			printf("hand\r\n");
-		}
-		//1
-		else if(ctrl_command == 1)	
-		{
-			height_lock();				//高度锁定
-			
-			printf("height lock\r\n");
-		}
-		//2
-		else if(ctrl_command == 2)	
-		{
-			height_attitude_lock();		//高度锁定+姿态归零
-			
-			printf("attitude lock\r\n");
-		}
-		//3
-		else if(ctrl_command == 3)	
-		{	
-			fly_ctrl_land();			//降落模式
-			
-			printf("land\r\n");
-		}
-		//4
-		else if(ctrl_command == 4)
-		{
-			fly_ctrl_takeoff();			//起飞模式
-			
-			printf("take off\r\n");
-		}
-	}
-	
-//	static u16 counter = 0;
-//	counter++;
-//	if(counter>20)
-//	{
-//		counter = 0;
-//		
-//		printf("command = %d\r\n",ctrl_command);
-//	}
+
 }
 
