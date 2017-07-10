@@ -243,6 +243,7 @@ void Thr_Ctrl(float T)
 	static float thr;
 	static float Thr_tmp;
 	
+	//油门数据来源（自动模式下油门自动控制）
 	if(mode_state == 3)	//自动控制模式下的油门值
 	{
 		thr = 500 + CH_ctrl[THR];	//油门值 0 ~ 1000

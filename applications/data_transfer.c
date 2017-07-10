@@ -546,17 +546,13 @@ void ANO_DT_Send_User2()
 	data_to_send[_cnt++]=0xf2; //用户数据2（对地面站辅助程序）
 	data_to_send[_cnt++]=0;
 	
-	_temp = (s16)mode_state;				//飞行模式
-	data_to_send[_cnt++]=BYTE1(_temp);
-	data_to_send[_cnt++]=BYTE0(_temp);
-
-	_temp = (s16)ctrl_command;				//指令编号
-	data_to_send[_cnt++]=BYTE1(_temp);
-	data_to_send[_cnt++]=BYTE0(_temp);
+	data_to_send[_cnt++] = mode_state;			//飞行模式
+			
+	data_to_send[_cnt++] = ctrl_command;		//指令编号
 	
-	_temp = (s16)fly_ready;					//解锁状态
-	data_to_send[_cnt++]=BYTE1(_temp);
-	data_to_send[_cnt++]=BYTE0(_temp);
+	data_to_send[_cnt++] = fly_ready;			//解锁状态
+	
+	data_to_send[_cnt++] = All_Out_Switch;		//输出控制标志（自己加上的，应急停止功能）
 	
 	data_to_send[3] = _cnt-4;				//LEN位，在这里补上
 	
@@ -620,35 +616,6 @@ void ANO_DT_Data_Exchange(void)	//当前调用周期1ms
 		f.send_speed = 1;
 
 	if(++cnt>200) cnt = 0;
-	
-	//=================================================
-	//简化的定时调用代码，不知道好不好用
-	
-//	if((cnt % senser_cnt) == 1)
-//		f.send_senser = 1;
-
-//	if((cnt % senser2_cnt) == 1)
-//		f.send_senser2 = 1;
-
-//	if((cnt % user_cnt) == 1)
-//		f.send_user = 1;
-//	
-//	if((cnt % status_cnt) == 1)
-//		f.send_status = 1;
-//	
-//	if((cnt % rcdata_cnt) == 1)
-//		f.send_rcdata = 1;
-//	
-//	if((cnt % motopwm_cnt) == 1)
-//		f.send_motopwm = 1;
-//	
-//	if((cnt % power_cnt) == 1)
-//		f.send_power = 1;
-//	
-//	if((cnt % speed_cnt) == 1)
-//		f.send_speed = 1;
-//	
-//	if(++cnt>200) cnt = 0;
 
 //========================================================================================================
 //发送内容判断

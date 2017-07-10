@@ -8,9 +8,6 @@ extern float CH_ctrl[CH_NUM];	//具体输入给ctrl的遥控器值
 extern u8 ctrl_command,ctrl_command_old;			//当前飞行指令
 extern u8 All_Out_Switch;
 
-//控制数据
-extern float height_speed_ctrl;	//期望垂直速度
-
 
 void Fly_Ctrl(void);			//在schedule里调用
 void Ctrl_Mode(float *ch_in);	//在fly_mode里调用

@@ -25,12 +25,12 @@ typedef struct
 {
 	s32 height;//cm
 	
-	float relative_height;
-	float h_delta;
-	float h_dt;
+	float relative_height;	//相对高度（超声波直接是当前高度，气压计是当前海拔（气压）-起飞时海拔（气压））
+	float h_delta;			//数据微分
+	float h_dt;				//采集间隔
 	
-	u8 measure_ok;
-	u8 measure_ot_cnt;
+	u8 measure_ok;		//采集正常标志位
+	u8 measure_ot_cnt;	//看门狗计数器
 }_height_st;
 
 extern _height_st baro;

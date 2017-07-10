@@ -122,13 +122,17 @@ _f_set_st baro_f_set = {
 //													0.3f,
 //													0.5f
 
-float sonar_weight;
-float wz_speed,baro_com_val;	//wz_speed 是气压计数据得出的相对准确的垂直速度
+float sonar_weight;		//超声波数据权重
+float wz_speed,sonarz_speed;	//wz_speed 是气压计数据得出的相对准确的垂直速度
 void baro_ctrl(float dT,_hc_value_st *height_value)		//获取高度数据（调用周期2ms）
 {
 	static float dtime;
+	static float baro_com_val;	//气压计补偿变量
 		
-	///////////
+//*******************************************************************************************************************************
+//											气压计数据采集
+//*******************************************************************************************************************************
+	
 	dtime += dT;	//传入的dT在数学上是△T，单位是s
 	if(dtime > 0.01f) //10 ms
 	{
@@ -137,34 +141,38 @@ void baro_ctrl(float dT,_hc_value_st *height_value)		//获取高度数据（调用周期2ms
 		{
 			baro.relative_height = baro.relative_height - 0.1f *baro_com_val;
 		}
-	}		
+	}
 
-//	baro.h_dt = 0.02f; //气压计读取间隔时间20ms		//（这段没用上）
+	//baro.h_dt = 0.02f; //气压计读取间隔时间20ms		//（这段没用上）
 	
 	//气压计补偿		//dT >= 2ms（2ms左右）
 	//这段代码有问题，不合逻辑
-	baro_com_val = baro_compensate(dT,1.0f,1.0f,reference_v.z,3500);	//气压计补偿是在气压计读取数据失败时根据
-
+	baro_com_val = baro_compensate(dT,1.0f,1.0f,reference_v.z,3500);	//气压计补偿是在气压计读取数据失败时根据reference_v.z进行补偿
+	
+//*******************************************************************************************************************************
+//							高度数据融合校准（设置死区、滑动滤波、单位化、融合加速度数据）
+//*******************************************************************************************************************************
+	
+	//气压计数据加速度融合
+	fusion_prepare(	dT,			baro_av_arr,	BARO_AV_NUM,		&baro_av_cnt,		2,			&baro,			&baro_p);
+	//				时间微分		气压计滑动数组	滑动数组数据个数		滑动滤波计数变量		死区宽度		采集到的数据		
+	acc_fusion(	dT,			&baro_f_set,	acc_3d_hg.z,	&baro_p,			&baro_fusion);
+	//		   时间微分		设置参数			加速度值			准备好的数据			融合输出
+	
 	//超声波数据加速度融合
 	fusion_prepare(dT,sonar_av_arr,SONAR_AV_NUM,&sonar_av_cnt,0,&ultra,&sonar);	//设置死区、平均数滤波、单位化为mm、用距离变化计算速度、加速度
 	acc_fusion(	dT,			&sonar_f_set,	acc_3d_hg.z,	&sonar,				&sonar_fusion);				//acc_3d_hg.z、sonar是输入，sonar_fusion是输出
 	//		   时间微分		设置参数			加速度值			准备好的数据			融合输出
-	
-	//气压计数据加速度融合
-	fusion_prepare(dT,			baro_av_arr,	BARO_AV_NUM,	&baro_av_cnt,	2,	&baro,&baro_p);
-	//			   时间微分		滑动滤波数组		平均次数			
-	acc_fusion(	dT,			&baro_f_set,	acc_3d_hg.z,	&baro_p,			&baro_fusion);
-	//		   时间微分		设置参数			加速度值			准备好的数据			融合输出
-	
-//==========================================================================
-//计算超声波数据占总数据的权重
-	
+
+//*******************************************************************************************************************************
+//	高度数据融合（选择数据来源）
+//*******************************************************************************************************************************
 	if(ultra.measure_ok == 1)	//超声波数据有效
 	{
 		sonar_weight += 0.5f *dtime;	//sonar_weight越大，超声波数据的权重越高
 	}
 	else
-	{ 
+	{
 		sonar_weight -= 2.0f *dtime;
 	}
 	sonar_weight = LIMIT(sonar_weight,0,1);
@@ -176,14 +184,18 @@ void baro_ctrl(float dT,_hc_value_st *height_value)		//获取高度数据（调用周期2ms
 	}
 
 //==========================================================================
-	wz_speed = baro_fusion.fusion_speed_m.out - baro_fusion.fusion_speed_me.out;	//wz_speed 是气压计数据得出的相对准确的垂直速度
-	//		   融合了加速度计数据经过带通滤波		被带通滤掉的气压计速度量经过带通滤波
+	
+	//		       融合了加速度计数据经过带通滤波		 被带通滤掉的气压计速度量经过带通滤波
+	wz_speed     = baro_fusion.fusion_speed_m.out  - baro_fusion.fusion_speed_me.out;	//wz_speed 是气压计数据得出的相对准确的垂直速度
+	sonarz_speed = sonar_fusion.fusion_speed_m.out - sonar_fusion.fusion_speed_me.out;	//超声波传感器计算出的相对精确垂直速度
 	
 	//气压计、超声波原始数据融合
 	//速度融合
 	float m_speed,f_speed;
-	m_speed = (1 - sonar_weight) *baro_p.speed + sonar_weight *(sonar.speed);															//数据源：经过平均数滤波、单位转换为mm的速度值
-	f_speed = (1 - sonar_weight) *(wz_speed)   + sonar_weight *(sonar_fusion.fusion_speed_m.out - sonar_fusion.fusion_speed_me.out);	//数据源：融合了加速度计的数据
+	m_speed = (1 - sonar_weight) * baro_p.speed + sonar_weight * (sonar.speed);					//数据源：经过平均数滤波、单位转换为mm的速度值
+	f_speed = (1 - sonar_weight) * (wz_speed)   + sonar_weight * (sonarz_speed);				//数据源：融合了加速度计的数据
+	//f_speed = (1 - sonar_weight) * (wz_speed)   + sonar_weight * (sonar_fusion.fusion_speed_m.out - sonar_fusion.fusion_speed_me.out);	
+	
 	
 	//加速度采用经过等效重力向量矫正的加速度计数据
 	//速度采用超声波+气压计融合的速度数据
