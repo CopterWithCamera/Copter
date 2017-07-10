@@ -288,18 +288,18 @@ void LED_Duty() //50ms一次
 		}
 		else
 		{
-			light.RGB_Info = 23; 
+			light.RGB_Info = 22; 
 		}
 	}
 	else if(mode_state ==1) //气压定高
 	{
 		if(!fly_ready)//没解锁
 		{
-			light.RGB_Info = 24;
+			light.RGB_Info = 10;
 		} 
 		else     //解锁
 		{
-			light.RGB_Info = 25;
+			light.RGB_Info = 23;
 		}
 	}
 	else if(mode_state ==2)//超声波
@@ -318,6 +318,28 @@ void LED_Duty() //50ms一次
 		if(!fly_ready)	//没解锁
 		{
 			light.RGB_Info = 24;
+		} 
+		else     		//解锁
+		{
+			light.RGB_Info = 25;
+		}
+	}
+	else if(mode_state ==4)//
+	{
+		if(!fly_ready)	//没解锁
+		{
+			light.RGB_Info = 11;
+		} 
+		else     		//解锁
+		{
+			light.RGB_Info = 12;
+		}
+	}
+	else if(mode_state ==5)//
+	{
+		if(!fly_ready)	//没解锁
+		{
+			light.RGB_Info = 14;
 		} 
 		else     		//解锁
 		{
@@ -457,6 +479,13 @@ void LED_Duty() //50ms一次
 			LED_Brightness[R] = 0;//led_flash(0.05f,R,1,100,100,0);
 			led_flash(0.05f,G,16,1,100,100,0);
 			led_flash(0.05f,B,16,1,100,100,0);					
+		break;
+		
+		case 22:
+			LED_Brightness[X] = 0;
+			LED_Brightness[R] = 0;
+			LED_Brightness[G] = 0;
+			LED_Brightness[B] = 0;
 		break;
 		
 		case 23:

@@ -243,8 +243,14 @@ void Thr_Ctrl(float T)
 	static float thr;
 	static float Thr_tmp;
 	
-//	thr = 500 + CH_filter[THR]; //油门值 0 ~ 1000
-	thr = 500 + CH_ctrl[THR];	//油门值 0 ~ 1000
+	if(mode_state == 3)	//自动控制模式下的油门值
+	{
+		thr = 500 + CH_ctrl[THR];	//油门值 0 ~ 1000
+	}
+	else				//其余模式手动控制油门
+	{
+		thr = 500 + CH_filter[THR]; //油门值 0 ~ 1000
+	}
 	
 	//thr取值范围0-1000
 	if( thr < 100 )	//油门低判断（用于 ALL_Out里的最低转速保护 和 ctrl2里的Yaw轴起飞前处理）
@@ -275,6 +281,7 @@ void Thr_Ctrl(float T)
 			thr = LIMIT(thr,0,300);	//非定高模式丢信号，油门300，基本上就是悬停或者慢速下降
 		}
 		thr_value = Height_Ctrl(T,thr,fly_ready,0);   //直接使用油门摇杆值
+		//thr_value = thr;		//暂时不能直接把手动模式部分改为直接复制，因为自动模式函数还有检测历史模式
 	}
 	
 	thr_value = LIMIT(thr_value,0,10 *MAX_THR *MAX_PWM/100);	//油门值限幅		//thr_value直接被用于计算电机输出（是最终的油门输出值）
@@ -359,6 +366,15 @@ void All_Out(float out_roll,float out_pitch,float out_yaw)
 		}
 	}
 	else	//未解锁状态下所有电机输出值强制为0
+	{
+		for(i=0;i<MAXMOTORS;i++)
+		{
+			motor[i] = 0;
+		}
+	}
+	
+	//通过AUX8控制输出值，实现一键停转
+	if(!All_Out_Switch)
 	{
 		for(i=0;i<MAXMOTORS;i++)
 		{

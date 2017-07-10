@@ -11,6 +11,7 @@
 #include "filter.h"
 #include "fly_mode.h"
 
+//¶Ô µÈĞ§ÖØÁ¦ÏòÁ¿ ºÍ lim µÄ³Ë»ı ×öµÍÍ¨ÂË²¨£¬¸ù¾İÆäÊıÖµ×öÊä³öcom_val			//Õâ¶Î´úÂëºÁÎŞµÀÀí
 float baro_compensate(float dT,float kup,float kdw,float vz,float lim)	//ÆøÑ¹²¹³¥
 {
 	float z_sin;
@@ -18,8 +19,10 @@ float baro_compensate(float dT,float kup,float kdw,float vz,float lim)	//ÆøÑ¹²¹³
 	
 	z_sin = my_sqrt(1-my_pow(vz));
 	
+	//((z_sin/0.44f) *lim) ¹ı2HzµÍÍ¨ µÃµ½ com_tar
+	
 	//com_tar = (z_sin/0.44f) *lim;
-	LPF_1_(2.0f,dT,((z_sin/0.44f) *lim),com_tar);
+	LPF_1_(2.0f,dT,((z_sin/0.44f) *lim),com_tar);	//µÍÍ¨ÂË²¨Æ÷
 	com_tar = LIMIT(com_tar,0,lim);
 	
 	if(com_val<(com_tar-100))
@@ -43,7 +46,7 @@ void fusion_prepare(float dT,float av_arr[],u16 av_num,u16 *av_cnt,float deadzon
 	Moving_Average(av_arr,av_num ,(av_cnt),(10 *pre_data->dis_deadzone ),&(pre_data->displacement));	//È¡Æ½¾ùÖµ£¬ÀåÃ×->ºÁÃ×
 	
 	pre_data->speed = safe_div(pre_data->displacement - pre_data->displacement_old,dT,0);	//ËÙ¶È = £¨±¾´Î¸ß¶È-ÉÏ´Î¸ß¶È£©¡ÂÊ±¼ä
-	pre_data->acceleration = safe_div(pre_data->speed - pre_data->speed_old,dT,0);
+	pre_data->acceleration = safe_div(pre_data->speed - pre_data->speed_old,dT,0);			//¼ÓËÙ¶È
 	
 	//¼ÇÂ¼¾ÉÊı¾İ
 	pre_data->displacement_old = pre_data->displacement;
@@ -136,10 +139,11 @@ void baro_ctrl(float dT,_hc_value_st *height_value)		//»ñÈ¡¸ß¶ÈÊı¾İ£¨µ÷ÓÃÖÜÆÚ2ms
 		}
 	}		
 
-	baro.h_dt = 0.02f; //ÆøÑ¹¼Æ¶ÁÈ¡¼ä¸ôÊ±¼ä20ms
+//	baro.h_dt = 0.02f; //ÆøÑ¹¼Æ¶ÁÈ¡¼ä¸ôÊ±¼ä20ms		//£¨Õâ¶ÎÃ»ÓÃÉÏ£©
 	
-	//ÆøÑ¹¼Æ²¹³¥
-	baro_com_val = baro_compensate(dT,1.0f,1.0f,reference_v.z,3500);	//dT >= 2ms£¨2ms×óÓÒ£©
+	//ÆøÑ¹¼Æ²¹³¥		//dT >= 2ms£¨2ms×óÓÒ£©
+	//Õâ¶Î´úÂëÓĞÎÊÌâ£¬²»ºÏÂß¼­
+	baro_com_val = baro_compensate(dT,1.0f,1.0f,reference_v.z,3500);	//ÆøÑ¹¼Æ²¹³¥ÊÇÔÚÆøÑ¹¼Æ¶ÁÈ¡Êı¾İÊ§°ÜÊ±¸ù¾İ
 
 	//³¬Éù²¨Êı¾İ¼ÓËÙ¶ÈÈÚºÏ
 	fusion_prepare(dT,sonar_av_arr,SONAR_AV_NUM,&sonar_av_cnt,0,&ultra,&sonar);	//ÉèÖÃËÀÇø¡¢Æ½¾ùÊıÂË²¨¡¢µ¥Î»»¯Îªmm¡¢ÓÃ¾àÀë±ä»¯¼ÆËãËÙ¶È¡¢¼ÓËÙ¶È
@@ -147,7 +151,8 @@ void baro_ctrl(float dT,_hc_value_st *height_value)		//»ñÈ¡¸ß¶ÈÊı¾İ£¨µ÷ÓÃÖÜÆÚ2ms
 	//		   Ê±¼äÎ¢·Ö		ÉèÖÃ²ÎÊı			¼ÓËÙ¶ÈÖµ			×¼±¸ºÃµÄÊı¾İ			ÈÚºÏÊä³ö
 	
 	//ÆøÑ¹¼ÆÊı¾İ¼ÓËÙ¶ÈÈÚºÏ
-	fusion_prepare(dT,baro_av_arr,BARO_AV_NUM,&baro_av_cnt,2,&baro,&baro_p);
+	fusion_prepare(dT,			baro_av_arr,	BARO_AV_NUM,	&baro_av_cnt,	2,	&baro,&baro_p);
+	//			   Ê±¼äÎ¢·Ö		»¬¶¯ÂË²¨Êı×é		Æ½¾ù´ÎÊı			
 	acc_fusion(	dT,			&baro_f_set,	acc_3d_hg.z,	&baro_p,			&baro_fusion);
 	//		   Ê±¼äÎ¢·Ö		ÉèÖÃ²ÎÊı			¼ÓËÙ¶ÈÖµ			×¼±¸ºÃµÄÊı¾İ			ÈÚºÏÊä³ö
 	
@@ -164,7 +169,7 @@ void baro_ctrl(float dT,_hc_value_st *height_value)		//»ñÈ¡¸ß¶ÈÊı¾İ£¨µ÷ÓÃÖÜÆÚ2ms
 	}
 	sonar_weight = LIMIT(sonar_weight,0,1);
 	
-	//ÖĞÎ»²»Ê¹ÓÃ³¬Éù²¨
+	//Ä£Ê½1Îª´¿ÆøÑ¹¼ÆÄ£Ê½
 	if(mode_state == 1)	//Í¨µÀ5Ñ¡ÔñÆøÑ¹¼ÆÄ£Ê½£¬³¬Éù²¨Êı¾İ²»²ÎÓë¸ß¶ÈÊı¾İÈÚºÏ
 	{
 		sonar_weight = 0;

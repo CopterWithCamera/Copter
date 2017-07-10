@@ -131,6 +131,7 @@ void fly_ctrl_takeoff(void)	//调用周期2ms
 //识别控制指令（在mode_check函数中调用，处理辅助通道数值）
 u8 ctrl_command;
 u8 ctrl_command_old;
+u8 All_Out_Switch = 0;
 void Ctrl_Mode(float *ch_in)
 {
 	//更新历史模式
@@ -139,7 +140,7 @@ void Ctrl_Mode(float *ch_in)
 	//根据AUX2通道（第6通道）的数值输入自动控制指令
 	if(*(ch_in+AUX2) <-200)		//三挡开关在最上
 	{
-		ctrl_command = 1;	
+		ctrl_command = 1;
 	}
 	else if(*(ch_in+AUX2) <200)		//三挡开关在中间
 	{
@@ -157,9 +158,13 @@ void Ctrl_Mode(float *ch_in)
 	}
 	
 	//
-	if(*(ch_in+AUX4) > 0)			//
+	if(*(ch_in+AUX4) > 0)			//SWA,输出使能开关，只有在开关播到上方时输出才能被输出到PWM
 	{
-		
+		All_Out_Switch = 0;
+	}
+	else
+	{
+		All_Out_Switch = 1;
 	}
 }
 

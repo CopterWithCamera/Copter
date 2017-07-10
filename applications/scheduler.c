@@ -22,6 +22,7 @@
 #include "height_ctrl.h"
 #include "fly_mode.h"
 #include "fly_ctrl.h"
+#include "anotc_baro_ctrl.h"
 
 s16 loop_cnt;
 
@@ -81,7 +82,9 @@ void Duty_2ms()
 				mpu6050.Acc.x, mpu6050.Acc.y, mpu6050.Acc.z,					//三轴加速度计数据（4096--1G）
 				&Roll,&Pitch,&Yaw);												//输出：ROL PIT YAW 姿态角
 
-	CTRL_1( inner_loop_time ); 							//内环角速度控制。输入：执行周期，期望角速度，测量角速度，角度前馈；输出：电机PWM占空比。<函数未封装>
+	
+	baro_ctrl( inner_loop_time ,&hc_value);			//高度数据获取，为内环函数最后调用的高度控制函数做准备（获取气压计数据，调用超声波数据，融合计算高度数据）
+	CTRL_1( inner_loop_time ); 						//内环角速度控制。输入：执行周期，期望角速度，测量角速度，角度前馈；输出：电机PWM占空比。<函数未封装>
 	
 	RC_Duty( inner_loop_time , Rc_Pwm_In );				//遥控器通道数据处理 ，输入：执行周期，接收机pwm捕获的数据。
 	

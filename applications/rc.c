@@ -209,20 +209,6 @@ void Fly_Ready(float T,float height_speed_mm)
 		thr_stick_low = 0;	//油门低标志置0
 		ready_cnt=0;
 	}
-	
-	if(ctrl_command == 4)	//起飞模式特殊处理
-	{
-		//用CH_ctrl[2]的油门值更新thr_stick_low状态，防止摇杆值低造成的意外上锁
-		if(CH_ctrl[2] < 400)
-		{
-			thr_stick_low = 1;	//油门低标志置1
-		}
-		else
-		{
-			thr_stick_low = 0;	//油门低标志置0
-		}
-	}
-
 
 	//对计数结果进行判断
 	if( ready_cnt > 300 ) // 600ms 
