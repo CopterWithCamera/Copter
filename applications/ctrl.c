@@ -254,7 +254,7 @@ void Thr_Ctrl(float T)
 	}
 	
 	//thr取值范围0-1000
-	if( thr < 100 )	//油门低判断（用于 ALL_Out里的最低转速保护 和 ctrl2里的Yaw轴起飞前处理）
+	if( thr < 100 )	//油门低判断（用于 ALL_Out 里的最低转速保护 和 ctrl2 里的Yaw轴起飞前处理）
 	{
 		Thr_Low = 1;
 	}
@@ -264,7 +264,7 @@ void Thr_Ctrl(float T)
 	}
 	
 	//根据飞行模式选择油门控制方法
-	//mode_state： 0 -- 姿态    1 -- 气压计   2 -- 超声波 + 气压计
+	//mode_state： 0 -- 姿态    1 -- 气压计   2 -- 超声波 + 气压计  3 -- 自动模式
 	if(mode_state)	//定高模式（在此版本代码里，mode_state由fly_mode.c控制）
 	{
 		if(NS==0) //丢失信号

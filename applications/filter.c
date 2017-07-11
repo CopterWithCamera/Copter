@@ -18,7 +18,7 @@ void anotc_filter_1(float base_hz,float gain_hz,float dT,float in,_filter_1_st *
 
 
  void Moving_Average(float moavarray[],u16 len ,u16 *fil_cnt,float in,float *out)
-	 //					滑动滤波数组		
+	 //					滑动滤波数组
 {
 	u16 width_num;
 	float last;
