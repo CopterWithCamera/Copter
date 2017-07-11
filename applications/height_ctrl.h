@@ -26,7 +26,7 @@ extern float set_height_e;		//高度误差积分
 extern float thr_take_off;		//基准油门
 
 float auto_take_off_land(float dT,u8 ready);
-float Height_Ctrl(float T,float thr,u8 ready,float en);
+float Height_Ctrl(float T,u8 mode,float thr,float height,float speed,u8 ready,float en);
 void h_pid_init(void);
 #endif
 

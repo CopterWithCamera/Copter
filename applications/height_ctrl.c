@@ -252,7 +252,28 @@ float Height_Pid(float T,float en,float height_error,u8 takeoff_flag,u8 modechan
 	return thr_out;
 }
 
-float Height_Ctrl(float T,float thr,u8 ready,float en)	//高度控制使能：   en	1 -- 定高   0 -- 非定高
+/*
+
+输入：
+
+T：时间间隔
+mode：模式
+height：期望高度
+speed：期望速度
+ready：安全锁状态
+en：定高模式使能
+
+输出：
+
+油门值
+
+mode：
+0：油门控制
+1：期望高度
+2：期望速度
+
+*/
+float Height_Ctrl(float T,u8 mode,float thr,float height,float speed,u8 ready,float en)	//高度控制使能：   en	1 -- 定高   0 -- 非定高
 {
 	static float en_old;	//高度控制使能变量 en 的历史模式
 	u8 detection_modechange_flag = 0;	//飞行中检测到模式切换则置位
@@ -283,88 +304,102 @@ float Height_Ctrl(float T,float thr,u8 ready,float en)	//高度控制使能：   en	1 -
 	
 
 	/*自动模式*/
-
-
-	//油门处理：
 	
-	//取值范围转换、设置死区
-	//thr_set是经过死区设置的油门控制量输入值，取值范围 -500 -- +500
-	float thr_set;	//本函数处理后的油门
-	thr_set = my_deathzoom_2(my_deathzoom((thr - 500),0,40),0,10);	//±50为死区，零点为±40的位置
-
-	//======================================================================================
-	//状态检测
+	//需要控制的flag：
+	//detection_modechange_flag		飞行中切入自动控制
+	//detection_takeoff_flag		检测到起飞
 	
-	//模式切换检测
-	//飞行中初次进入定高模式切换处理（安全保护，防止基准油门过低）
-	if( ABS(en - en_old) > 0.5f )	//从非定高切换到定高（官方注释）	//我认为是模式在飞行中被切换，切换方向不确定
+	if(mode == 0)	//遥控器控制
 	{
-
-		//thr_set > -150 代表油门非低
-		if(thr_set > -150)		//thr_set是经过死区设置的油门控制量输入值，取值范围 -500 -- +500
-		{
-			//thr_take_off = 400;	//设置基准油门
-			detection_modechange_flag = 1;	//飞行中切入定高模式
-		}
-
-		en_old = en;	//更新历史模式
-	}
+		//油门处理：
 	
-	//起飞检测
-	if(thr_set>0)	//油门推过中值
-	{
-		if(thr_take_off_f == 0)	//如果没有起飞（本次解锁后还没有起飞）
+		//取值范围转换、设置死区
+		//thr_set是经过死区设置的油门控制量输入值，取值范围 -500 -- +500
+		float thr_set;	//本函数处理后的油门
+		thr_set = my_deathzoom_2(my_deathzoom((thr - 500),0,40),0,10);	//±50为死区，零点为±40的位置
+
+		//======================================================================================
+		//状态检测
+		
+		//模式切换检测
+		//飞行中初次进入定高模式切换处理（安全保护，防止基准油门过低）
+		if( ABS(en - en_old) > 0.5f )	//从非定高切换到定高（官方注释）	//我认为是模式在飞行中被切换，切换方向不确定
 		{
-			if(thr_set>100)	//达到起飞油门
+
+			//thr_set > -150 代表油门非低
+			if(thr_set > -150)		//thr_set是经过死区设置的油门控制量输入值，取值范围 -500 -- +500
 			{
-				thr_take_off_f = 1;	//起飞标志置1，此标志只在上锁后会被归零
-				detection_takeoff_flag = 1;		//检测到起飞
+				detection_modechange_flag = 1;	//飞行中切入定高模式
+			}
+
+			en_old = en;	//更新历史模式
+		}
+		
+		//起飞检测
+		if(thr_set>0)	//油门推过中值
+		{
+			if(thr_take_off_f == 0)	//如果没有起飞（本次解锁后还没有起飞）
+			{
+				if(thr_set>100)	//达到起飞油门
+				{
+					thr_take_off_f = 1;	//起飞标志置1，此标志只在上锁后会被归零
+					detection_takeoff_flag = 1;		//检测到起飞
+				}
 			}
 		}
-	}
 
-	//======================================================================================
-	//遥控器输入值控制升降
-	
-	//生成期望速度
-	if(thr_set>0)	//上升
+		//======================================================================================
+		//遥控器输入值控制升降
+		
+		//生成期望速度
+		if(thr_set>0)	//上升
+		{
+			set_speed_t = thr_set/450 * MAX_VERTICAL_SPEED_UP;	//set_speed_t 表示期望上升速度占最大上升速度的比值
+		}
+		else			//悬停或下降
+		{
+			set_speed_t = thr_set/450 * MAX_VERTICAL_SPEED_DW;
+		}
+
+		//速度期望限幅滤波
+		set_speed_t = LIMIT(set_speed_t,-MAX_VERTICAL_SPEED_DW,MAX_VERTICAL_SPEED_UP);	//速度期望限幅
+		LPF_1_(10.0f,T,my_pow_2_curve(set_speed_t,0.25f,MAX_VERTICAL_SPEED_DW),set_speed);	//LPF_1_是低通滤波器，截至频率是10Hz，输出值是set_speed，my_pow_2_curve把输入数据转换为2阶的曲线，在0附近平缓，在数值较大的部分卸率大
+		set_speed = LIMIT(set_speed,-MAX_VERTICAL_SPEED_DW,MAX_VERTICAL_SPEED_UP);	//限幅，单位mm/s
+
+		//set_speed 为最终输出的期望速度
+		
+		//生成期望高度差
+		
+		//高度差 = ∑速度差*T （单位 mm/s）
+		//h(n) = h(n-1) + △h  ， △h =（期望速度 - 当前速度） * △t
+		//用起飞状态给目标高度差积分控制变量赋值，只有在ex_i_en = 1时才会开始积分计算目标高度差
+		static u8 ex_i_en;		//期望高度差控制变量（只有起飞后才会开始计数期望高度差）
+		ex_i_en = thr_take_off_f;
+		
+		set_height_em += (set_speed -        hc_value.m_speed)      * T;	//没有经过加速度修正和带通滤波的速度值算出的速度差 * △T
+		set_height_em = LIMIT(set_height_em,-5000 *ex_i_en,5000 *ex_i_en);	//ex_i_en = 1 表示已经到达起飞油门，否则为0
+		
+		set_height_e += (set_speed  - 1.05f *hc_value.fusion_speed) * T;	//经过加速度修正和带通滤波的速度值算出的速度差 * △T
+		set_height_e  = LIMIT(set_height_e ,-5000 *ex_i_en,5000 *ex_i_en);
+		
+		LPF_1_(0.0005f,T,set_height_em,set_height_e);	//频率 时间 输入 输出	//两个速度差按比例融合，第一个参数越大，set_height_em的占比越大	
+		
+		//set_height_e 为期望高度差，单位 mm
+	}
+	else if(mode == 1)
 	{
-		set_speed_t = thr_set/450 * MAX_VERTICAL_SPEED_UP;	//set_speed_t 表示期望上升速度占最大上升速度的比值
+		//sonar_fusion.fusion_displacement.out是当前高度，单位是mm
+		set_height_e = height - sonar_fusion.fusion_displacement.out;
+		
+		mydata.d1 = (s16)set_height_e;
 	}
-	else			//悬停或下降
-	{
-		set_speed_t = thr_set/450 * MAX_VERTICAL_SPEED_DW;
-	}
-
-	//速度期望限幅滤波
-	set_speed_t = LIMIT(set_speed_t,-MAX_VERTICAL_SPEED_DW,MAX_VERTICAL_SPEED_UP);	//速度期望限幅
-	LPF_1_(10.0f,T,my_pow_2_curve(set_speed_t,0.25f,MAX_VERTICAL_SPEED_DW),set_speed);	//LPF_1_是低通滤波器，截至频率是10Hz，输出值是set_speed，my_pow_2_curve把输入数据转换为2阶的曲线，在0附近平缓，在数值较大的部分卸率大
-	set_speed = LIMIT(set_speed,-MAX_VERTICAL_SPEED_DW,MAX_VERTICAL_SPEED_UP);	//限幅，单位mm/s
-
-	//set_speed 为最终输出的期望速度
-	
-	//生成期望高度差
-	
-	//高度差 = ∑速度差*T （单位 mm/s）
-	//h(n) = h(n-1) + △h  ， △h =（期望速度 - 当前速度） * △t
-	//用起飞状态给目标高度差积分控制变量赋值，只有在ex_i_en = 1时才会开始积分计算目标高度差
-	static u8 ex_i_en;		//期望高度差控制变量（只有起飞后才会开始计数期望高度差）
-	ex_i_en = thr_take_off_f;
-	
-	set_height_em += (set_speed -        hc_value.m_speed)      * T;	//没有经过加速度修正和带通滤波的速度值算出的速度差 * △T
-	set_height_em = LIMIT(set_height_em,-5000 *ex_i_en,5000 *ex_i_en);	//ex_i_en = 1 表示已经到达起飞油门，否则为0
-	
-	set_height_e += (set_speed  - 1.05f *hc_value.fusion_speed) * T;	//经过加速度修正和带通滤波的速度值算出的速度差 * △T
-	set_height_e  = LIMIT(set_height_e ,-5000 *ex_i_en,5000 *ex_i_en);
-	
-	LPF_1_(0.0005f,T,set_height_em,set_height_e);	//频率 时间 输入 输出	//两个速度差按比例融合，第一个参数越大，set_height_em的占比越大	
-	
-	//set_height_e 为期望高度差，单位 mm
-	//======================================================================================
+	mydata.d2 = (s16)set_height_e;
+	mydata.d3 = (s16)ultra.relative_height*10;
+	mydata.d4 = (s16)sonar_fusion.fusion_displacement.out;
 	
 	//高度控制PID
 	float my_thr_out;
-	my_thr_out = Height_Pid(T,en,set_height_e,detection_takeoff_flag,detection_modechange_flag);	
+	my_thr_out = Height_Pid(T,en,set_height_e,detection_takeoff_flag,detection_modechange_flag);
 
 	return (my_thr_out);	//经过定高运算的油门值
 

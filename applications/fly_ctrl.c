@@ -3,12 +3,13 @@
 #include "fly_mode.h"
 #include "ultrasonic.h"
 #include "mymath.h"
+#include "anotc_baro_ctrl.h"
 
 //定义辅助通道对应飞行模式的宏
 
 #define	FUNCTION_1					hand_ctrl()
 #define FUNCTION_2					height_lock()
-#define FUNCTION_3					height_attitude_lock()
+#define FUNCTION_3					height_lock_displacement()
 
 
 //=================== filter ===================================
@@ -17,9 +18,18 @@
 
 float CH_ctrl[CH_NUM];	//具体输入给ctrl的遥控器值
 
+u8 my_height_mode = 0;	//模式使用的定高模式
+						//0：油门
+						//1：期望高度
+						//2：期望速度
+						
+float my_except_height = 0;//期望高度
+
 //手飞
 void hand_ctrl(void)
 {
+	my_height_mode = 0;
+	
 	//手飞模式下俯仰和横滚加死区
 	CH_ctrl[0] = my_deathzoom( ( CH_filter[ROL]) ,0,30 );	//0：横滚 ROL
 	CH_ctrl[1] = my_deathzoom( ( CH_filter[PIT]) ,0,30 );	//1：俯仰 PIT
@@ -27,9 +37,11 @@ void hand_ctrl(void)
 	CH_ctrl[3] = CH_filter[3];	//3：航向 YAW
 }
 
-//高度锁定
+//高度锁定（遥控器归中值）
 void height_lock(void)
 {
+	my_height_mode = 0;
+	
 	CH_ctrl[0] = CH_filter[0];	//0：横滚
 	CH_ctrl[1] = CH_filter[1];	//1：俯仰
 	CH_ctrl[3] = CH_filter[3];	//3：航向
@@ -38,9 +50,28 @@ void height_lock(void)
 
 }
 
+//直接输入期望高度定高
+void height_lock_displacement()
+{ 	
+	static u8 flag;
+	my_height_mode = 1;
+	
+	if(!flag)
+	{
+		flag = 1;
+		my_except_height = sonar_fusion.fusion_displacement.out;	//读取当前高度
+	}
+	
+	CH_ctrl[0] = CH_filter[0];	//0：横滚
+	CH_ctrl[1] = CH_filter[1];	//1：俯仰
+	CH_ctrl[3] = CH_filter[3];	//3：航向
+}
+	
 //高度姿态锁定
 void height_attitude_lock(void)
 {
+	my_height_mode = 0;
+	
 	CH_ctrl[0] = 0;	//0：横滚
 	CH_ctrl[1] = 0;	//1：俯仰
 	CH_ctrl[3] = 0;	//3：航向

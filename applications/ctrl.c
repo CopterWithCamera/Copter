@@ -273,7 +273,10 @@ void Thr_Ctrl(float T)
 									//也就是说定高模式丢信号时只能悬停或下降（依照丢信号前状态）
 		}
 		
-		thr_value = Height_Ctrl(T,thr,fly_ready,1);   //输出经过定高算法修正的值
+		if(mode_state == 3)			//自动模式
+			thr_value = Height_Ctrl(T,my_height_mode,thr,my_except_height,0,fly_ready,1);   //输出经过定高算法修正的值
+		else						//其余有定高功能的手飞模式
+			thr_value = Height_Ctrl(T,0,thr,0,0,fly_ready,1);
 	}
 	else					//手动模式（只有mode_state = 0时才是手动，其余的都是自动控高）
 	{
@@ -281,8 +284,7 @@ void Thr_Ctrl(float T)
 		{
 			thr = LIMIT(thr,0,300);	//非定高模式丢信号，油门300，基本上就是悬停或者慢速下降
 		}
-		thr_value = Height_Ctrl(T,thr,fly_ready,0);   //直接使用油门摇杆值
-		//thr_value = thr;		//暂时不能直接把手动模式部分改为直接复制，因为自动模式函数还有检测历史模式
+		thr_value = Height_Ctrl(T,0,thr,0,0,fly_ready,0);	 //直接使用油门摇杆值
 	}
 	
 	thr_value = LIMIT(thr_value,0,10 *MAX_THR *MAX_PWM/100);	//油门值限幅		//thr_value直接被用于计算电机输出（是最终的油门输出值）
