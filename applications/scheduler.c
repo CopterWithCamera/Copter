@@ -23,6 +23,8 @@
 #include "fly_mode.h"
 #include "fly_ctrl.h"
 #include "anotc_baro_ctrl.h"
+#include "usart.h"
+#include "camera_datatransfer.h"
 
 s16 loop_cnt;
 
@@ -119,9 +121,13 @@ void Duty_20ms()
 //50ms线程
 void Duty_50ms()
 {
+		
 	mode_check(CH_filter);	//根据辅助通道状态切换当前模式
 	LED_Duty();				//根据标志位和飞机模式情况控制LED闪烁
 	Ultra_Duty();			//定时向超声波传感器写入测距指令
+	
+	Camera_Data_Send();
+	
 }
 
 //********************************************************************************************************

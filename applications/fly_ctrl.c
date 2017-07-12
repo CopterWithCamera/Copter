@@ -7,9 +7,9 @@
 
 //定义辅助通道对应飞行模式的宏
 
-#define	FUNCTION_1					hand_ctrl()
-#define FUNCTION_2					height_lock()
-#define FUNCTION_3					height_lock_displacement()
+#define	FUNCTION_1					hand_ctrl
+#define FUNCTION_2					height_lock
+#define FUNCTION_3					height_lock_displacement
 
 
 //=================== filter ===================================
@@ -28,7 +28,7 @@ float my_except_height = 0;//期望高度
 //手飞
 void hand_ctrl(void)
 {
-	my_height_mode = 0;
+	my_height_mode = 0;		//输入油门值
 	
 	//手飞模式下俯仰和横滚加死区
 	CH_ctrl[0] = my_deathzoom( ( CH_filter[ROL]) ,0,30 );	//0：横滚 ROL
@@ -40,7 +40,7 @@ void hand_ctrl(void)
 //高度锁定（遥控器归中值）
 void height_lock(void)
 {
-	my_height_mode = 0;
+	my_height_mode = 0;		//输入油门值
 	
 	CH_ctrl[0] = CH_filter[0];	//0：横滚
 	CH_ctrl[1] = CH_filter[1];	//1：俯仰
@@ -52,9 +52,9 @@ void height_lock(void)
 
 //直接输入期望高度定高
 void height_lock_displacement()
-{ 	
+{
 	static u8 flag;
-	my_height_mode = 1;
+	my_height_mode = 1;		//输入目标高度差
 	
 	if(!flag)
 	{
@@ -66,7 +66,7 @@ void height_lock_displacement()
 	CH_ctrl[1] = CH_filter[1];	//1：俯仰
 	CH_ctrl[3] = CH_filter[3];	//3：航向
 }
-	
+
 //高度姿态锁定
 void height_attitude_lock(void)
 {
@@ -189,21 +189,20 @@ void Fly_Ctrl(void)
 	switch(ctrl_command)
 	{
 		case 1:
-			FUNCTION_1;
+			FUNCTION_1();
 		break;
 		
 		case 2:
-			FUNCTION_2;
+			FUNCTION_2();
 		break;
 		
 		case 3:
-			FUNCTION_3;
+			FUNCTION_3();
 		break;
 		
 		default:
 			hand_ctrl();	//意外情况下手飞
 		break;
 	}
-
 }
 

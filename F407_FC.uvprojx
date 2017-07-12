@@ -537,6 +537,16 @@
               <FileType>1</FileType>
               <FilePath>.\applications\PID.c</FilePath>
             </File>
+            <File>
+              <FileName>camera_datatransfer.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\applications\camera_datatransfer.c</FilePath>
+            </File>
+            <File>
+              <FileName>camera_datatransfer.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\applications\camera_datatransfer.h</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>
