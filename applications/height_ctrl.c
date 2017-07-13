@@ -390,12 +390,7 @@ float Height_Ctrl(float T,u8 mode,float thr,float height,float speed,u8 ready,fl
 	{
 		//sonar_fusion.fusion_displacement.out是当前高度，单位是mm
 		set_height_e = height - sonar_fusion.fusion_displacement.out;
-		
-		mydata.d1 = (s16)set_height_e;
 	}
-	mydata.d2 = (s16)set_height_e;
-	mydata.d3 = (s16)ultra.relative_height*10;
-	mydata.d4 = (s16)sonar_fusion.fusion_displacement.out;
 	
 	//高度控制PID
 	float my_thr_out;

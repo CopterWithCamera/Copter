@@ -39,24 +39,24 @@ void Camrea_Send_Height(void)
 	
 	//内容
 	tmp_f = ultra.relative_height*10;	//转为mm单位
-	Data_Buffer[cnt++] = BYTE3(tmp_f);
-	Data_Buffer[cnt++] = BYTE2(tmp_f);
-	Data_Buffer[cnt++] = BYTE1(tmp_f);
 	Data_Buffer[cnt++] = BYTE0(tmp_f);
+	Data_Buffer[cnt++] = BYTE1(tmp_f);
+	Data_Buffer[cnt++] = BYTE2(tmp_f);
+	Data_Buffer[cnt++] = BYTE3(tmp_f);
 	
 	tmp_f = sonar.displacement;
-	Data_Buffer[cnt++] = BYTE3(tmp_f);
-	Data_Buffer[cnt++] = BYTE2(tmp_f);
-	Data_Buffer[cnt++] = BYTE1(tmp_f);
 	Data_Buffer[cnt++] = BYTE0(tmp_f);
+	Data_Buffer[cnt++] = BYTE1(tmp_f);
+	Data_Buffer[cnt++] = BYTE2(tmp_f);
+	Data_Buffer[cnt++] = BYTE3(tmp_f);
 	
 	tmp_f = sonar_fusion.fusion_displacement.out;
-	Data_Buffer[cnt++] = BYTE3(tmp_f);
-	Data_Buffer[cnt++] = BYTE2(tmp_f);
-	Data_Buffer[cnt++] = BYTE1(tmp_f);
 	Data_Buffer[cnt++] = BYTE0(tmp_f);
+	Data_Buffer[cnt++] = BYTE1(tmp_f);
+	Data_Buffer[cnt++] = BYTE2(tmp_f);
+	Data_Buffer[cnt++] = BYTE3(tmp_f);
 	
-	Send_to_Camera(Data_Buffer,cnt-1);
+	Send_to_Camera(Data_Buffer,cnt);
 }
 
 
