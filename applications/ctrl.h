@@ -42,7 +42,7 @@ extern ctrl_t ctrl_2;
 void CTRL_2(float);
 void CTRL_1(float);
 void Ctrl_Para_Init(void);
-void Thr_Ctrl(float);
+void Thr_Ctrl(float,u8);
 void All_Out(float x,float y,float z);
 
 extern u8 Thr_Low;

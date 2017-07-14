@@ -73,6 +73,8 @@ void Duty_2ms()
 	inner_loop_time = Get_Cycle_T(0)/1000000.0f; 		//获取内环准确的执行周期（本次和上次调用的时间差，单位是s）
 	test[0] = GetSysTime_us()/1000000.0f;				//把GetSysTime_us所获取的数值存入，但似乎没有被调用，似乎是用来放在监视里看的。
 	
+	/* ********************* 姿态计算 ********************* */
+	
 	//mpu6050处理
 	MPU6050_Read(); 									//读取mpu6轴传感器
 	MPU6050_Data_Prepare( inner_loop_time );			//mpu6轴传感器数据处理   校准、滤波、坐标转换
@@ -84,16 +86,24 @@ void Duty_2ms()
 				mpu6050.Acc.x, mpu6050.Acc.y, mpu6050.Acc.z,					//三轴加速度计数据（4096--1G）
 				&Roll,&Pitch,&Yaw);												//输出：ROL PIT YAW 姿态角
 
-	
+	//高度数据采集
 	baro_ctrl( inner_loop_time ,&hc_value);			//高度数据获取，为内环函数最后调用的高度控制函数做准备（获取气压计数据，调用超声波数据，融合计算高度数据）
 	
+	/* ****************** 姿态 和 高度 控制 ******************** */
+	
+	//姿态控制
 	CTRL_1( inner_loop_time ); 						//内环角速度控制。输入：执行周期，期望角速度，测量角速度，角度前馈；输出：电机PWM占空比。<函数未封装>
-	Thr_Ctrl( inner_loop_time );					// 油门控制，这里面包含高度控制闭环	thr_value
+	
+	//高度控制
+	Thr_Ctrl( inner_loop_time , my_height_mode);		//油门控制，这里面包含高度控制闭环	thr_value 
+	
+	//输出控制
 	All_Out(ctrl_1.out.x,ctrl_1.out.y,ctrl_1.out.z);	//电机输出处理（包含电机输出判断，未解锁状态输出为0）
 														//输出值包括两部分，posture_value 和 thr_value
 														//out_roll,out_pitch,out_yaw 生成 posture_value
 														//在 All_Out 里这两部分按照权重参数 Thr_Weight 整合
 	
+	/* ****************** RC接收机采集 ******************** */
 	
 	RC_Duty( inner_loop_time , Rc_Pwm_In );				//遥控器通道数据处理 ，输入：执行周期，接收机pwm捕获的数据。
 	
@@ -106,9 +116,14 @@ void Duty_5ms()
 	float outer_loop_time;
 	outer_loop_time = Get_Cycle_T(2)/1000000.0f;		//获取外环准确的执行周期，Get_Cycle_T(2)返回值的单位是us，除以1000000后单位是s
 	test[2] = GetSysTime_us()/1000000.0f;				//存储获取到的时间，但没有被调用
-
+	
+	/* ****************** 自动控制功能实现函数 ****************** */
 	Fly_Ctrl();									//运算自动控制模式下飞行时的最外环控制值
+	
+	
+	/* ********************** 姿态外环 ********************* */
  	CTRL_2( outer_loop_time ); 					//外环角度控制。输入：执行周期，期望角度（摇杆量），姿态角度；输出：期望角速度。<函数未封装>
+	
 	
 	test[3] = GetSysTime_us()/1000000.0f;		//存储获取到的时间，但没有被调用。应该是和test[2]一起使用，计算代码运行时间。
 }

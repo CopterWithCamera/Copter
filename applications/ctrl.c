@@ -243,7 +243,7 @@ void CTRL_1(float T)  //x roll,y pitch,z yaw
 float thr_value;
 u8 Thr_Low;
 float Thr_Weight;
-void Thr_Ctrl(float T)	//计算生成 thr_value 和 Thr_Weight
+void Thr_Ctrl(float T , u8 mode)	//计算生成 thr_value 和 Thr_Weight
 {
 	static float thr;
 	static float Thr_tmp;
