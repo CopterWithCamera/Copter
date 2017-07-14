@@ -86,7 +86,14 @@ void Duty_2ms()
 
 	
 	baro_ctrl( inner_loop_time ,&hc_value);			//高度数据获取，为内环函数最后调用的高度控制函数做准备（获取气压计数据，调用超声波数据，融合计算高度数据）
+	
 	CTRL_1( inner_loop_time ); 						//内环角速度控制。输入：执行周期，期望角速度，测量角速度，角度前馈；输出：电机PWM占空比。<函数未封装>
+	Thr_Ctrl( inner_loop_time );					// 油门控制，这里面包含高度控制闭环	thr_value
+	All_Out(ctrl_1.out.x,ctrl_1.out.y,ctrl_1.out.z);	//电机输出处理（包含电机输出判断，未解锁状态输出为0）
+														//输出值包括两部分，posture_value 和 thr_value
+														//out_roll,out_pitch,out_yaw 生成 posture_value
+														//在 All_Out 里这两部分按照权重参数 Thr_Weight 整合
+	
 	
 	RC_Duty( inner_loop_time , Rc_Pwm_In );				//遥控器通道数据处理 ，输入：执行周期，接收机pwm捕获的数据。
 	

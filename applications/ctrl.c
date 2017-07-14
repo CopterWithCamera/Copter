@@ -134,10 +134,10 @@ void CTRL_2(float T)
 	ctrl_2.out.z = ctrl_2.PID[PIDYAW].kp   *( ctrl_2.err.z + ctrl_2.err_d.z + ctrl_2.err_i.z );	//yaw
 }
 
+//内环角速度处理函数
+
 xyz_f_t except_AS;	//期望角速度
-
 float g_old[ITEMS];
-
 void CTRL_1(float T)  //x roll,y pitch,z yaw
 {
 	xyz_f_t EXP_LPF_TMP;
@@ -214,15 +214,20 @@ void CTRL_1(float T)  //x roll,y pitch,z yaw
 //						ctrl_1在总输   根据本次计算中外环error值计算出的外环输出值的	归一化后的外环输出值	  ctrl_1计算结果在	   							  P				 D				  I	
 //						出的占比	   影响权重										  （被认为是期望角速度值）	  总输出值的占比
 
-	//油门控制
-	Thr_Ctrl(T);// 油门控制，这里面包含高度控制闭环
-				// 输出 thr_value
-	
-	//电机输出（包含解锁判断，未解锁状态输出为0）
-	All_Out(ctrl_1.out.x,ctrl_1.out.y,ctrl_1.out.z);	//输出值包括两部分，posture_value 和 thr_value
-														//out_roll,out_pitch,out_yaw 生成 posture_value
-														//在 All_Out 里这两部分按照权重参数 Thr_Weight 整合
-														
+//=============================================================================================================
+	/*已经挪到scheduler.c里面去了*/
+
+//	//油门控制
+//	Thr_Ctrl(T);// 油门控制，这里面包含高度控制闭环
+//				// 输出 thr_value
+//	
+//	//电机输出（包含解锁判断，未解锁状态输出为0）
+//	All_Out(ctrl_1.out.x,ctrl_1.out.y,ctrl_1.out.z);	//输出值包括两部分，posture_value 和 thr_value
+//														//out_roll,out_pitch,out_yaw 生成 posture_value
+//														//在 All_Out 里这两部分按照权重参数 Thr_Weight 整合
+
+//=============================================================================================================
+
 	//记录历史数据
 	ctrl_1.err_old.x = ctrl_1.err.x;
 	ctrl_1.err_old.y = ctrl_1.err.y;
@@ -233,12 +238,12 @@ void CTRL_1(float T)  //x roll,y pitch,z yaw
 	g_old[A_Z] = -mpu6050.Gyro_deg.z ;
 }
 
+//油门值处理函数
 
 float thr_value;
 u8 Thr_Low;
 float Thr_Weight;
-
-void Thr_Ctrl(float T)
+void Thr_Ctrl(float T)	//计算生成 thr_value 和 Thr_Weight
 {
 	static float thr;
 	static float Thr_tmp;

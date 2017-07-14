@@ -114,7 +114,8 @@ void Usart3_IRQ(void)
 		USART_ClearITPendingBit(USART3,USART_IT_RXNE);//清除中断标志
 
 		com_data = USART3->DR;
-		//
+		
+		//此处添加处理函数
 		
 	}
 	//发送（进入移位）中断
@@ -234,6 +235,8 @@ void Usart2_IRQ(void)
 		USART_ClearITPendingBit(USART2,USART_IT_RXNE);//清除中断标志
 
 		com_data = USART2->DR;
+		
+		//此处添加处理函数
 		ANO_DT_Data_Receive_Prepare(com_data);
 	}
 	//发送（进入移位）中断
@@ -357,9 +360,11 @@ void Uart5_IRQ(void)
 		//添加超声波串口的模块匹配处理
 		#if defined(USE_KS103)
 		
-		Delay_us(20);	//按照KS103的要求，每次发送完需要延时20-100us再进行下一位发送
+			Delay_us(20);	//按照KS103的要求，每次发送完需要延时20-100us再进行下一位发送
 		
 		#elif defined(USE_US100)
+		
+			
 		
 		#endif
           
