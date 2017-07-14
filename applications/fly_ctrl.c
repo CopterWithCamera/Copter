@@ -175,16 +175,74 @@ void Ctrl_Mode(float *ch_in)
 												
 *************************************************************** */
 
-void Fly_Ctrl(void)	
+void Fly_Ctrl(void)		//调用周期5ms
 {
+	static u8 height_lock_flag = 0;
 	
-	//调用周期5ms
-	
+	//只有自动模式才会执行自动控制代码
 	if(mode_state != 3)
 	{
-		//只有自动模式才会执行自动控制代码
 		return;
 	}
+	
+//==================== 新飞行控制逻辑（未测试） ==========================
+	
+	/*
+	
+	飞行控制的主要任务有两个：
+	
+	1.姿态控制，处理横滚、俯仰、航向三轴
+		CH_ctrl[0] = CH_filter[0];	//0：横滚
+		CH_ctrl[1] = CH_filter[1];	//1：俯仰
+		CH_ctrl[3] = CH_filter[3];	//3：航向
+	
+	2.高度控制
+		my_height_mode = 0		油门输入模式
+		使用 CH_filter[THR] 输入油门值，取值范围 -500 -- +500
+	
+		my_height_mode = 1		期望高度模式
+		使用 my_except_height 变量控制高度，单位为mm	
+	
+	*/
+	
+//	//高度控制demo
+//	if(ctrl_command == 0)
+//	{
+//		my_height_mode = 0;
+//		CH_ctrl[2] = CH_filter[2];	//2：油门 THR
+//		
+//		height_lock_flag = 0;
+//	}
+//	else if(ctrl_command == 1)
+//	{
+//		my_height_mode = 1;
+//		
+//		if(height_lock_flag == 0)
+//		{
+//			height_lock_flag = 1;
+//			
+//			//设置期望高度
+//			my_except_height = sonar_fusion.fusion_displacement.out;	//读取当前高度
+//		}
+//		
+//	}
+//	else	//应急模式用手动控制油门
+//	{
+//		my_height_mode = 0;
+//		CH_ctrl[2] = CH_filter[2];	//2：油门 THR
+//		
+//		height_lock_flag = 0;
+//	}
+//	
+//	//姿态控制demo
+//	CH_ctrl[0] = my_deathzoom( ( CH_filter[ROL]) ,0,30 );	//0：横滚 ROL
+//	CH_ctrl[1] = my_deathzoom( ( CH_filter[PIT]) ,0,30 );	//1：俯仰 PIT
+//	CH_ctrl[3] = CH_filter[3];	//3：航向 YAW
+
+	
+	
+	
+//==================== 旧飞行控制逻辑 ==========================
 	
 	switch(ctrl_command)
 	{
