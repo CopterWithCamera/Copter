@@ -95,7 +95,7 @@ void Duty_2ms()
 	CTRL_1( inner_loop_time ); 						//内环角速度控制。输入：执行周期，期望角速度，测量角速度，角度前馈；输出：电机PWM占空比。<函数未封装>
 	
 	//高度控制
-	Thr_Ctrl( inner_loop_time , my_height_mode);		//油门控制，这里面包含高度控制闭环	thr_value 
+	Thr_Ctrl( inner_loop_time , mode_state);		//油门控制，这里面包含高度控制闭环	thr_value 
 	
 	//输出控制
 	All_Out(ctrl_1.out.x,ctrl_1.out.y,ctrl_1.out.z);	//电机输出处理（包含电机输出判断，未解锁状态输出为0）

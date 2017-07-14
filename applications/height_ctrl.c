@@ -309,7 +309,7 @@ float Height_Ctrl(float T,u8 mode,float thr,float height,float speed,u8 ready,fl
 	//detection_modechange_flag		飞行中切入自动控制
 	//detection_takeoff_flag		检测到起飞
 	
-	if(mode == 0)	//遥控器控制
+	if(mode == 0)	//油门值控制
 	{
 		//油门处理：
 	
