@@ -75,20 +75,23 @@ void h_pid_init()
 	输入：
 	T：调用时间间隔
 	en：PID积分使能  en = 1 时 PID中的积分变量开始积分
+	mode：0 -- 输入期望高度差   1 -- 输入期望速度
 	height_error：期望高度差，后期会改为期望高度
+	speed_except：期望z轴速度
 	takeoff_flag：起飞处理标志，置1时执行起飞处理（只有起飞瞬间所在周期被置1）
 	modechange_flag：飞行中切入定高模式（只有与手动油门模式切换时有用）
 	
 	输出：
 	thr_out：	油门输出值
 */
-float thr_pid_out,	//微调PID输出
-	thr_take_off,	//基准值输出
-	tilted_fix,		//补偿（融合）系数
-	thr_out;	//高度PID最终输出油门值
-float Height_Pid(float T,float en,float height_error,u8 takeoff_flag,u8 modechange_flag)
+
+float thr_take_off;	//基准值输出
+float Height_Pid(float T,float en,u8 mode,float height_error,float except_speed_input,u8 takeoff_flag,u8 modechange_flag)
 {
 	static u8 speed_cnt,height_cnt;		//速度、位置PID调用周期计数变量
+	float thr_pid_out;	//微调PID输出
+	float thr_out;		//高度PID最终输出油门值
+	float tilted_fix;	//补偿（融合）系数
 	
 	//0.飞行中切入定高模式处理	//处理飞行过程中突然进入此模式的情况
 	if(modechange_flag)		
@@ -105,32 +108,39 @@ float Height_Pid(float T,float en,float height_error,u8 takeoff_flag,u8 modechan
 		thr_take_off = 350;
 	}
 	
-	
-	//1.微调PID部分（输入的是目标高度差）
-	
-	//位置（高度）PID（输入目标高度差，输出期望速度）
 	static float dT2;
-	dT2 += T;		//计算微分时间
-	height_cnt++;	//计算循环执行周期
-	if(height_cnt>=100)  //200ms（调用间隔2ms）
+	
+	if(mode == 0)	//期望高度差生成期望速度
 	{
+		//1.微调PID部分（输入的是目标高度差）
 		
-
-		//位置PID
-		//输入的反馈值是高度差而不是高度，相当于已经把error输入了，所以期望值为0时正好是 error = error - 0
-		exp_speed = PID_calculate( 		dT2,            //周期
-										0,				//前馈
-										0,				//期望值（设定值）
-										//-set_height_e,	//反馈值				set_height_e：期望高度差，单位mm
-										-height_error,	//反馈值				set_height_e：期望高度差，单位mm
-										&h_height_arg, 	//PID参数结构体
-										&h_height_val,	//PID数据结构体
-										1500 *en		//integration limit，积分限幅
-								 );			//输出	
-		exp_speed = LIMIT(exp_speed,-300,300);
-		
-		height_cnt = 0;
-		dT2 = 0;
+		//位置（高度）PID（输入目标高度差，输出期望速度）
+		dT2 += T;		//计算微分时间
+		height_cnt++;	//计算循环执行周期
+		if(height_cnt>=100)  //200ms（调用间隔2ms）
+		{
+			//位置PID
+			//输入的反馈值是高度差而不是高度，相当于已经把error输入了，所以期望值为0时正好是 error = error - 0
+			exp_speed = PID_calculate( 		dT2,            //周期
+											0,				//前馈
+											0,				//期望值（设定值）
+											//-set_height_e,	//反馈值				set_height_e：期望高度差，单位mm
+											-height_error,	//反馈值				set_height_e：期望高度差，单位mm
+											&h_height_arg, 	//PID参数结构体
+											&h_height_val,	//PID数据结构体
+											1500 *en		//integration limit，积分限幅
+									 );			//输出	
+			exp_speed = LIMIT(exp_speed,-300,300);
+			
+			mydata.d1 = (s16)exp_speed;
+			
+			height_cnt = 0;
+			dT2 = 0;
+		}
+	}
+	else		//直接输入期望速度
+	{
+		exp_speed = except_speed_input;
 	}
 	
 	//速度PID（输入期望速度，输出期望加速度）
@@ -254,30 +264,30 @@ float Height_Pid(float T,float en,float height_error,u8 takeoff_flag,u8 modechan
 
 /*
 
-输入：
+	输入：
 
-T：时间间隔
-mode：模式
-height：期望高度
-speed：期望速度
-ready：安全锁状态
-en：定高模式使能
+	T：时间间隔
+	mode：模式
+	height：期望高度
+	ready：安全锁状态
+	en：定高模式使能
 
-输出：
+	输出：
 
-油门值
+	油门值
 
-mode：
-0：油门控制
-1：期望高度
-2：期望速度
+	mode：
+	0：油门控制
+	1：期望高度
 
 */
-float Height_Ctrl(float T,u8 mode,float thr,float height,float speed,u8 ready,float en)	//高度控制使能：   en	1 -- 定高   0 -- 非定高
+float Height_Ctrl(float T,u8 mode,float thr,float height,u8 ready,float en)	//高度控制使能：   en	1 -- 定高   0 -- 非定高
 {
 	static float en_old;	//高度控制使能变量 en 的历史模式
 	u8 detection_modechange_flag = 0;	//飞行中检测到模式切换则置位
 	u8 detection_takeoff_flag = 0;		//检测到起飞则置位
+	float my_thr_out;
+	
 	//thr：0 -- 1000
 
 	/*模式切换与模式识别，在未解锁时默认为手动模式，防止自动模式开环运行*/
@@ -291,7 +301,7 @@ float Height_Ctrl(float T,u8 mode,float thr,float height,float speed,u8 ready,fl
 	}
 	
 	//模式判断
-	if(en < 0.1f)		
+	if(en < 0.1f)		//en = 0
 	{
 		
 		/*手动模式*/
@@ -302,8 +312,10 @@ float Height_Ctrl(float T,u8 mode,float thr,float height,float speed,u8 ready,fl
 						//把传入油门直接传出去了，上面所有算法都没用上
 	}
 	
-
+	
 	/*自动模式*/
+	
+	//此模式下en = 1
 	
 	//需要控制的flag：
 	//detection_modechange_flag		飞行中切入自动控制
@@ -389,13 +401,26 @@ float Height_Ctrl(float T,u8 mode,float thr,float height,float speed,u8 ready,fl
 	else if(mode == 1)
 	{
 		//sonar_fusion.fusion_displacement.out是当前高度，单位是mm
-		set_height_e = height - sonar_fusion.fusion_displacement.out;
+		set_height_e = height - sonar_fusion.fusion_displacement.out;	//高度差 = 目标高度 - 当前高度
 	}
 	
-	//高度控制PID
-	float my_thr_out;
-	my_thr_out = Height_Pid(T,en,set_height_e,detection_takeoff_flag,detection_modechange_flag);
-
+	//高度控制
+	if( set_height_e > 100)			//期望高度大于当前高度，需要上升
+	{
+		//期望速度模式
+		my_thr_out = Height_Pid(T,en,1,0,300,detection_takeoff_flag,detection_modechange_flag);	//设置上升速度
+	}
+	else if(set_height_e < -100)	//期望高度小于当前高度，需要下降
+	{
+		//期望速度模式
+		my_thr_out = Height_Pid(T,en,1,0,-120,detection_takeoff_flag,detection_modechange_flag);	//设置下降速度
+	}
+	else							//小范围内调整
+	{
+		//期望高度模式
+		my_thr_out = Height_Pid(T,en,0,set_height_e,0,detection_takeoff_flag,detection_modechange_flag);	//设置期望高度
+	}
+	
 	return (my_thr_out);	//经过定高运算的油门值
 
 }

@@ -216,20 +216,6 @@ void CTRL_1(float T)  //x roll,y pitch,z yaw
 //						ctrl_1在总输   根据本次计算中外环error值计算出的外环输出值的	归一化后的外环输出值	  ctrl_1计算结果在	   							  P				 D				  I	
 //						出的占比	   影响权重										  （被认为是期望角速度值）	  总输出值的占比
 
-//=============================================================================================================
-	/*已经挪到scheduler.c里面去了*/
-
-//	//油门控制
-//	Thr_Ctrl(T);// 油门控制，这里面包含高度控制闭环
-//				// 输出 thr_value
-//	
-//	//电机输出（包含解锁判断，未解锁状态输出为0）
-//	All_Out(ctrl_1.out.x,ctrl_1.out.y,ctrl_1.out.z);	//输出值包括两部分，posture_value 和 thr_value
-//														//out_roll,out_pitch,out_yaw 生成 posture_value
-//														//在 All_Out 里这两部分按照权重参数 Thr_Weight 整合
-
-//=============================================================================================================
-
 	//记录历史数据
 	ctrl_1.err_old.x = ctrl_1.err.x;
 	ctrl_1.err_old.y = ctrl_1.err.y;
@@ -249,7 +235,7 @@ void Thr_Ctrl(float T , u8 state)	//计算生成 thr_value 和 Thr_Weight
 {
 	//说明：
 	//state = mode_state     	 0 -- 姿态    1 -- 气压计   2 -- 超声波 + 气压计  3 -- 自动模式
-	//height_mode = my_height_mode		0：油门		1：期望高度		2：期望速度
+	//height_mode = my_height_mode		0：油门		1：期望高度
 	
 	static float thr;
 	static float Thr_tmp;
@@ -275,7 +261,7 @@ void Thr_Ctrl(float T , u8 state)	//计算生成 thr_value 和 Thr_Weight
 		}
 		
 		//油门输出值
-		thr_value = Height_Ctrl(T, my_height_mode, thr, my_except_height, 0, fly_ready, 1);   //输出经过定高算法修正的值
+		thr_value = Height_Ctrl(T, my_height_mode, thr, my_except_height, fly_ready, 1);   //输出经过定高算法修正的值
 		
 	}
 	else				//其余模式手动控制油门
@@ -301,7 +287,7 @@ void Thr_Ctrl(float T , u8 state)	//计算生成 thr_value 和 Thr_Weight
 				thr = LIMIT(thr,0,500);	//保持当前油门值，但不能超过半油门，500这个数在定高代码里代表悬停
 										//也就是说定高模式丢信号时只能悬停或下降（依照丢信号前状态）
 			}
-			thr_value = Height_Ctrl(T,0,thr,0,0,fly_ready,1);
+			thr_value = Height_Ctrl(T,0,thr,0,fly_ready,1);
 		}
 		else			//手动模式（只有mode_state = 0时才是手动，其余的都是自动控高）
 		{
@@ -309,7 +295,7 @@ void Thr_Ctrl(float T , u8 state)	//计算生成 thr_value 和 Thr_Weight
 			{
 				thr = LIMIT(thr,0,300);	//非定高模式丢信号，油门300，基本上就是悬停或者慢速下降
 			}
-			thr_value = Height_Ctrl(T,0,thr,0,0,fly_ready,0);	 //直接使用油门摇杆值
+			thr_value = Height_Ctrl(T,0,thr,0,fly_ready,0);	 //直接使用油门摇杆值
 		}
 	}
 	
