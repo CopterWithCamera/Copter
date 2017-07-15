@@ -78,45 +78,6 @@ void height_attitude_lock(void)
 	CH_ctrl[2] = 0;	//2：油门（油门位于中值，含义为高度保持）
 }
 
-////降落
-//float height_speed_ctrl = 0;
-//void fly_ctrl_land(void)	//调用周期2ms
-//{
-//	static u16 lock_time = 0;
-//	
-//	//降落函数只可在起飞后调用
-//	
-//	//从其他模式切换到降落模式
-//	if(ctrl_command != ctrl_command_old)
-//	{
-//		set_height_e = 0;	//期望速度差归零
-//	}
-//	
-//	//俯仰、横滚、航向轴正常
-//	CH_ctrl[0] = CH_filter[0];	//0：横滚
-//	CH_ctrl[1] = CH_filter[1];	//1：俯仰
-//	CH_ctrl[3] = CH_filter[3];	//3：航向
-
-////	//摇杆控制（转化为速度期望）
-////	CH_ctrl[2] = -60;	//-50对应的大约是0.3m/s，-100大约是0.6m/s，具体数值通过实验确定
-//	
-//	//设定期望垂直速度
-//	height_speed_ctrl = -400;	//单位mm/s
-//	CH_ctrl[2] = 0;				//油门值拉最低，转速输出函数检测到油门低时才允许螺旋桨停转
-//	
-//	if(ultra.relative_height < 5)	//当前飞机在地面时超声波数据是3-4cm（和具体机型有关）
-//	{
-//		height_speed_ctrl = -2000;	//切换为最大下降速度（快速通过积分让螺旋桨停转）
-//		
-//		lock_time++;			//计数器累加
-//		if(lock_time > 1000)	//2s
-//		{
-//			fly_ready = 0;	//锁定
-//		}
-//	}
-//	
-//}
-
 
 //========================================================================================================
 
@@ -168,16 +129,18 @@ void Fly_Ctrl(void)		//调用周期5ms
 	
 	*/
 	
-	/* **************** 高度控制demo ********************* */
+	/* ********************* 高度控制 ********************* */
+	
 	if(ctrl_command == 0)
 	{
+		//摇杆控高
 		my_height_mode = 0;
 		CH_ctrl[2] = CH_filter[2];	//2：油门 THR
-		
 		height_lock_flag = 0;
 	}
 	else if(ctrl_command == 1)
 	{
+		//期望高度控制高度
 		my_height_mode = 1;
 		
 		if(height_lock_flag == 0)
@@ -187,6 +150,25 @@ void Fly_Ctrl(void)		//调用周期5ms
 			//设置期望高度
 			my_except_height = sonar_fusion.fusion_displacement.out;	//读取当前高度
 		}
+	}
+	else if(ctrl_command == 2)
+	{
+		//期望高度控制高度
+		my_height_mode = 1;
+
+		//设置期望高度
+		my_except_height = 100;		//下降到100mm = 10cm
+	}
+	else if(ctrl_command == 3)
+	{
+		
+	}
+	else if(ctrl_command == 4)
+	{
+		
+	}
+	else if(ctrl_command == 5)
+	{
 		
 	}
 	else	//应急模式用手动控制油门
@@ -197,7 +179,9 @@ void Fly_Ctrl(void)		//调用周期5ms
 		height_lock_flag = 0;
 	}
 	
-	//姿态控制demo
+	
+	/* ********************* 姿态控制 ********************* */
+	
 	CH_ctrl[0] = my_deathzoom( ( CH_filter[ROL]) ,0,30 );	//0：横滚 ROL
 	CH_ctrl[1] = my_deathzoom( ( CH_filter[PIT]) ,0,30 );	//1：俯仰 PIT
 	CH_ctrl[3] = CH_filter[3];	//3：航向 YAW
@@ -217,27 +201,27 @@ void Ctrl_Mode(float *ch_in)
 	//根据AUX2通道（第6通道）的数值输入自动控制指令
 	if(*(ch_in+AUX2) < -350)			//-499 -- -350
 	{
-		ctrl_command = 1;
+		ctrl_command = 0;
 	}
 	else if(*(ch_in+AUX2) < -150)		//-350 -- -150
 	{
-		ctrl_command = 2;
+		ctrl_command = 1;
 	}
 	else if(*(ch_in+AUX2) < 0)			//-150 -- 0
 	{
-		ctrl_command = 3;
+		ctrl_command = 2;
 	}
 	else if(*(ch_in+AUX2) < 150)		//0 -- 150
 	{
-		ctrl_command = 4;
+		ctrl_command = 3;
 	}
 	else if(*(ch_in+AUX2) < 350)		//150 -- 350				
 	{
-		ctrl_command = 5;
+		ctrl_command = 4;
 	}
 	else								//350 -- 499
 	{
-		ctrl_command = 6;
+		ctrl_command = 5;
 	}
 	
 	
