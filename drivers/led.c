@@ -274,7 +274,6 @@ void LED_Duty() //50ms一次
 {
 	
 	led_cnt_res_check();
-	
 
 	if(Mag_CALIBRATED) //传感器校准指示优先
 	{
@@ -318,28 +317,6 @@ void LED_Duty() //50ms一次
 		if(!fly_ready)	//没解锁
 		{
 			light.RGB_Info = 24;
-		} 
-		else     		//解锁
-		{
-			light.RGB_Info = 25;
-		}
-	}
-	else if(mode_state ==4)//
-	{
-		if(!fly_ready)	//没解锁
-		{
-			light.RGB_Info = 11;
-		} 
-		else     		//解锁
-		{
-			light.RGB_Info = 12;
-		}
-	}
-	else if(mode_state ==5)//
-	{
-		if(!fly_ready)	//没解锁
-		{
-			light.RGB_Info = 14;
 		} 
 		else     		//解锁
 		{

@@ -120,45 +120,8 @@ void height_attitude_lock(void)
 
 //========================================================================================================
 
-//识别控制指令（在mode_check函数中调用，处理辅助通道数值）
-u8 ctrl_command;
-u8 ctrl_command_old;
-u8 All_Out_Switch = 0;
-void Ctrl_Mode(float *ch_in)
-{
-	//更新历史模式
-	ctrl_command_old = ctrl_command;
-	
-	//根据AUX2通道（第6通道）的数值输入自动控制指令
-	if(*(ch_in+AUX2) <-200)		//三挡开关在最上
-	{
-		ctrl_command = 1;
-	}
-	else if(*(ch_in+AUX2) <200)		//三挡开关在中间
-	{
-		ctrl_command = 2;	
-	}
-	else							//三挡开关在最下
-	{
-		ctrl_command = 3;	
-	}
-	
-	//自动回位开关
-	if(*(ch_in+AUX3) > 0)			//触发
-	{
-		set_height_e = 0;	//期望速度差归零
-	}
-	
-	//急停功能
-	if(*(ch_in+AUX4) > 0)			//SWA,输出使能开关，只有在开关播到上方时输出才能被输出到PWM
-	{
-		All_Out_Switch = 0;
-	}
-	else
-	{
-		All_Out_Switch = 1;
-	}
-}
+
+
 
 /* ************************************************************
 	飞行自动控制函数
@@ -185,7 +148,7 @@ void Fly_Ctrl(void)		//调用周期5ms
 		return;
 	}
 	
-//==================== 新飞行控制逻辑（未测试） ==========================
+	//==================== 新飞行控制逻辑 ==========================
 	
 	/*
 	
@@ -205,62 +168,114 @@ void Fly_Ctrl(void)		//调用周期5ms
 	
 	*/
 	
-//	//高度控制demo
-//	if(ctrl_command == 0)
-//	{
-//		my_height_mode = 0;
-//		CH_ctrl[2] = CH_filter[2];	//2：油门 THR
-//		
-//		height_lock_flag = 0;
-//	}
-//	else if(ctrl_command == 1)
-//	{
-//		my_height_mode = 1;
-//		
-//		if(height_lock_flag == 0)
-//		{
-//			height_lock_flag = 1;
-//			
-//			//设置期望高度
-//			my_except_height = sonar_fusion.fusion_displacement.out;	//读取当前高度
-//		}
-//		
-//	}
-//	else	//应急模式用手动控制油门
-//	{
-//		my_height_mode = 0;
-//		CH_ctrl[2] = CH_filter[2];	//2：油门 THR
-//		
-//		height_lock_flag = 0;
-//	}
-//	
-//	//姿态控制demo
-//	CH_ctrl[0] = my_deathzoom( ( CH_filter[ROL]) ,0,30 );	//0：横滚 ROL
-//	CH_ctrl[1] = my_deathzoom( ( CH_filter[PIT]) ,0,30 );	//1：俯仰 PIT
-//	CH_ctrl[3] = CH_filter[3];	//3：航向 YAW
-
-	
-	
-	
-//==================== 旧飞行控制逻辑 ==========================
-	
-	switch(ctrl_command)
+	/* **************** 高度控制demo ********************* */
+	if(ctrl_command == 0)
 	{
-		case 1:
-			FUNCTION_1();
-		break;
+		my_height_mode = 0;
+		CH_ctrl[2] = CH_filter[2];	//2：油门 THR
 		
-		case 2:
-			FUNCTION_2();
-		break;
+		height_lock_flag = 0;
+	}
+	else if(ctrl_command == 1)
+	{
+		my_height_mode = 1;
 		
-		case 3:
-			FUNCTION_3();
-		break;
+		if(height_lock_flag == 0)
+		{
+			height_lock_flag = 1;
+			
+			//设置期望高度
+			my_except_height = sonar_fusion.fusion_displacement.out;	//读取当前高度
+		}
 		
-		default:
-			hand_ctrl();	//意外情况下手飞
-		break;
+	}
+	else	//应急模式用手动控制油门
+	{
+		my_height_mode = 0;
+		CH_ctrl[2] = CH_filter[2];	//2：油门 THR
+		
+		height_lock_flag = 0;
+	}
+	
+	//姿态控制demo
+	CH_ctrl[0] = my_deathzoom( ( CH_filter[ROL]) ,0,30 );	//0：横滚 ROL
+	CH_ctrl[1] = my_deathzoom( ( CH_filter[PIT]) ,0,30 );	//1：俯仰 PIT
+	CH_ctrl[3] = CH_filter[3];	//3：航向 YAW
+	
+
+}
+
+//识别控制指令（在mode_check函数中调用，处理辅助通道数值）
+u8 ctrl_command;
+u8 ctrl_command_old;
+u8 All_Out_Switch = 0;
+void Ctrl_Mode(float *ch_in)
+{
+	//更新历史模式
+	ctrl_command_old = ctrl_command;
+	
+	//根据AUX2通道（第6通道）的数值输入自动控制指令
+	if(*(ch_in+AUX2) < -350)			//-499 -- -350
+	{
+		ctrl_command = 1;
+	}
+	else if(*(ch_in+AUX2) < -150)		//-350 -- -150
+	{
+		ctrl_command = 2;
+	}
+	else if(*(ch_in+AUX2) < 0)			//-150 -- 0
+	{
+		ctrl_command = 3;
+	}
+	else if(*(ch_in+AUX2) < 150)		//0 -- 150
+	{
+		ctrl_command = 4;
+	}
+	else if(*(ch_in+AUX2) < 350)		//150 -- 350				
+	{
+		ctrl_command = 5;
+	}
+	else								//350 -- 499
+	{
+		ctrl_command = 6;
+	}
+	
+	
+	//自动回位开关
+	if(*(ch_in+AUX3) > 0)			//触发
+	{
+		set_height_e = 0;	//期望速度差归零
+	}
+	
+	//急停功能
+	if(*(ch_in+AUX4) > 0)			//SWA,输出使能开关，只有在开关播到上方时输出才能被输出到PWM
+	{
+		All_Out_Switch = 0;
+	}
+	else
+	{
+		All_Out_Switch = 1;
 	}
 }
+
+//==================== 旧飞行控制逻辑 ==========================
+	
+//	switch(ctrl_command)
+//	{
+//		case 1:
+//			FUNCTION_1();
+//		break;
+//		
+//		case 2:
+//			FUNCTION_2();
+//		break;
+//		
+//		case 3:
+//			FUNCTION_3();
+//		break;
+//		
+//		default:
+//			hand_ctrl();	//意外情况下手飞
+//		break;
+//	}
 
