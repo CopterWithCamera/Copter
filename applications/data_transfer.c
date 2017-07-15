@@ -756,6 +756,8 @@ void ANO_DT_Data_Exchange(void)	//当前调用周期1ms
 
 }
 
+u8 tmp;
+
 //Data_Receive_Anl函数是协议数据解析函数，函数参数是符合协议格式的一个数据帧，该函数会首先对协议数据进行校验
 //校验通过后对数据进行解析，实现相应功能
 //此函数可以不用用户自行调用，由函数Data_Receive_Prepare自动调用
@@ -948,11 +950,11 @@ void ANO_DT_Data_Receive_Anl(u8 *data_buf,u8 num)
 	{
 		switch(*(data_buf+4))	//第一个数据（u8）
 		{
-			case 0x01:
+			case 0x01:	//急停
 				
 			break;
 			
-			case 0x02:
+			case 0x02:	//解急停
 				
 			break;
 			
@@ -962,27 +964,27 @@ void ANO_DT_Data_Receive_Anl(u8 *data_buf,u8 num)
 		}
 	}
 	
-	if(*(data_buf+2)==0X41)			//急停控制
+	if(*(data_buf+2)==0X41)			//姿态校准指令
 	{
 		switch(*(data_buf+4))	//第一个数据（u8）
 		{
-			case 0x01:
+			case 0x01:	//前
 				
 			break;
 			
-			case 0x02:
+			case 0x02:	//后
 				
 			break;
 			
-			case 0x03:
+			case 0x03:	//左
 				
 			break;
 			
-			case 0x04:
+			case 0x04:	//右
 				
 			break;
 			
-			case 0x05:
+			case 0x05:	//存储
 				
 			break;
 			
@@ -990,6 +992,13 @@ void ANO_DT_Data_Receive_Anl(u8 *data_buf,u8 num)
 				
 			break;
 		}
+	}
+	
+	
+	
+	if(*(data_buf+2)==0X42)			//高度数据
+	{
+		tmp = *(data_buf+4);
 	}
 	
 }
