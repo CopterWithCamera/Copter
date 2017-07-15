@@ -376,9 +376,10 @@ void Parameter_Save()
 		flash_save_en_cnt++;
 	}
 
-	if( flash_save_en_cnt > 60 ) // 20 *60 = 1200ms
+	if( flash_save_en_cnt > 60 ) // 20 *60 = 1200ms（两次存储的间隔大于1.2s）
 	{
-		flash_save_en_cnt = 0;
+		flash_save_en_cnt = 0;	//存完了就归0，flash_save_en_cnt == 1时才会开启一次新的存储
+		
 		if( !fly_ready )	//只有在上锁后才会调用函数存储PID数据
 		{
 			Param_SavePID();

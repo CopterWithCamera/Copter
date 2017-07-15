@@ -905,7 +905,7 @@ void ANO_DT_Data_Receive_Anl(u8 *data_buf,u8 num)
     }
 	if(*(data_buf+2)==0X13)			//PID4
 	{
-		    pid_setup.groups.ctrl4.kp  = 0.001*( (vs16)(*(data_buf+4)<<8)|*(data_buf+5) );
+		pid_setup.groups.ctrl4.kp  = 0.001*( (vs16)(*(data_buf+4)<<8)|*(data_buf+5) );
         pid_setup.groups.ctrl4.ki  = 0.001*( (vs16)(*(data_buf+6)<<8)|*(data_buf+7) );
         pid_setup.groups.ctrl4.kd  = 0.001*( (vs16)(*(data_buf+8)<<8)|*(data_buf+9) );
 			
@@ -943,6 +943,55 @@ void ANO_DT_Data_Receive_Anl(u8 *data_buf,u8 num)
 			checksum_to_send = sum;
 		}
 	}
+	
+	if(*(data_buf+2)==0X40)			//急停控制
+	{
+		switch(*(data_buf+4))	//第一个数据（u8）
+		{
+			case 0x01:
+				
+			break;
+			
+			case 0x02:
+				
+			break;
+			
+			default:
+				
+			break;
+		}
+	}
+	
+	if(*(data_buf+2)==0X41)			//急停控制
+	{
+		switch(*(data_buf+4))	//第一个数据（u8）
+		{
+			case 0x01:
+				
+			break;
+			
+			case 0x02:
+				
+			break;
+			
+			case 0x03:
+				
+			break;
+			
+			case 0x04:
+				
+			break;
+			
+			case 0x05:
+				
+			break;
+			
+			default:
+				
+			break;
+		}
+	}
+	
 }
 
 

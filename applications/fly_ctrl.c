@@ -194,7 +194,7 @@ u8 ctrl_command;
 u8 ctrl_command_old;
 u8 All_Out_Switch = 0;
 void Ctrl_Mode(float *ch_in)
-{
+{	
 	//更新历史模式
 	ctrl_command_old = ctrl_command;
 	
@@ -224,7 +224,6 @@ void Ctrl_Mode(float *ch_in)
 		ctrl_command = 5;
 	}
 	
-	
 	//自动回位开关
 	if(*(ch_in+AUX3) > 0)			//触发
 	{
@@ -232,12 +231,15 @@ void Ctrl_Mode(float *ch_in)
 	}
 	
 	//急停功能
+	//All_Out_Switch = 0时急停，All_Out_Switch = 1时正常运行
 	if(*(ch_in+AUX4) > 0)			//SWA,输出使能开关，只有在开关播到上方时输出才能被输出到PWM
 	{
+		//禁止输出
 		All_Out_Switch = 0;
 	}
 	else
 	{
+		//允许输出
 		All_Out_Switch = 1;
 	}
 }
