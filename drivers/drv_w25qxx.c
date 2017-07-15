@@ -79,6 +79,7 @@ static uint8_t Flash_SendByte(uint8_t byte)
     /* Return the byte read from the SPI bus */
     return SPI_I2S_ReceiveData(SPI1);
 }
+
 static uint32_t Flash_Transfer(uint8_t *send_buffer,uint8_t *recv_buffer,uint32_t len)
 {
 	uint8_t data;

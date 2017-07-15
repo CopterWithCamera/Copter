@@ -669,18 +669,22 @@ void ANO_DT_Data_Exchange(void)	//当前调用周期1ms
 		{
 			f.send_pid4 = 0;
 			ANO_DT_Send_PID(4,pid_setup.groups.ctrl4.kp,pid_setup.groups.ctrl4.ki,pid_setup.groups.ctrl4.kd,
-												0						,0						,0						,
-												0						,0						,0						);
+							  pid_setup.groups.ctrl5.kp,pid_setup.groups.ctrl5.ki,pid_setup.groups.ctrl5.kd,
+							  pid_setup.groups.ctrl6.kp,pid_setup.groups.ctrl6.ki,pid_setup.groups.ctrl6.kd);
 		}
 		else if(f.send_pid5)
 		{
 			f.send_pid5 = 0;
-			ANO_DT_Send_PID(5,0,0,0,0,0,0,0,0,0);
+			ANO_DT_Send_PID(5,user_parameter.groups.self_def_1.kp , user_parameter.groups.self_def_1.ki , user_parameter.groups.self_def_1.kd,
+									user_parameter.groups.self_def_2.kp , user_parameter.groups.self_def_2.ki , user_parameter.groups.self_def_2.kd,	
+									user_parameter.groups.param_A , user_parameter.groups.param_B , user_parameter.groups.param_C );
 		}
 		else if(f.send_pid6)
 		{
 			f.send_pid6 = 0;
-			ANO_DT_Send_PID(6,0,0,0,0,0,0,0,0,0);
+			ANO_DT_Send_PID(6,user_parameter.groups.param_D , user_parameter.groups.param_E , user_parameter.groups.param_F,
+												user_parameter.groups.param_G , user_parameter.groups.param_H , user_parameter.groups.param_I,
+												user_parameter.groups.param_J , user_parameter.groups.param_K , user_parameter.groups.param_L);
 		}
 		
 	//=================================================================================================================================
@@ -843,6 +847,7 @@ void ANO_DT_Data_Receive_Anl(u8 *data_buf,u8 num)
 		RX_CH[AUX4] = (vs16)(*(data_buf+18)<<8)|*(data_buf+19) ;
 	}
 
+	//PID1 赋值到运算用的结构体
 	if(*(data_buf+2)==0X10)			//设置 PID1 组
     {
         ctrl_1.PID[PIDROLL].kp  = 0.001*( (vs16)(*(data_buf+4)<<8)|*(data_buf+5) );
@@ -861,8 +866,9 @@ void ANO_DT_Data_Receive_Anl(u8 *data_buf,u8 num)
 			checksum_to_send = sum;
 		}
 		PID_Para_Init();
-		flash_save_en_cnt = 1;
+		flash_save_en_cnt = 1;	//用于存储到存储用结构体的标志位
     }
+	//PID2 赋值到运算用的结构体
     if(*(data_buf+2)==0X11)			//设置 PID2 组
     {
         ctrl_2.PID[PIDROLL].kp  = 0.001*( (vs16)(*(data_buf+4)<<8)|*(data_buf+5) );
@@ -881,18 +887,22 @@ void ANO_DT_Data_Receive_Anl(u8 *data_buf,u8 num)
 			checksum_to_send = sum;
 		}
 		PID_Para_Init();
-		flash_save_en_cnt = 1;
+		flash_save_en_cnt = 1;	//用于存储到存储用结构体的标志位
     }
+	//直接存储到存储用的结构体
     if(*(data_buf+2)==0X12)			//设置 PID3 组
-    {	
+    {
+		//高度速率
         pid_setup.groups.hc_sp.kp  = 0.001*( (vs16)(*(data_buf+4)<<8)|*(data_buf+5) );
         pid_setup.groups.hc_sp.ki  = 0.001*( (vs16)(*(data_buf+6)<<8)|*(data_buf+7) );
         pid_setup.groups.hc_sp.kd  = 0.001*( (vs16)(*(data_buf+8)<<8)|*(data_buf+9) );
-			
+		
+		//高度保持
         pid_setup.groups.hc_height.kp = 0.001*( (vs16)(*(data_buf+10)<<8)|*(data_buf+11) );
         pid_setup.groups.hc_height.ki = 0.001*( (vs16)(*(data_buf+12)<<8)|*(data_buf+13) );
         pid_setup.groups.hc_height.kd = 0.001*( (vs16)(*(data_buf+14)<<8)|*(data_buf+15) );
-			
+		
+		//位置速率
         pid_setup.groups.ctrl3.kp 	= 0.001*( (vs16)(*(data_buf+16)<<8)|*(data_buf+17) );
         pid_setup.groups.ctrl3.ki 	= 0.001*( (vs16)(*(data_buf+18)<<8)|*(data_buf+19) );
         pid_setup.groups.ctrl3.kd 	= 0.001*( (vs16)(*(data_buf+20)<<8)|*(data_buf+21) );
@@ -903,21 +913,23 @@ void ANO_DT_Data_Receive_Anl(u8 *data_buf,u8 num)
 			checksum_to_send = sum;
 		}
 		PID_Para_Init();
-		flash_save_en_cnt = 1;
+		flash_save_en_cnt = 1;	//用于存储到存储用结构体的标志位
     }
 	if(*(data_buf+2)==0X13)			//PID4
 	{
+		//位置保持
 		pid_setup.groups.ctrl4.kp  = 0.001*( (vs16)(*(data_buf+4)<<8)|*(data_buf+5) );
         pid_setup.groups.ctrl4.ki  = 0.001*( (vs16)(*(data_buf+6)<<8)|*(data_buf+7) );
         pid_setup.groups.ctrl4.kd  = 0.001*( (vs16)(*(data_buf+8)<<8)|*(data_buf+9) );
 			
-//         pid_setup.groups.hc_height.kp = 0.001*( (vs16)(*(data_buf+10)<<8)|*(data_buf+11) );
-//         pid_setup.groups.hc_height.ki = 0.001*( (vs16)(*(data_buf+12)<<8)|*(data_buf+13) );
-//         pid_setup.groups.hc_height.kd = 0.001*( (vs16)(*(data_buf+14)<<8)|*(data_buf+15) );
-// 			
-//         pid_setup.groups.ctrl3.kp 	= 0.001*( (vs16)(*(data_buf+16)<<8)|*(data_buf+17) );
-//         pid_setup.groups.ctrl3.ki 	= 0.001*( (vs16)(*(data_buf+18)<<8)|*(data_buf+19) );
-//         pid_setup.groups.ctrl3.kd 	= 0.001*( (vs16)(*(data_buf+20)<<8)|*(data_buf+21) );
+		pid_setup.groups.ctrl5.kp  = 0.001*( (vs16)(*(data_buf+10)<<8)|*(data_buf+11) );
+		pid_setup.groups.ctrl5.ki  = 0.001*( (vs16)(*(data_buf+12)<<8)|*(data_buf+13) );
+		pid_setup.groups.ctrl5.kd  = 0.001*( (vs16)(*(data_buf+14)<<8)|*(data_buf+15) );
+
+		pid_setup.groups.ctrl6.kp  = 0.001*( (vs16)(*(data_buf+16)<<8)|*(data_buf+17) );
+		pid_setup.groups.ctrl6.ki  = 0.001*( (vs16)(*(data_buf+18)<<8)|*(data_buf+19) );
+		pid_setup.groups.ctrl6.kd  = 0.001*( (vs16)(*(data_buf+20)<<8)|*(data_buf+21) );
+		
 		if(f.send_check == 0)
 		{
 			f.send_check = 1;
@@ -927,24 +939,61 @@ void ANO_DT_Data_Receive_Anl(u8 *data_buf,u8 num)
 		PID_Para_Init();
 		flash_save_en_cnt = 1;
 	}
-	if(*(data_buf+2)==0X14)			//PID5
+
+	/* ********** 用户定义参数 ********** */
+	
+	if(*(data_buf+2)==0X14)			//设置PID13;PID14;PID15
 	{
+		/***PID13**/	
+		user_parameter.groups.self_def_1.kp  = 0.001*( (vs16)(*(data_buf+4)<<8)|*(data_buf+5) );
+		user_parameter.groups.self_def_1.ki  = 0.001*( (vs16)(*(data_buf+6)<<8)|*(data_buf+7) );
+		user_parameter.groups.self_def_1.kd  = 0.001*( (vs16)(*(data_buf+8)<<8)|*(data_buf+9) );
+		
+		/***PID14***/
+        user_parameter.groups.self_def_2.kp = 0.001*( (vs16)(*(data_buf+10)<<8)|*(data_buf+11) );
+        user_parameter.groups.self_def_2.ki = 0.001*( (vs16)(*(data_buf+12)<<8)|*(data_buf+13) );
+        user_parameter.groups.self_def_2.kd = 0.001*( (vs16)(*(data_buf+14)<<8)|*(data_buf+15) );
+		
+		/***PID15(PARAM A B C)***/ 			
+        user_parameter.groups.param_A	= 0.001*( (vs16)(*(data_buf+16)<<8)|*(data_buf+17) );
+        user_parameter.groups.param_B 	= 0.001*( (vs16)(*(data_buf+18)<<8)|*(data_buf+19) );
+        user_parameter.groups.param_C 	= 0.001*( (vs16)(*(data_buf+20)<<8)|*(data_buf+21) );
+		
 		if(f.send_check == 0)
 		{
 			f.send_check = 1;
 			checkdata_to_send = *(data_buf+2);
 			checksum_to_send = sum;
 		}
+		flash_save_en_cnt = 1;
 	}
-	if(*(data_buf+2)==0X15)			//PID6
+	
+	if(*(data_buf+2)==0X15)			//设置PID16;PID17;PID18
 	{
+		
+		/***PID15(PARAM D E F)***/ 			
+        user_parameter.groups.param_D	= 0.001*( (vs16)(*(data_buf+4)<<8)|*(data_buf+5) );
+        user_parameter.groups.param_E = 0.001*( (vs16)(*(data_buf+6)<<8)|*(data_buf+7) );
+        user_parameter.groups.param_F	= 0.001*( (vs16)(*(data_buf+8)<<8)|*(data_buf+9) );
+		
+		/***PID15(PARAM G H I)***/ 			
+        user_parameter.groups.param_G	= 0.001*( (vs16)(*(data_buf+10)<<8)|*(data_buf+11) );
+        user_parameter.groups.param_H = 0.001*( (vs16)(*(data_buf+12)<<8)|*(data_buf+13) );
+        user_parameter.groups.param_I = 0.001*( (vs16)(*(data_buf+14)<<8)|*(data_buf+15) );
+		
+		/***PID15(PARAM J K L)***/ 			
+        user_parameter.groups.param_J	= 0.001*( (vs16)(*(data_buf+16)<<8)|*(data_buf+17) );
+        user_parameter.groups.param_K = 0.001*( (vs16)(*(data_buf+18)<<8)|*(data_buf+19) );
+        user_parameter.groups.param_L = 0.001*( (vs16)(*(data_buf+20)<<8)|*(data_buf+21) );
 		if(f.send_check == 0)
 		{
 			f.send_check = 1;
 			checkdata_to_send = *(data_buf+2);
 			checksum_to_send = sum;
 		}
+		flash_save_en_cnt = 1;
 	}
+
 	
 	if(*(data_buf+2)==0X40)			//急停控制
 	{
