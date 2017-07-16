@@ -26,6 +26,8 @@ static void Rheostat_ADC_Mode_Config(void)
 	ADC_InitTypeDef ADC_InitStructure;
 	ADC_CommonInitTypeDef ADC_CommonInitStructure;
 
+	//DMA配置
+	
 	// ------------------DMA Init 结构体参数 初始化--------------------------
 	// ADC1使用DMA2，数据流0，通道0，这个是手册固定死的
 	// 开启DMA时钟
@@ -63,8 +65,11 @@ static void Rheostat_ADC_Mode_Config(void)
 	// 使能DMA流
 	DMA_Cmd(RHEOSTAT_ADC_DMA_STREAM, ENABLE);
 
+	//ADC配置
+
 	// 开启ADC时钟
 	RCC_APB2PeriphClockCmd(RHEOSTAT_ADC_CLK , ENABLE);
+
 	// -------------------ADC Common 结构体 参数 初始化------------------------
 	// 独立ADC模式
 	ADC_CommonInitStructure.ADC_Mode = ADC_Mode_Independent;
@@ -82,8 +87,9 @@ static void Rheostat_ADC_Mode_Config(void)
 	ADC_InitStructure.ADC_Resolution = ADC_Resolution_12b;
 	// 禁止扫描模式，多通道采集才需要	
 	ADC_InitStructure.ADC_ScanConvMode = DISABLE; 
-	// 连续转换	
-	ADC_InitStructure.ADC_ContinuousConvMode = ENABLE; 
+	// 连续转换
+	//ADC_InitStructure.ADC_ContinuousConvMode = ENABLE; 
+	ADC_InitStructure.ADC_ContinuousConvMode = DISABLE; 
 	//禁止外部边沿触发
 	ADC_InitStructure.ADC_ExternalTrigConvEdge = ADC_ExternalTrigConvEdge_None;
 	//外部触发通道，本例子使用软件触发，此值随便赋值即可
@@ -100,13 +106,13 @@ static void Rheostat_ADC_Mode_Config(void)
 
 	// 使能DMA请求 after last transfer (Single-ADC mode)
 	ADC_DMARequestAfterLastTransferCmd(RHEOSTAT_ADC, ENABLE);
+	
 	// 使能ADC DMA
 	ADC_DMACmd(RHEOSTAT_ADC, ENABLE);
 
 	// 使能ADC
-	ADC_Cmd(RHEOSTAT_ADC, ENABLE);  
-	//开始adc转换，软件触发
-	ADC_SoftwareStartConv(RHEOSTAT_ADC);
+	ADC_Cmd(RHEOSTAT_ADC, ENABLE);
+
 }
 
 void ANO_ADC_Init(void)
@@ -119,6 +125,9 @@ void ANO_ADC_Init(void)
 void ADC_Read(void)
 {
 	float tmp;
+	
+	//开始adc转换，软件触发
+	ADC_SoftwareStartConv(RHEOSTAT_ADC);
 	
 	//计算当前电压
 	tmp = (float)ADC_ConvertedValue * Voltage_To_V;
