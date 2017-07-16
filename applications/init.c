@@ -16,6 +16,7 @@
 #include "ms5611.h"
 #include "ak8975.h"
 #include "ultrasonic.h"
+#include "adc.h"
 
 u8 All_Init()
 {
@@ -50,6 +51,8 @@ u8 All_Init()
 	Ultrasonic_Init();   			//超声波初始化（串口5初始化）
 	
 	ak8975_ok = !(ANO_AK8975_Run());
+	
+	ANO_ADC_Init();					//ADC电池电压采集
 	
 	if( !mpu6050_ok )
 	{
