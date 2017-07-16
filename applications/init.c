@@ -52,6 +52,8 @@ u8 All_Init()
 	
 	ak8975_ok = !(ANO_AK8975_Run());
 	
+	ANO_ADC_Init();					//ADC电池电压采集
+	
 	if( !mpu6050_ok )
 	{
 		LED_MPU_Err();

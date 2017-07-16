@@ -1,5 +1,5 @@
-#ifndef _TIME_H_
-#define _TIME_H_
+#ifndef _ADC_H_
+#define _ADC_H_
 
 #include "stm32f4xx.h"
 
@@ -13,13 +13,9 @@
 #define RHEOSTAT_ADC_CLK          RCC_APB2Periph_ADC1
 #define RHEOSTAT_ADC_CHANNEL      ADC_Channel_15
 
-// ADC DR寄存器宏定义，ADC转换后的数字值则存放在这里
-#define RHEOSTAT_ADC_DR_ADDR    ((u32)ADC1+0x4c)
 
-// ADC DMA 通道宏定义，这里我们使用DMA传输
-#define RHEOSTAT_ADC_DMA_CLK      RCC_AHB1Periph_DMA2
-#define RHEOSTAT_ADC_DMA_CHANNEL  DMA_Channel_0
-#define RHEOSTAT_ADC_DMA_STREAM   DMA2_Stream0
+// ADC 中断宏定义
+#define Rheostat_ADC_IRQ          ADC_IRQn
 
 void ANO_ADC_Init(void);	//初始化
 void ADC_Read(void);		//读取数据
