@@ -152,7 +152,7 @@ void Duty_50ms()
 	LED_Duty();				//根据标志位和飞机模式情况控制LED闪烁
 	Camera_Data_Send();		//向图像处理板发送信息
 	
-	ADC_Read();
+	ADC_Read();			//获取电池电压
 	
 }
 

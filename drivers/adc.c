@@ -125,11 +125,18 @@ void ANO_ADC_Init(void)
 void ADC_Read(void)
 {
 	float tmp;
+	static u8 counter = 0;
 	
-	//开始adc转换，软件触发
-	ADC_SoftwareStartConv(RHEOSTAT_ADC);
-	
-	//计算当前电压
-	tmp = (float)ADC_ConvertedValue * Voltage_To_V;
-	Battry_Voltage = (u16)(tmp * 100);
+	counter++;
+	if(counter > 10)	//此函数在50ms线程里，每10次采1次数，每0.5s更新1次
+	{
+		counter = 0;
+		
+		//开始adc转换，软件触发
+		ADC_SoftwareStartConv(RHEOSTAT_ADC);
+		
+		//计算当前电压
+		tmp = (float)ADC_ConvertedValue * Voltage_To_V;
+		Battry_Voltage = (u16)(tmp * 100);
+	}
 }
