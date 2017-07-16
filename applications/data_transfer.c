@@ -22,6 +22,9 @@
 #include "fly_mode.h"
 #include "height_ctrl.h"
 #include "fly_ctrl.h"
+#include "adc.h"
+
+//u16 Battry_Voltage;
 
 /////////////////////////////////////////////////////////////////////////////////////
 //数据拆分宏定义，在发送大于1字节的数据类型时，比如int16、float等，需要把数据拆分成单独字节进行发送
@@ -737,7 +740,7 @@ void ANO_DT_Data_Exchange(void)	//当前调用周期1ms
 		else if(f.send_power)	//电压电流
 		{
 			f.send_power = 0;
-			ANO_DT_Send_Power(123,456);
+			ANO_DT_Send_Power( Battry_Voltage ,456);	//传入数据为V*100，输入123则显示为1.23V
 		}
 	//	else if(f.send_location == 2)
 	//	{

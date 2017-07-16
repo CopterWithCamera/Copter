@@ -50,8 +50,10 @@
 #define TO_M_S2 			0.23926f   			//  980cm/s2    +-8g	980/4096
 #define ANGLE_TO_RADIAN 	0.01745329f 		//  *0.01745 = /57.3	角度转弧度
 
-#define MAX_ACC  4096.0f						//  +-8G		加速度计量程
-#define TO_DEG_S 500.0f      					//  T = 2ms  默认为2ms ，数值等于1/T
+#define MAX_ACC  			4096.0f				//  +-8G		加速度计量程
+#define TO_DEG_S 			500.0f      		//  T = 2ms  默认为2ms ，数值等于1/T
+
+#define	Voltage_To_V 		0.000806f	// 3.3V / 4096 = 0.000805664
 
 enum
 {

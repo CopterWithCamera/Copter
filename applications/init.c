@@ -16,6 +16,7 @@
 #include "ms5611.h"
 #include "ak8975.h"
 #include "ultrasonic.h"
+#include "adc.h"
 
 u8 All_Init()
 {
