@@ -1,4 +1,4 @@
-﻿#ifndef _LED_H_
+#ifndef _LED_H_
 #define	_LED_H_
 
 #include "stm32f4xx.h"
@@ -34,7 +34,11 @@
 /***************LED GPIO定义******************/
 #define ANO_RCC_LED			RCC_AHB1Periph_GPIOE
 #define ANO_GPIO_LED		GPIOE
+
+//飞控板上的红色LED
 #define ANO_Pin_LED1		GPIO_Pin_3
+
+//三色LED
 #define ANO_Pin_LED2		GPIO_Pin_2
 #define ANO_Pin_LED3		GPIO_Pin_1
 #define ANO_Pin_LED4		GPIO_Pin_0
@@ -50,7 +54,7 @@
 //RGB_Info == 7，绿色快速闪烁：传感器正常，自检校准中。
 //RGB_Info == 8，开机红色常亮：自检失败，需重启。
 
-//RGB_Info == 9，	呼吸白色：手动模式上锁（或姿态模式）。
+//RGB_Info == 9， 呼吸白色：手动模式上锁（或姿态模式）。
 //RGB_Info == 10，呼吸绿色：自动模式上锁（定点定高）。
 //RGB_Info == 11，呼吸绿红色：GPS信号弱上锁（自动模式）。
 //RGB_Info == 12，呼吸绿黄色：罗盘信号干扰上锁（自动模式）。

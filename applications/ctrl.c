@@ -29,27 +29,33 @@ xyz_f_t except_A = {0,0,0};				//角度期望
 
 xyz_f_t ctrl_angle_offset = {0,0,0};	
 
-
+//=================== filter ===================================
+//  全局输出，CH_filter[],0横滚，1俯仰，2油门，3航向 范围：+-500	
+//	CH_filter[]的输入数值在输出前是经过限幅的
+//=================== filter =================================== 
 
 void CTRL_2(float T)
 {
 
-//=========================== 期望角度 ========================================
+	//=========================== 输入数据切换 ========================================
+
+	//根据飞行模式选取控制数据
+	if(mode_state == 3)	//自动控制模式下没有死区
+	{
+		//无死区
+		except_A.x  = MAX_CTRL_ANGLE  *( CH_ctrl[ROL]/500.0f );
+		except_A.y  = MAX_CTRL_ANGLE  *( CH_ctrl[PIT]/500.0f );
+	}
+	else	//手飞模式正常有死区
+	{
+		//使用遥控器输出值CH_filter[]
+		//将±30这个区域设置为死区
+		//并把输入的 -500 -- +500 这个区间的遥控器数值归一化，然后乘上最大期望值，使输入值成为当前期望值对最大期望值的占比
+		except_A.x  = MAX_CTRL_ANGLE  *( my_deathzoom( ( CH_filter[ROL]) ,0,30 )/500.0f );
+		except_A.y  = MAX_CTRL_ANGLE  *( my_deathzoom( ( CH_filter[PIT]) ,0,30 )/500.0f );
+	}
 	
-	//=================== filter ===================================
-	//  全局输出，CH_filter[],0横滚，1俯仰，2油门，3航向 范围：+-500	
-	//	CH_filter[]的输入数值在输出前是经过限幅的
-	//=================== filter =================================== 
-	
-	//将±30这个区域设置为死区
-	//并把输入的 -500 -- +500 这个区间的遥控器数值归一化，然后乘上最大期望值，使输入值成为当前期望值对最大期望值的占比
-	
-	//x轴、y轴处理
-//	except_A.x  = MAX_CTRL_ANGLE  *( my_deathzoom( ( CH_filter[ROL]) ,0,30 )/500.0f );
-//	except_A.y  = MAX_CTRL_ANGLE  *( my_deathzoom( ( CH_filter[PIT]) ,0,30 )/500.0f );
-	
-	except_A.x  = MAX_CTRL_ANGLE  *( my_deathzoom( ( CH_ctrl[ROL]) ,0,30 )/500.0f );
-	except_A.y  = MAX_CTRL_ANGLE  *( my_deathzoom( ( CH_ctrl[PIT]) ,0,30 )/500.0f );
+	//=========================== 期望角度控制 ========================================
 	
 	//z轴处理，将输入值转化为期望角速度
 	if( Thr_Low == 0 )	//这东西顶多跟起不起飞有关系，跟油门低不低有啥关系？？
@@ -130,10 +136,10 @@ void CTRL_2(float T)
 	ctrl_2.out.z = ctrl_2.PID[PIDYAW].kp   *( ctrl_2.err.z + ctrl_2.err_d.z + ctrl_2.err_i.z );	//yaw
 }
 
+//内环角速度处理函数
+
 xyz_f_t except_AS;	//期望角速度
-
 float g_old[ITEMS];
-
 void CTRL_1(float T)  //x roll,y pitch,z yaw
 {
 	xyz_f_t EXP_LPF_TMP;
@@ -210,15 +216,6 @@ void CTRL_1(float T)  //x roll,y pitch,z yaw
 //						ctrl_1在总输   根据本次计算中外环error值计算出的外环输出值的	归一化后的外环输出值	  ctrl_1计算结果在	   							  P				 D				  I	
 //						出的占比	   影响权重										  （被认为是期望角速度值）	  总输出值的占比
 
-	//油门控制
-	Thr_Ctrl(T);// 油门控制，这里面包含高度控制闭环
-				// 输出 thr_value
-	
-	//电机输出（包含解锁判断，未解锁状态输出为0）
-	All_Out(ctrl_1.out.x,ctrl_1.out.y,ctrl_1.out.z);	//输出值包括两部分，posture_value 和 thr_value
-														//out_roll,out_pitch,out_yaw 生成 posture_value
-														//在 All_Out 里这两部分按照权重参数 Thr_Weight 整合
-														
 	//记录历史数据
 	ctrl_1.err_old.x = ctrl_1.err.x;
 	ctrl_1.err_old.y = ctrl_1.err.y;
@@ -229,51 +226,81 @@ void CTRL_1(float T)  //x roll,y pitch,z yaw
 	g_old[A_Z] = -mpu6050.Gyro_deg.z ;
 }
 
+//油门值处理函数
 
 float thr_value;
-u8 Thr_Low;
+u8 Thr_Low;				//油门低标准
 float Thr_Weight;
-
-void Thr_Ctrl(float T)
+void Thr_Ctrl(float T , u8 state)	//计算生成 thr_value 和 Thr_Weight
 {
+	//说明：
+	//state = mode_state     	 0 -- 姿态    1 -- 气压计   2 -- 超声波 + 气压计  3 -- 自动模式
+	//height_mode = my_height_mode		0：油门		1：期望高度
+	
 	static float thr;
 	static float Thr_tmp;
 	
-//	thr = 500 + CH_filter[THR]; //油门值 0 ~ 1000
-	thr = 500 + CH_ctrl[THR];	//油门值 0 ~ 1000
-	
-	//thr取值范围0-1000
-	if( thr < 100 )	//油门低判断（用于 ALL_Out里的最低转速保护 和 ctrl2里的Yaw轴起飞前处理）
+	if(state == 3)		//自动控制模式下的油门值
 	{
-		Thr_Low = 1;
-	}
-	else
-	{
-		Thr_Low = 0;
-	}
-	
-	//根据飞行模式选择油门控制方法
-	//mode_state： 0 -- 姿态    1 -- 气压计   2 -- 超声波 + 气压计
-	if(mode_state)	//定高模式（在此版本代码里，mode_state由fly_mode.c控制）
-	{
+		thr = 500 + CH_ctrl[THR];	//油门值 0 ~ 1000
+		
+		//thr取值范围0-1000
+		if( thr < 100 )	//油门低判断（用于 ALL_Out 里的最低转速保护 和 ctrl2 里的Yaw轴起飞前处理）
+		{
+			Thr_Low = 1;
+		}
+		else
+		{
+			Thr_Low = 0;
+		}
+		
 		if(NS==0) //丢失信号
 		{
 			thr = LIMIT(thr,0,500);	//保持当前油门值，但不能超过半油门，500这个数在定高代码里代表悬停
 									//也就是说定高模式丢信号时只能悬停或下降（依照丢信号前状态）
 		}
 		
-		thr_value = Height_Ctrl(T,thr,fly_ready,1);   //输出经过定高算法修正的值
+		//油门输出值
+		thr_value = Height_Ctrl(T, my_height_mode, thr, my_except_height, fly_ready, 1);   //输出经过定高算法修正的值
+		
 	}
-	else					//手动模式（只有mode_state = 0时才是手动，其余的都是自动控高）
+	else				//其余模式手动控制油门
 	{
-		if(NS==0) //丢失信号
+		thr = 500 + CH_filter[THR]; //油门值 0 ~ 1000
+		
+		//thr取值范围0-1000
+		if( thr < 100 )	//油门低判断（用于 ALL_Out 里的最低转速保护 和 ctrl2 里的Yaw轴起飞前处理）
 		{
-			thr = LIMIT(thr,0,300);	//非定高模式丢信号，油门300，基本上就是悬停或者慢速下降
+			Thr_Low = 1;
 		}
-		thr_value = Height_Ctrl(T,thr,fly_ready,0);   //实际使用值
+		else
+		{
+			Thr_Low = 0;
+		}
+		
+		//根据飞行模式选择油门控制方法
+		
+		if(state)	//定高模式（在此版本代码里，mode_state由fly_mode.c控制）
+		{
+			if(NS==0) 	//丢失信号
+			{
+				thr = LIMIT(thr,0,500);	//保持当前油门值，但不能超过半油门，500这个数在定高代码里代表悬停
+										//也就是说定高模式丢信号时只能悬停或下降（依照丢信号前状态）
+			}
+			thr_value = Height_Ctrl(T,0,thr,0,fly_ready,1);
+		}
+		else			//手动模式（只有mode_state = 0时才是手动，其余的都是自动控高）
+		{
+			if(NS==0) //丢失信号
+			{
+				thr = LIMIT(thr,0,300);	//非定高模式丢信号，油门300，基本上就是悬停或者慢速下降
+			}
+			thr_value = Height_Ctrl(T,0,thr,0,fly_ready,0);	 //直接使用油门摇杆值
+		}
 	}
 	
-	thr_value = LIMIT(thr_value,0,10 *MAX_THR *MAX_PWM/100);	//油门值限幅		//thr_value直接被用于计算电机输出（是最终的油门输出值）
+	//油门值限幅
+	thr_value = LIMIT(thr_value,0,10 *MAX_THR *MAX_PWM/100);		//thr_value直接被用于计算电机输出（是最终的油门输出值）
 	
 	//计算权重参数 Thr_Weight，油门越高，权重越大（表示姿态输出在总输出中占比增大）
 	Thr_tmp += 10 *3.14f *T *(thr_value/400.0f - Thr_tmp); 			//thr_value 的低通滤波值为 Thr_tmp
@@ -355,6 +382,15 @@ void All_Out(float out_roll,float out_pitch,float out_yaw)
 		}
 	}
 	else	//未解锁状态下所有电机输出值强制为0
+	{
+		for(i=0;i<MAXMOTORS;i++)
+		{
+			motor[i] = 0;
+		}
+	}
+	
+	//通过AUX8控制输出值，实现一键停转
+	if(!All_Out_Switch)	//All_Out_Switch = 0时急停
 	{
 		for(i=0;i<MAXMOTORS;i++)
 		{

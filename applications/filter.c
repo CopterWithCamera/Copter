@@ -18,22 +18,23 @@ void anotc_filter_1(float base_hz,float gain_hz,float dT,float in,_filter_1_st *
 
 
  void Moving_Average(float moavarray[],u16 len ,u16 *fil_cnt,float in,float *out)
+	 //					滑动滤波数组
 {
 	u16 width_num;
 	float last;
 
 	width_num = len ;
 	
-	if( ++*fil_cnt >= width_num )	
+	if( ++*fil_cnt >= width_num )	//*fil_cnt数值+1
 	{
 		*fil_cnt = 0; //now
 	}
 	
-	last = moavarray[ *fil_cnt ];
+	last = moavarray[ *fil_cnt ];	//last是上一次的
 	
-	moavarray[ *fil_cnt ] = in;
+	moavarray[ *fil_cnt ] = in;	//输入数值放入滑动滤波数组
 	
-	*out += ( in - ( last  ) )/(float)( width_num ) ;
+	*out += ( in - ( last  ) )/(float)( width_num ) ;	//滑动平均值减去len次之前那个数的影响，加入当前数的影响
 	*out += 0.00001f *(in - *out);  //次要修正
 	
 }

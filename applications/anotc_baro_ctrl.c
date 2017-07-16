@@ -11,6 +11,7 @@
 #include "filter.h"
 #include "fly_mode.h"
 
+//¶Ô µÈĞ§ÖØÁ¦ÏòÁ¿ ºÍ lim µÄ³Ë»ı ×öµÍÍ¨ÂË²¨£¬¸ù¾İÆäÊıÖµ×öÊä³öcom_val			//Õâ¶Î´úÂëºÁÎŞµÀÀí
 float baro_compensate(float dT,float kup,float kdw,float vz,float lim)	//ÆøÑ¹²¹³¥
 {
 	float z_sin;
@@ -18,8 +19,10 @@ float baro_compensate(float dT,float kup,float kdw,float vz,float lim)	//ÆøÑ¹²¹³
 	
 	z_sin = my_sqrt(1-my_pow(vz));
 	
+	//((z_sin/0.44f) *lim) ¹ı2HzµÍÍ¨ µÃµ½ com_tar
+	
 	//com_tar = (z_sin/0.44f) *lim;
-	LPF_1_(2.0f,dT,((z_sin/0.44f) *lim),com_tar);
+	LPF_1_(2.0f,dT,((z_sin/0.44f) *lim),com_tar);	//µÍÍ¨ÂË²¨Æ÷
 	com_tar = LIMIT(com_tar,0,lim);
 	
 	if(com_val<(com_tar-100))
@@ -43,7 +46,7 @@ void fusion_prepare(float dT,float av_arr[],u16 av_num,u16 *av_cnt,float deadzon
 	Moving_Average(av_arr,av_num ,(av_cnt),(10 *pre_data->dis_deadzone ),&(pre_data->displacement));	//È¡Æ½¾ùÖµ£¬ÀåÃ×->ºÁÃ×
 	
 	pre_data->speed = safe_div(pre_data->displacement - pre_data->displacement_old,dT,0);	//ËÙ¶È = £¨±¾´Î¸ß¶È-ÉÏ´Î¸ß¶È£©¡ÂÊ±¼ä
-	pre_data->acceleration = safe_div(pre_data->speed - pre_data->speed_old,dT,0);
+	pre_data->acceleration = safe_div(pre_data->speed - pre_data->speed_old,dT,0);			//¼ÓËÙ¶È
 	
 	//¼ÇÂ¼¾ÉÊı¾İ
 	pre_data->displacement_old = pre_data->displacement;
@@ -119,13 +122,17 @@ _f_set_st baro_f_set = {
 //													0.3f,
 //													0.5f
 
-float sonar_weight;
-float wz_speed,baro_com_val;	//wz_speed ÊÇÆøÑ¹¼ÆÊı¾İµÃ³öµÄÏà¶Ô×¼È·µÄ´¹Ö±ËÙ¶È
+float sonar_weight;		//³¬Éù²¨Êı¾İÈ¨ÖØ
+float wz_speed,sonarz_speed;	//wz_speed ÊÇÆøÑ¹¼ÆÊı¾İµÃ³öµÄÏà¶Ô×¼È·µÄ´¹Ö±ËÙ¶È
 void baro_ctrl(float dT,_hc_value_st *height_value)		//»ñÈ¡¸ß¶ÈÊı¾İ£¨µ÷ÓÃÖÜÆÚ2ms£©
 {
 	static float dtime;
+	static float baro_com_val;	//ÆøÑ¹¼Æ²¹³¥±äÁ¿
 		
-	///////////
+//*******************************************************************************************************************************
+//											ÆøÑ¹¼ÆÊı¾İ²É¼¯
+//*******************************************************************************************************************************
+	
 	dtime += dT;	//´«ÈëµÄdTÔÚÊıÑ§ÉÏÊÇ¡÷T£¬µ¥Î»ÊÇs
 	if(dtime > 0.01f) //10 ms
 	{
@@ -134,51 +141,61 @@ void baro_ctrl(float dT,_hc_value_st *height_value)		//»ñÈ¡¸ß¶ÈÊı¾İ£¨µ÷ÓÃÖÜÆÚ2ms
 		{
 			baro.relative_height = baro.relative_height - 0.1f *baro_com_val;
 		}
-	}		
+	}
 
-	baro.h_dt = 0.02f; //ÆøÑ¹¼Æ¶ÁÈ¡¼ä¸ôÊ±¼ä20ms
+	//baro.h_dt = 0.02f; //ÆøÑ¹¼Æ¶ÁÈ¡¼ä¸ôÊ±¼ä20ms		//£¨Õâ¶ÎÃ»ÓÃÉÏ£©
 	
-	//ÆøÑ¹¼Æ²¹³¥
-	baro_com_val = baro_compensate(dT,1.0f,1.0f,reference_v.z,3500);	//dT >= 2ms£¨2ms×óÓÒ£©
-
+	//ÆøÑ¹¼Æ²¹³¥		//dT >= 2ms£¨2ms×óÓÒ£©
+	//Õâ¶Î´úÂëÓĞÎÊÌâ£¬²»ºÏÂß¼­
+	baro_com_val = baro_compensate(dT,1.0f,1.0f,reference_v.z,3500);	//ÆøÑ¹¼Æ²¹³¥ÊÇÔÚÆøÑ¹¼Æ¶ÁÈ¡Êı¾İÊ§°ÜÊ±¸ù¾İreference_v.z½øĞĞ²¹³¥
+	
+//*******************************************************************************************************************************
+//							¸ß¶ÈÊı¾İÈÚºÏĞ£×¼£¨ÉèÖÃËÀÇø¡¢»¬¶¯ÂË²¨¡¢µ¥Î»»¯¡¢ÈÚºÏ¼ÓËÙ¶ÈÊı¾İ£©
+//*******************************************************************************************************************************
+	
+	//ÆøÑ¹¼ÆÊı¾İ¼ÓËÙ¶ÈÈÚºÏ
+	fusion_prepare(	dT,			baro_av_arr,	BARO_AV_NUM,		&baro_av_cnt,		2,			&baro,			&baro_p);
+	//				Ê±¼äÎ¢·Ö		ÆøÑ¹¼Æ»¬¶¯Êı×é	»¬¶¯Êı×éÊı¾İ¸öÊı		»¬¶¯ÂË²¨¼ÆÊı±äÁ¿		ËÀÇø¿í¶È		²É¼¯µ½µÄÊı¾İ		
+	acc_fusion(	dT,			&baro_f_set,	acc_3d_hg.z,	&baro_p,			&baro_fusion);
+	//		   Ê±¼äÎ¢·Ö		ÉèÖÃ²ÎÊı			¼ÓËÙ¶ÈÖµ			×¼±¸ºÃµÄÊı¾İ			ÈÚºÏÊä³ö
+	
 	//³¬Éù²¨Êı¾İ¼ÓËÙ¶ÈÈÚºÏ
 	fusion_prepare(dT,sonar_av_arr,SONAR_AV_NUM,&sonar_av_cnt,0,&ultra,&sonar);	//ÉèÖÃËÀÇø¡¢Æ½¾ùÊıÂË²¨¡¢µ¥Î»»¯Îªmm¡¢ÓÃ¾àÀë±ä»¯¼ÆËãËÙ¶È¡¢¼ÓËÙ¶È
 	acc_fusion(	dT,			&sonar_f_set,	acc_3d_hg.z,	&sonar,				&sonar_fusion);				//acc_3d_hg.z¡¢sonarÊÇÊäÈë£¬sonar_fusionÊÇÊä³ö
 	//		   Ê±¼äÎ¢·Ö		ÉèÖÃ²ÎÊı			¼ÓËÙ¶ÈÖµ			×¼±¸ºÃµÄÊı¾İ			ÈÚºÏÊä³ö
-	
-	//ÆøÑ¹¼ÆÊı¾İ¼ÓËÙ¶ÈÈÚºÏ
-	fusion_prepare(dT,baro_av_arr,BARO_AV_NUM,&baro_av_cnt,2,&baro,&baro_p);
-	acc_fusion(	dT,			&baro_f_set,	acc_3d_hg.z,	&baro_p,			&baro_fusion);
-	//		   Ê±¼äÎ¢·Ö		ÉèÖÃ²ÎÊı			¼ÓËÙ¶ÈÖµ			×¼±¸ºÃµÄÊı¾İ			ÈÚºÏÊä³ö
-	
-//==========================================================================
-//¼ÆËã³¬Éù²¨Êı¾İÕ¼×ÜÊı¾İµÄÈ¨ÖØ
-	
+
+//*******************************************************************************************************************************
+//	¸ß¶ÈÊı¾İÈÚºÏ£¨Ñ¡ÔñÊı¾İÀ´Ô´£©
+//*******************************************************************************************************************************
 	if(ultra.measure_ok == 1)	//³¬Éù²¨Êı¾İÓĞĞ§
 	{
 		sonar_weight += 0.5f *dtime;	//sonar_weightÔ½´ó£¬³¬Éù²¨Êı¾İµÄÈ¨ÖØÔ½¸ß
 	}
 	else
-	{ 
+	{
 		sonar_weight -= 2.0f *dtime;
 	}
 	sonar_weight = LIMIT(sonar_weight,0,1);
 	
-	//ÖĞÎ»²»Ê¹ÓÃ³¬Éù²¨
+	//Ä£Ê½1Îª´¿ÆøÑ¹¼ÆÄ£Ê½
 	if(mode_state == 1)	//Í¨µÀ5Ñ¡ÔñÆøÑ¹¼ÆÄ£Ê½£¬³¬Éù²¨Êı¾İ²»²ÎÓë¸ß¶ÈÊı¾İÈÚºÏ
 	{
 		sonar_weight = 0;
 	}
 
 //==========================================================================
-	wz_speed = baro_fusion.fusion_speed_m.out - baro_fusion.fusion_speed_me.out;	//wz_speed ÊÇÆøÑ¹¼ÆÊı¾İµÃ³öµÄÏà¶Ô×¼È·µÄ´¹Ö±ËÙ¶È
-	//		   ÈÚºÏÁË¼ÓËÙ¶È¼ÆÊı¾İ¾­¹ı´øÍ¨ÂË²¨		±»´øÍ¨ÂËµôµÄÆøÑ¹¼ÆËÙ¶ÈÁ¿¾­¹ı´øÍ¨ÂË²¨
+	
+	//		       ÈÚºÏÁË¼ÓËÙ¶È¼ÆÊı¾İ¾­¹ı´øÍ¨ÂË²¨		 ±»´øÍ¨ÂËµôµÄÆøÑ¹¼ÆËÙ¶ÈÁ¿¾­¹ı´øÍ¨ÂË²¨
+	wz_speed     = baro_fusion.fusion_speed_m.out  - baro_fusion.fusion_speed_me.out;	//wz_speed ÊÇÆøÑ¹¼ÆÊı¾İµÃ³öµÄÏà¶Ô×¼È·µÄ´¹Ö±ËÙ¶È
+	sonarz_speed = sonar_fusion.fusion_speed_m.out - sonar_fusion.fusion_speed_me.out;	//³¬Éù²¨´«¸ĞÆ÷¼ÆËã³öµÄÏà¶Ô¾«È·´¹Ö±ËÙ¶È
 	
 	//ÆøÑ¹¼Æ¡¢³¬Éù²¨Ô­Ê¼Êı¾İÈÚºÏ
 	//ËÙ¶ÈÈÚºÏ
 	float m_speed,f_speed;
-	m_speed = (1 - sonar_weight) *baro_p.speed + sonar_weight *(sonar.speed);															//Êı¾İÔ´£º¾­¹ıÆ½¾ùÊıÂË²¨¡¢µ¥Î»×ª»»ÎªmmµÄËÙ¶ÈÖµ
-	f_speed = (1 - sonar_weight) *(wz_speed)   + sonar_weight *(sonar_fusion.fusion_speed_m.out - sonar_fusion.fusion_speed_me.out);	//Êı¾İÔ´£ºÈÚºÏÁË¼ÓËÙ¶È¼ÆµÄÊı¾İ
+	m_speed = (1 - sonar_weight) * baro_p.speed + sonar_weight * (sonar.speed);					//Êı¾İÔ´£º¾­¹ıÆ½¾ùÊıÂË²¨¡¢µ¥Î»×ª»»ÎªmmµÄËÙ¶ÈÖµ
+	f_speed = (1 - sonar_weight) * (wz_speed)   + sonar_weight * (sonarz_speed);				//Êı¾İÔ´£ºÈÚºÏÁË¼ÓËÙ¶È¼ÆµÄÊı¾İ
+	//f_speed = (1 - sonar_weight) * (wz_speed)   + sonar_weight * (sonar_fusion.fusion_speed_m.out - sonar_fusion.fusion_speed_me.out);	
+	
 	
 	//¼ÓËÙ¶È²ÉÓÃ¾­¹ıµÈĞ§ÖØÁ¦ÏòÁ¿½ÃÕıµÄ¼ÓËÙ¶È¼ÆÊı¾İ
 	//ËÙ¶È²ÉÓÃ³¬Éù²¨+ÆøÑ¹¼ÆÈÚºÏµÄËÙ¶ÈÊı¾İ
@@ -193,8 +210,6 @@ void baro_ctrl(float dT,_hc_value_st *height_value)		//»ñÈ¡¸ß¶ÈÊı¾İ£¨µ÷ÓÃÖÜÆÚ2ms
 	height_value->fusion_acc = baro_fusion.fusion_acceleration.out;
 	height_value->fusion_speed = my_deathzoom(LIMIT( (f_speed),-MAX_VERTICAL_SPEED_DW,MAX_VERTICAL_SPEED_UP),height_value->fusion_speed,10);	//f_speedÏŞ·ù+ËÀÇø£¨Èç¹û±ä»¯Ğ¡£¬¾ÍÈÏÎªÃ»±ä»¯£©
 	height_value->fusion_height = baro_fusion.fusion_displacement.out; 
-	
-	//return (*height_value);
 }
 
 

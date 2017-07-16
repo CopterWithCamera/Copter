@@ -41,7 +41,7 @@ u8 All_Init()
 	
 	Usart1_Init(115200);
 	Usart2_Init(115200);					//串口2初始化，函数参数为波特率
-//	Uart4_Init(115200);
+	Usart3_Init(115200);
 	
 	Para_Init();							//参数初始化
 	
