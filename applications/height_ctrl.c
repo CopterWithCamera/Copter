@@ -77,7 +77,7 @@ void h_pid_init()
 	en：PID积分使能  en = 1 时 PID中的积分变量开始积分
 	mode：0 -- 输入期望高度差   1 -- 输入期望速度
 	height_error：期望高度差，后期会改为期望高度
-	speed_except：期望z轴速度
+	speed_except：期望z轴速度（取值-300 -- +300，没有物理意义，数值大于200才会有较为明显的位置变化，否则变化速度会比较慢）
 	takeoff_flag：起飞处理标志，置1时执行起飞处理（只有起飞瞬间所在周期被置1）
 	modechange_flag：飞行中切入定高模式（只有与手动油门模式切换时有用）
 	
@@ -413,7 +413,7 @@ float Height_Ctrl(float T,u8 mode,float thr,float height,u8 ready,float en)	//高
 	else if(set_height_e < -100)	//期望高度小于当前高度，需要下降
 	{
 		//期望速度模式
-		my_thr_out = Height_Pid(T,en,1,0,-120,detection_takeoff_flag,detection_modechange_flag);	//设置下降速度
+		my_thr_out = Height_Pid(T,en,1,0,-240,detection_takeoff_flag,detection_modechange_flag);	//设置下降速度
 	}
 	else							//小范围内调整
 	{

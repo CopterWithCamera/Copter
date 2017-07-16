@@ -460,9 +460,9 @@ void LED_Duty() //50ms一次
 		
 		case 22:
 			LED_Brightness[X] = 0;
-			LED_Brightness[R] = 0;
-			LED_Brightness[G] = 0;
-			LED_Brightness[B] = 0;
+			LED_Brightness[R] = 20;
+			LED_Brightness[G] = 20;
+			LED_Brightness[B] = 20;
 		break;
 		
 		case 23:

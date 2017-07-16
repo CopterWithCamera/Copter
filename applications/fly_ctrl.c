@@ -5,83 +5,120 @@
 #include "mymath.h"
 #include "anotc_baro_ctrl.h"
 
-//定义辅助通道对应飞行模式的宏
-
-#define	FUNCTION_1					hand_ctrl
-#define FUNCTION_2					height_lock
-#define FUNCTION_3					height_lock_displacement
-
-
-//=================== filter ===================================
-//  全局输出，CH_filter[],0横滚，1俯仰，2油门，3航向 范围：+-500	
-//=================== filter ===================================
-
 float CH_ctrl[CH_NUM];	//具体输入给ctrl的遥控器值
-
+float my_except_height = 0;//期望高度
 u8 my_height_mode = 0;	//模式使用的定高模式
 						//0：油门
 						//1：期望高度
 						//2：期望速度
-						
-float my_except_height = 0;//期望高度
 
-//手飞
-void hand_ctrl(void)
+//========================================================================================
+
+void set_except_height(u8 height)	//传入高度数据，单位cm，取值范围0cm-255cm
 {
-	my_height_mode = 0;		//输入油门值
-	
-	//手飞模式下俯仰和横滚加死区
-	CH_ctrl[0] = my_deathzoom( ( CH_filter[ROL]) ,0,30 );	//0：横滚 ROL
-	CH_ctrl[1] = my_deathzoom( ( CH_filter[PIT]) ,0,30 );	//1：俯仰 PIT
-	CH_ctrl[2] = CH_filter[2];	//2：油门 THR
-	CH_ctrl[3] = CH_filter[3];	//3：航向 YAW
+	my_except_height = height * 10;
 }
 
-//高度锁定（遥控器归中值）
-void height_lock(void)
+void set_attitude_calibration(u8 cmd)
 {
-	my_height_mode = 0;		//输入油门值
-	
-	CH_ctrl[0] = CH_filter[0];	//0：横滚
-	CH_ctrl[1] = CH_filter[1];	//1：俯仰
-	CH_ctrl[3] = CH_filter[3];	//3：航向
-
-	CH_ctrl[2] = 0;	//2：油门（油门位于中值，含义为高度保持）
-
-}
-
-//直接输入期望高度定高
-void height_lock_displacement()
-{
-	static u8 flag;
-	my_height_mode = 1;		//输入目标高度差
-	
-	if(!flag)
+	switch(cmd)
 	{
-		flag = 1;
-		my_except_height = sonar_fusion.fusion_displacement.out;	//读取当前高度
+		case 0x01:	//前
+			
+		break;
+		
+		case 0x02:	//后
+			
+		break;
+		
+		case 0x03:	//左
+			
+		break;
+		
+		case 0x04:	//右
+			
+		break;
+		
+		case 0x05:	//存储
+			
+		break;
+		
+		default:
+			
+		break;
 	}
-	
-	CH_ctrl[0] = CH_filter[0];	//0：横滚
-	CH_ctrl[1] = CH_filter[1];	//1：俯仰
-	CH_ctrl[3] = CH_filter[3];	//3：航向
 }
 
-//高度姿态锁定
-void height_attitude_lock(void)
+
+//========================================================================================
+
+//手飞模式
+void hand(void)
 {
-	my_height_mode = 0;
+	//=================== filter ===================================
+	//  全局输出，CH_filter[],0横滚，1俯仰，2油门，3航向 范围：+-500	
+	//=================== filter ===================================
 	
-	CH_ctrl[0] = 0;	//0：横滚
-	CH_ctrl[1] = 0;	//1：俯仰
-	CH_ctrl[3] = 0;	//3：航向
-	CH_ctrl[2] = 0;	//2：油门（油门位于中值，含义为高度保持）
+	//摇杆控高
+	my_height_mode = 0;
+	CH_ctrl[2] = CH_filter[2];	//2：油门 THR
 }
 
+//锁定当前高度
+void lock_now_height(u8 en)	//en -- 模式启用标志位，用于判断此模式是否被使用
+{
+	static u8 height_lock_flag = 0;
+	
+	if(en)
+	{
+		//模式被启用
+		
+		my_height_mode = 1;
+		
+		if(height_lock_flag == 0)
+		{
+			height_lock_flag = 1;
+			
+			//设置期望高度
+			my_except_height = sonar_fusion.fusion_displacement.out;	//读取当前高度
+		}
+	}
+	else
+	{
+		height_lock_flag = 0;
+	}
+}
 
-//========================================================================================================
+//根据 my_except_height 变量值控制高度
+void use_my_except_height(void)
+{
+	//限制最低高度
+	if( my_except_height < 120)	
+		my_except_height = 120;
+		
+	//期望高度控制高度
+	my_height_mode = 1;
+}
 
+//上升测试
+void falling_to_15cm(void)
+{
+	//期望高度控制高度
+	my_height_mode = 1;
 
+	//设置期望高度
+	my_except_height = 150;		//下降到100mm = 10cm
+}
+
+//下降测试
+void rising_to_100cm(void)
+{
+	//期望高度控制高度
+	my_height_mode = 1;
+
+	//设置期望高度
+	my_except_height = 1000;		//下降到100mm = 10cm
+}
 
 
 /* ************************************************************
@@ -101,15 +138,13 @@ void height_attitude_lock(void)
 
 void Fly_Ctrl(void)		//调用周期5ms
 {
-	static u8 height_lock_flag = 0;
-	
 	//只有自动模式才会执行自动控制代码
 	if(mode_state != 3)
 	{
 		return;
 	}
 	
-	//==================== 新飞行控制逻辑 ==========================
+	//==================== 飞行控制逻辑 ==========================
 	
 	/*
 	
@@ -131,52 +166,57 @@ void Fly_Ctrl(void)		//调用周期5ms
 	
 	/* ********************* 高度控制 ********************* */
 	
+	//指令1
 	if(ctrl_command == 0)
 	{
-		//摇杆控高
+		hand();
+	}
+	
+	//指令2
+	if(ctrl_command == 1)
+	{
+		lock_now_height(1);
+	}
+	else
+	{
+		lock_now_height(0);
+	}
+	
+	//指令3
+	if(ctrl_command == 2)
+	{
+		use_my_except_height();
+	}
+	
+	//指令4
+	if(ctrl_command == 3)
+	{
+		hand();
+	}
+	
+	//指令5
+	if(ctrl_command == 4)
+	{
+		lock_now_height(1);
+	}
+	else
+	{
+		lock_now_height(0);
+	}
+	
+	//指令6
+	if(ctrl_command == 5)
+	{
+		falling_to_15cm();
+	}
+	
+	//=======================================
+	
+	//以外状况处理
+	if(ctrl_command > 5)	//不应该出现的情况
+	{
 		my_height_mode = 0;
 		CH_ctrl[2] = CH_filter[2];	//2：油门 THR
-		height_lock_flag = 0;
-	}
-	else if(ctrl_command == 1)
-	{
-		//期望高度控制高度
-		my_height_mode = 1;
-		
-		if(height_lock_flag == 0)
-		{
-			height_lock_flag = 1;
-			
-			//设置期望高度
-			my_except_height = sonar_fusion.fusion_displacement.out;	//读取当前高度
-		}
-	}
-	else if(ctrl_command == 2)
-	{
-		//期望高度控制高度
-		my_height_mode = 1;
-
-		//设置期望高度
-		my_except_height = 100;		//下降到100mm = 10cm
-	}
-	else if(ctrl_command == 3)
-	{
-		
-	}
-	else if(ctrl_command == 4)
-	{
-		
-	}
-	else if(ctrl_command == 5)
-	{
-		
-	}
-	else	//应急模式用手动控制油门
-	{
-		my_height_mode = 0;
-		CH_ctrl[2] = CH_filter[2];	//2：油门 THR
-		
-		height_lock_flag = 0;
 	}
 	
 	

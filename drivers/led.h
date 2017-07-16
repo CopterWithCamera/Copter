@@ -34,7 +34,11 @@
 /***************LED GPIO定义******************/
 #define ANO_RCC_LED			RCC_AHB1Periph_GPIOE
 #define ANO_GPIO_LED		GPIOE
+
+//飞控板上的红色LED
 #define ANO_Pin_LED1		GPIO_Pin_3
+
+//三色LED
 #define ANO_Pin_LED2		GPIO_Pin_2
 #define ANO_Pin_LED3		GPIO_Pin_1
 #define ANO_Pin_LED4		GPIO_Pin_0

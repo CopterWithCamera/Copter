@@ -483,11 +483,6 @@
               <FilePath>.\applications\fly_ctrl.c</FilePath>
             </File>
             <File>
-              <FileName>fly_mode.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>.\applications\fly_mode.c</FilePath>
-            </File>
-            <File>
               <FileName>parameter.c</FileName>
               <FileType>1</FileType>
               <FilePath>.\applications\parameter.c</FilePath>
@@ -536,6 +531,11 @@
               <FileName>PID.c</FileName>
               <FileType>1</FileType>
               <FilePath>.\applications\PID.c</FilePath>
+            </File>
+            <File>
+              <FileName>fly_mode.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\applications\fly_mode.c</FilePath>
             </File>
             <File>
               <FileName>camera_datatransfer.c</FileName>

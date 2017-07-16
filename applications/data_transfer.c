@@ -743,7 +743,7 @@ void ANO_DT_Data_Exchange(void)	//当前调用周期1ms
 	//	{
 	//		
 	//		f.send_location = 0;
-	//		ANO_DT_Send_Location(	0,			ctrl_command,		3 *10000000,	4 *10000000,	0		);
+	//		ANO_DT_Send_Location(	0,			0,		3 *10000000,	4 *10000000,	0		);
 	//		//						定位状态	卫星数量			经度 			纬度 			回航角
 	//		
 	//	}
@@ -760,8 +760,6 @@ void ANO_DT_Data_Exchange(void)	//当前调用周期1ms
 
 }
 
-u8 tmp;
-
 //Data_Receive_Anl函数是协议数据解析函数，函数参数是符合协议格式的一个数据帧，该函数会首先对协议数据进行校验
 //校验通过后对数据进行解析，实现相应功能
 //此函数可以不用用户自行调用，由函数Data_Receive_Prepare自动调用
@@ -769,6 +767,8 @@ u16 flash_save_en_cnt = 0;
 u16 RX_CH[CH_NUM];
 void ANO_DT_Data_Receive_Anl(u8 *data_buf,u8 num)
 {
+	u8 tmp;
+	
 	u8 sum = 0;
 	for(u8 i=0;i<(num-1);i++)
 		sum += *(data_buf+i);
@@ -1002,7 +1002,7 @@ void ANO_DT_Data_Receive_Anl(u8 *data_buf,u8 num)
 			case 0x01:	//急停
 				
 			break;
-			
+				
 			case 0x02:	//解急停
 				
 			break;
@@ -1015,39 +1015,14 @@ void ANO_DT_Data_Receive_Anl(u8 *data_buf,u8 num)
 	
 	if(*(data_buf+2)==0X41)			//姿态校准指令
 	{
-		switch(*(data_buf+4))	//第一个数据（u8）
-		{
-			case 0x01:	//前
-				
-			break;
-			
-			case 0x02:	//后
-				
-			break;
-			
-			case 0x03:	//左
-				
-			break;
-			
-			case 0x04:	//右
-				
-			break;
-			
-			case 0x05:	//存储
-				
-			break;
-			
-			default:
-				
-			break;
-		}
+		tmp = *(data_buf+4);
+		set_attitude_calibration(tmp);
 	}
-	
-	
 	
 	if(*(data_buf+2)==0X42)			//高度数据
 	{
 		tmp = *(data_buf+4);
+		set_except_height(tmp);
 	}
 	
 }
