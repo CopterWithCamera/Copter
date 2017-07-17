@@ -80,7 +80,7 @@ void lock_now_height(u8 en)	//en -- 模式启用标志位，用于判断此模式是否被使用
 			height_lock_flag = 1;
 			
 			//设置期望高度
-			my_except_height = sonar_fusion.fusion_displacement.out;	//读取当前高度
+			my_except_height = sonar.displacement;	//读取当前高度
 		}
 	}
 	else
@@ -219,14 +219,12 @@ void Fly_Ctrl(void)		//调用周期5ms
 		CH_ctrl[2] = CH_filter[2];	//2：油门 THR
 	}
 	
-	
 	/* ********************* 姿态控制 ********************* */
 	
 	CH_ctrl[0] = my_deathzoom( ( CH_filter[ROL]) ,0,30 );	//0：横滚 ROL
 	CH_ctrl[1] = my_deathzoom( ( CH_filter[PIT]) ,0,30 );	//1：俯仰 PIT
 	CH_ctrl[3] = CH_filter[3];	//3：航向 YAW
 	
-
 }
 
 //识别控制指令（在mode_check函数中调用，处理辅助通道数值）
