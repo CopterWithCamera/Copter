@@ -24,9 +24,7 @@ void Ctrl_Para_Init()		//设置默认参数
 	ctrl_1.FB = 0.20;   //外  0<fb<1
 }
 
-xyz_f_t except_A = {0,0,0};				//角度期望
-
-xyz_f_t ctrl_angle_offset = {0,0,0};	
+xyz_f_t except_A = {0,0,0};				//角度期望	
 
 //=================== filter ===================================
 //  全局输出，CH_filter[],0横滚，1俯仰，2油门，3航向 范围：+-500	
@@ -76,9 +74,9 @@ void CTRL_2(float T)
 
 	/* 得到角度误差 */
 	//将误差角度限制在±180°之间
-	ctrl_2.err.x =  To_180_degrees( ctrl_angle_offset.x + except_A.x - Roll  );	//ctrl_angle_offset的值默认为0，没有相关的设置代码
-	ctrl_2.err.y =  To_180_degrees( ctrl_angle_offset.y + except_A.y - Pitch );
-	ctrl_2.err.z =  To_180_degrees( ctrl_angle_offset.z + except_A.z - Yaw	 );
+	ctrl_2.err.x =  To_180_degrees( except_A.x - Roll  );	//ctrl_angle_offset的值默认为0，没有相关的设置代码
+	ctrl_2.err.y =  To_180_degrees( except_A.y - Pitch );
+	ctrl_2.err.z =  To_180_degrees( except_A.z - Yaw   );
 	
 	/* 计算角度误差权重 */
 	ctrl_2.err_weight.x = ABS(ctrl_2.err.x)/ANGLE_TO_MAX_AS;	//期望角度差 与 最大倾角的比值

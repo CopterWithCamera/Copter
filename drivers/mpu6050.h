@@ -402,4 +402,7 @@ void MPU6050_Read(void);
 void MPU6050_Data_Prepare(float T);
 extern u8 mpu6050_ok;
 
+extern MPU6050_STRUCT mpu6050;	//引用mpu6050的目的为使用姿态offset值mpu6050.vec_3d_cali
+
+
 #endif
