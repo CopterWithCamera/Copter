@@ -132,8 +132,6 @@ float Height_Pid(float T,float en,u8 mode,float height_error,float except_speed_
 									 );			//Êä³ö	
 			exp_speed = LIMIT(exp_speed,-300,300);
 			
-			mydata.d1 = (s16)exp_speed;
-			
 			height_cnt = 0;
 			dT2 = 0;
 		}

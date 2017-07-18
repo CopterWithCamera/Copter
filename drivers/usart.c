@@ -10,7 +10,7 @@
 #include "usart.h"
 #include "data_transfer.h"
 #include "ultrasonic.h"
-
+#include "camera_datatransfer.h"
 
 
 	/*
@@ -116,8 +116,9 @@ void Usart3_IRQ(void)
 		com_data = USART3->DR;
 		
 		//此处添加处理函数
-		
+		Copter_Receive_Handle(com_data);
 	}
+	
 	//发送（进入移位）中断
 	if( USART_GetITStatus(USART3,USART_IT_TXE ) )
 	{		
@@ -363,8 +364,6 @@ void Uart5_IRQ(void)
 			Delay_us(20);	//按照KS103的要求，每次发送完需要延时20-100us再进行下一位发送
 		
 		#elif defined(USE_US100)
-		
-			
 		
 		#endif
           

@@ -150,7 +150,7 @@ void Duty_50ms()
 	Ctrl_Mode(CH_filter);	//fly_ctrl用的飞行模式控制，在mode_state=3时起作用
 	
 	LED_Duty();				//根据标志位和飞机模式情况控制LED闪烁
-	Camera_Data_Send();		//向图像处理板发送信息
+	Copter_Data_Send();		//向图像处理板发送信息
 	
 	ADC_Read();			//获取电池电压
 	

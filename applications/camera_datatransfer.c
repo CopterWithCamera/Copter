@@ -24,7 +24,7 @@ void Send_to_Camera(unsigned char *DataToSend ,u8 data_num)
 	Usart3_Send(DataToSend,data_num);
 }
 
-void Camrea_Send_Height(void)
+void Copter_Send_Height(void)
 {
 	float tmp_f;
 	
@@ -59,9 +59,79 @@ void Camrea_Send_Height(void)
 	Send_to_Camera(Data_Buffer,cnt);
 }
 
-
-void Camera_Data_Send(void)
+//向Camera板发送数据
+void Copter_Data_Send(void)
 {
-	Camrea_Send_Height();
+	Copter_Send_Height();
 }
 
+//========================================================================================================
+
+float length = 0;
+float angle = 0;
+float speed = 0;
+
+//数据暂存数组
+unsigned char Tmp_Buffer[20];
+
+void Get_Position(void)
+{
+	length  = *((float*)(&(Tmp_Buffer[0])));
+	angle    = *((float*)(&(Tmp_Buffer[4])));
+	speed = *((float*)(&(Tmp_Buffer[8])));
+	
+	printf("%.1f  %.1f   %.1f\r\n", length, angle, speed);
+}
+
+u8 counter = 0;
+void Copter_Receive_Handle(unsigned char data)
+{
+	static u8 mode = 0;
+	
+	switch(mode)
+	{
+		case 0:
+			if(data == 0xAA)
+				mode = 1;
+			else
+				mode = 0;
+			break;
+			
+		case 1:
+			if(data == 0xAF)
+				mode = 2;
+			else
+				mode = 0;
+			break;
+			
+		case 2:
+			if(data == 0x01)	//进入功能字1解码
+			{
+				mode = 10;
+				counter = 0;
+			}
+			else if(data == 0x02)	//进入功能字2解码
+			{
+				
+			}
+			else				//没有对应功能字
+			{
+				mode = 0;
+			}
+			break;
+		
+		case 10:
+			Tmp_Buffer[counter] = data;	//3*4字节，总共占用数组0-11位
+			counter++;
+			if(counter>=12)
+			{
+				Get_Position();	//高度数据获取完成
+				mode = 0;
+			}
+		break;
+			
+		default:
+			mode = 0;
+		break;
+	}
+}
