@@ -43,6 +43,7 @@ _PID_val_st h_height_val;
 
 void h_pid_init()
 {
+	//加速度环
 	h_acc_arg.kp = 0.01f ;				//比例系数
 	h_acc_arg.ki = 0.02f  *pid_setup.groups.hc_sp.kp;				//积分系数
 	h_acc_arg.kd = 0;				//微分系数
@@ -51,6 +52,7 @@ void h_pid_init()
 	h_acc_arg.k_inc_d_norm = 0.0f;
 	h_acc_arg.k_ff = 0.05f;
 
+	//速度环
 	h_speed_arg.kp = 1.5f *pid_setup.groups.hc_sp.kp;				//比例系数
 	h_speed_arg.ki = 0.0f *pid_setup.groups.hc_sp.ki;				//积分系数
 	h_speed_arg.kd = 0.0f;				//微分系数
@@ -59,6 +61,7 @@ void h_pid_init()
 	h_speed_arg.k_inc_d_norm = 0.8f;
 	h_speed_arg.k_ff = 0.5f;	
 	
+	//高度位置环
 	h_height_arg.kp = 1.5f *pid_setup.groups.hc_height.kp;				//比例系数
 	h_height_arg.ki = 0.0f *pid_setup.groups.hc_height.ki;				//积分系数
 	h_height_arg.kd = 0.05f *pid_setup.groups.hc_height.kd;				//微分系数
@@ -66,7 +69,6 @@ void h_pid_init()
 	h_height_arg.inc_hz = 20;
 	h_height_arg.k_inc_d_norm = 0.5f;
 	h_height_arg.k_ff = 0;	
-	
 }
 
 /*

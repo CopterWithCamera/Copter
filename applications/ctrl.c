@@ -17,8 +17,7 @@ ctrl_t ctrl_2;
 
 void Ctrl_Para_Init()		//设置默认参数
 {
-//====================================
-	ctrl_1.PID[PIDROLL].kdamp  = 1;
+	ctrl_1.PID[PIDROLL].kdamp  = 1;		//damp 阻尼
 	ctrl_1.PID[PIDPITCH].kdamp = 1;
 	ctrl_1.PID[PIDYAW].kdamp   = 1;
 	

@@ -36,7 +36,7 @@ typedef union
 		xyz_f_t Accel;
 		xyz_f_t Gyro;
 		xyz_f_t Mag;
-		xyz_f_t vec_3d_cali;
+		xyz_f_t vec_3d_cali;	//存储数据结构体中的vec_3d_cali
 		uint32_t mpu_flag;
 		float Acc_Temperature;
 		float Gyro_Temperature;
@@ -111,9 +111,11 @@ void Param_SavePID(void);
 void Param_SaveAccelOffset(xyz_f_t *offset);
 void Param_SaveGyroOffset(xyz_f_t *offset);
 void Param_SaveMagOffset(xyz_f_t *offset);
-void Param_Save_3d_offset(xyz_f_t *offset);
+void Param_Save3d_offset(xyz_f_t *offset);
 void Parameter_Save(void);
 void PID_Para_Init(void);
+
+extern u16 flash_save_en_cnt;
 
 #endif
 

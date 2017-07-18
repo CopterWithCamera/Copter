@@ -27,7 +27,7 @@ typedef struct
 	xyz_f_t Acc_Offset;
 	xyz_f_t Gyro_Offset;
 	xyz_f_t Gyro_Auto_Offset;
-	xyz_f_t vec_3d_cali;
+	xyz_f_t vec_3d_cali;		//运算中用到的vec_3d_cali
 	float Acc_Temprea_Offset;
 	float Gyro_Temprea_Offset;
 	

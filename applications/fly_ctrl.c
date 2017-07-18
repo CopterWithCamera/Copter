@@ -81,6 +81,9 @@ void lock_now_height(u8 en)	//en -- 模式启用标志位，用于判断此模式是否被使用
 			//设置期望高度
 			my_except_height = sonar_fusion.fusion_displacement.out;	//读取当前高度
 		}
+		
+		mydata.d1 = (s16)my_except_height;
+	
 	}
 	else
 	{
@@ -136,7 +139,7 @@ void rising_to_50cm(void)
 *************************************************************** */
 
 void Fly_Ctrl(void)		//调用周期5ms
-{
+{	
 	//只有自动模式才会执行自动控制代码
 	if(mode_state != 3)
 	{
@@ -196,11 +199,7 @@ void Fly_Ctrl(void)		//调用周期5ms
 	//指令5
 	if(ctrl_command == 4)
 	{
-		lock_now_height(1);
-	}
-	else
-	{
-		lock_now_height(0);
+		hand();
 	}
 	
 	//指令6
@@ -231,7 +230,7 @@ u8 ctrl_command;
 u8 ctrl_command_old;
 u8 All_Out_Switch = 0;
 void Ctrl_Mode(float *ch_in)
-{	
+{
 	//更新历史模式
 	ctrl_command_old = ctrl_command;
 	

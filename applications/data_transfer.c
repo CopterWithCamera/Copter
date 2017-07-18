@@ -766,7 +766,6 @@ void ANO_DT_Data_Exchange(void)	//当前调用周期1ms
 //Data_Receive_Anl函数是协议数据解析函数，函数参数是符合协议格式的一个数据帧，该函数会首先对协议数据进行校验
 //校验通过后对数据进行解析，实现相应功能
 //此函数可以不用用户自行调用，由函数Data_Receive_Prepare自动调用
-u16 flash_save_en_cnt = 0;
 u16 RX_CH[CH_NUM];
 void ANO_DT_Data_Receive_Anl(u8 *data_buf,u8 num)
 {
@@ -788,10 +787,10 @@ void ANO_DT_Data_Receive_Anl(u8 *data_buf,u8 num)
 		{
 			mpu6050.Gyro_CALIBRATE = 1;
 		}
-		else if(*(data_buf+4)==0X03)		//0x03：
+		else if(*(data_buf+4)==0X03)		//0x03：无功能（地面站无法发送此指令）
 		{
-			mpu6050.Acc_CALIBRATE = 1;
-			mpu6050.Gyro_CALIBRATE = 1;			
+			//mpu6050.Acc_CALIBRATE = 1;
+			//mpu6050.Gyro_CALIBRATE = 1;
 		}
 		else if(*(data_buf+4)==0X04)		//0x04：MAG校准
 		{

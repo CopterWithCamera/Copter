@@ -285,7 +285,7 @@ void MPU6050_Data_Offset()
             gyro_sum_cnt =0;
             if(mpu6050.Gyro_CALIBRATE == 1)		//陀螺仪的默认偏移设置由上位机发出的指令触发，则将测得数据保存到flash，并向上位机返回应答。
 			{
-                Param_SaveGyroOffset(&mpu6050.Gyro_Offset);		
+                Param_SaveGyroOffset(&mpu6050.Gyro_Offset);		//更新结构体（同时更新存储结构体和运行时结构体）并保存数据
 				f.msg_id = 2;
 				f.msg_data = 1;
 			}

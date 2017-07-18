@@ -109,7 +109,7 @@ void ANO_AK8975_CalOffset_Mag(void)
 				ak8975.Mag_Gain.y = MagSum.x / MagSum.y;
 				ak8975.Mag_Gain.z = MagSum.x / MagSum.z;
 				
-				Param_SaveMagOffset(&ak8975.Mag_Offset);//param_Save();//保存数据
+				Param_SaveMagOffset(&ak8975.Mag_Offset);	//更新结构体（同时更新存储结构体和运行时结构体）并保存数据
 				cnt_m = 0;
 				Mag_CALIBRATED = 0;		//退出陀螺仪校准状态（20s结束后）
 				f.msg_id = 3;			//返回校准完成应答
@@ -126,8 +126,8 @@ void ANO_AK8975_CalOffset_Mag(void)
 
 void ANO_AK8975_Read(void)
 {
-		//读取磁力计
-		ANO_AK8975_Read_Mag_Data();
+	//读取磁力计
+	ANO_AK8975_Read_Mag_Data();
 }
 
 
