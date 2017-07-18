@@ -72,7 +72,6 @@ void lock_now_height(u8 en)	//en -- 模式启用标志位，用于判断此模式是否被使用
 	if(en)
 	{
 		//模式被启用
-		
 		my_height_mode = 1;
 		
 		if(height_lock_flag == 0)
@@ -80,7 +79,7 @@ void lock_now_height(u8 en)	//en -- 模式启用标志位，用于判断此模式是否被使用
 			height_lock_flag = 1;
 			
 			//设置期望高度
-			my_except_height = sonar.displacement;	//读取当前高度
+			my_except_height = sonar_fusion.fusion_displacement.out;	//读取当前高度
 		}
 	}
 	else
@@ -100,8 +99,8 @@ void use_my_except_height(void)
 	my_height_mode = 1;
 }
 
-//上升测试
-void falling_to_15cm(void)
+//下降测试
+void falling_to_15cm(void)	//这个高度相当于降落了（起落架大约比15cm短一点点）
 {
 	//期望高度控制高度
 	my_height_mode = 1;
@@ -110,14 +109,14 @@ void falling_to_15cm(void)
 	my_except_height = 150;		//下降到100mm = 10cm
 }
 
-//下降测试
-void rising_to_100cm(void)
+//上升测试
+void rising_to_50cm(void)
 {
 	//期望高度控制高度
 	my_height_mode = 1;
 
 	//设置期望高度
-	my_except_height = 1000;		//下降到100mm = 10cm
+	my_except_height = 500;		//下降到 150cm
 }
 
 
@@ -175,17 +174,17 @@ void Fly_Ctrl(void)		//调用周期5ms
 	//指令2
 	if(ctrl_command == 1)
 	{
-		lock_now_height(1);
+		lock_now_height(1);	//锁定当前高度
 	}
 	else
 	{
-		lock_now_height(0);
+		lock_now_height(0);	//清除标志位
 	}
 	
 	//指令3
 	if(ctrl_command == 2)
 	{
-		use_my_except_height();
+		rising_to_50cm();
 	}
 	
 	//指令4

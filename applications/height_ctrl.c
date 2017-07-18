@@ -401,7 +401,7 @@ float Height_Ctrl(float T,u8 mode,float thr,float height,u8 ready,float en)	//高
 	else if(mode == 1)
 	{
 		//sonar_fusion.fusion_displacement.out是当前高度，单位是mm
-		set_height_e = height - sonar.displacement;	//高度差 = 目标高度 - 当前高度
+		set_height_e = height - sonar_fusion.fusion_displacement.out;	//高度差 = 目标高度 - 当前高度
 	}
 	
 	//高度控制

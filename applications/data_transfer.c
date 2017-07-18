@@ -555,6 +555,8 @@ void ANO_DT_Send_User2()
 	
 	data_to_send[_cnt++] = All_Out_Switch;		//输出控制标志（自己加上的，应急停止功能）
 	
+	data_to_send[_cnt++] = ultra.measure_ok;		//输出控制标志（自己加上的，应急停止功能）
+	
 	data_to_send[3] = _cnt-4;				//LEN位，在这里补上
 	
 	u8 sum = 0;
