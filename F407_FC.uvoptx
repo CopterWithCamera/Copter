@@ -118,7 +118,6 @@
         <SetRegEntry>
           <Number>0</Number>
           <Key>DLGUARM</Key>
-          <Name>(&gt;??鈝(&gt;?</Name>
         </SetRegEntry>
         <SetRegEntry>
           <Number>0</Number>
@@ -172,6 +171,11 @@
           <count>4</count>
           <WinNumber>1</WinNumber>
           <ItemText>mpu6050</ItemText>
+        </Ww>
+        <Ww>
+          <count>5</count>
+          <WinNumber>1</WinNumber>
+          <ItemText>user_parameter.groups.self_def_1</ItemText>
         </Ww>
       </WatchWindow1>
       <Tracepoint>

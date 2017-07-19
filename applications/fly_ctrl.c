@@ -175,17 +175,27 @@ void attitude_hand(void)
 	mydata.d1 = (s16)CH_ctrl[ROL];
 }
 
+
+
 //横滚角乒乓控制
 void attitude_pingpong(void)
 {
+	/*
+	
+		参数表：
+		user_parameter.groups.self_def_1	横滚方向PID		对应地面站PID13
+	
+	*/
+	
+	
 	//横滚自动控制
-	if(length > 20)
+	if(length > 20)	//偏左
 	{
-		CH_ctrl[0] = -5;
+		CH_ctrl[0] = 30 * user_parameter.groups.self_def_1.kp;	//横滚方向kp	向右调整（为正）
 	}
 	else if(length < -20)
 	{
-		CH_ctrl[0] = 5;
+		CH_ctrl[0] = -30 * user_parameter.groups.self_def_1.kp;	//向左调整（为负）
 	}
 	else
 	{
@@ -194,7 +204,7 @@ void attitude_pingpong(void)
 	
 	//俯仰和航向手动控制
 	CH_ctrl[1] = my_deathzoom( ( CH_filter[PIT]) ,0,30 );	//1：俯仰 PIT
-	CH_ctrl[3] = CH_filter[3];	//3：航向 YAW
+	CH_ctrl[3] = CH_filter[3];								//3：航向 YAW
 }
 
 //根据偏移量进行单P调整

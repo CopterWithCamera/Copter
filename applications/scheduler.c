@@ -146,6 +146,7 @@ void Duty_20ms()
 //50ms线程
 void Duty_50ms()
 {
+	
 	Ultra_Duty();			//定时向超声波传感器写入测距指令
 	
 	mode_check(CH_filter);	//根据辅助通道状态切换当前模式

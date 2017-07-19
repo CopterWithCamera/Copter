@@ -932,11 +932,13 @@ void ANO_DT_Data_Receive_Anl(u8 *data_buf,u8 num)
 		pid_setup.groups.ctrl4.kp  = 0.001*( (vs16)(*(data_buf+4)<<8)|*(data_buf+5) );
         pid_setup.groups.ctrl4.ki  = 0.001*( (vs16)(*(data_buf+6)<<8)|*(data_buf+7) );
         pid_setup.groups.ctrl4.kd  = 0.001*( (vs16)(*(data_buf+8)<<8)|*(data_buf+9) );
-			
+		
+		//PID11
 		pid_setup.groups.ctrl5.kp  = 0.001*( (vs16)(*(data_buf+10)<<8)|*(data_buf+11) );
 		pid_setup.groups.ctrl5.ki  = 0.001*( (vs16)(*(data_buf+12)<<8)|*(data_buf+13) );
 		pid_setup.groups.ctrl5.kd  = 0.001*( (vs16)(*(data_buf+14)<<8)|*(data_buf+15) );
 
+		//PID12
 		pid_setup.groups.ctrl6.kp  = 0.001*( (vs16)(*(data_buf+16)<<8)|*(data_buf+17) );
 		pid_setup.groups.ctrl6.ki  = 0.001*( (vs16)(*(data_buf+18)<<8)|*(data_buf+19) );
 		pid_setup.groups.ctrl6.kd  = 0.001*( (vs16)(*(data_buf+20)<<8)|*(data_buf+21) );
@@ -956,11 +958,13 @@ void ANO_DT_Data_Receive_Anl(u8 *data_buf,u8 num)
 	if(*(data_buf+2)==0X14)			//设置PID13;PID14;PID15
 	{
 		/***PID13**/	
+		//self_def_1是pid_t类型变量，其中包含kp,ki,kd和damp,使用到的主要是kp,ki,kd
 		user_parameter.groups.self_def_1.kp  = 0.001*( (vs16)(*(data_buf+4)<<8)|*(data_buf+5) );
 		user_parameter.groups.self_def_1.ki  = 0.001*( (vs16)(*(data_buf+6)<<8)|*(data_buf+7) );
 		user_parameter.groups.self_def_1.kd  = 0.001*( (vs16)(*(data_buf+8)<<8)|*(data_buf+9) );
 		
 		/***PID14***/
+		//self_def_2是pid_t类型变量，其中包含kp,ki,kd和damp,使用到的主要是kp,ki,kd
         user_parameter.groups.self_def_2.kp = 0.001*( (vs16)(*(data_buf+10)<<8)|*(data_buf+11) );
         user_parameter.groups.self_def_2.ki = 0.001*( (vs16)(*(data_buf+12)<<8)|*(data_buf+13) );
         user_parameter.groups.self_def_2.kd = 0.001*( (vs16)(*(data_buf+14)<<8)|*(data_buf+15) );
