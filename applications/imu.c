@@ -13,6 +13,7 @@
 #include "mymath.h"
 #include "filter.h"
 #include "mpu6050.h"
+#include "rc.h"
 
 #define Kp 0.3f                	// proportional gain governs rate of convergence to accelerometer/magnetometer
 #define Ki 0.0f                	// 0.001  integral gain governs rate of convergence of gyroscope biases
@@ -36,12 +37,11 @@ float mag_norm ,mag_norm_xyz ;
 
 xyz_f_t	mag_sim_3d,
 		acc_3d_hg,		//排除重力加速度影响的地理坐标系的三轴加速度值
-		acc_ng,			//排除重力加速度影响的机体坐标系三轴加速度值
-		acc_ng_offset;
+		acc_ng;			//排除重力加速度影响的机体坐标系三轴加速度值
 
-u8 acc_ng_cali;
-extern u8 fly_ready;
-void IMUupdate(float half_T,float gx, float gy, float gz, float ax, float ay, float az,float *rol,float *pit,float *yaw) 
+xyz_f_t acc_ng_offset;	//加速度计快速校准积分变量
+u8 acc_ng_cali;			//快速校准flag
+void IMUupdate(float half_T,float gx, float gy, float gz, float ax, float ay, float az,float *rol,float *pit,float *yaw) 	//调用频率2ms
 {		
 	float ref_err_lpf_hz;
 	static float yaw_correct;
@@ -136,10 +136,12 @@ void IMUupdate(float half_T,float gx, float gy, float gz, float ax, float ay, fl
 	*/
 	
 	//=============================================================================
-	//加速度计校准
+	//加速度计校准（只在解锁瞬间被调用）
 
 	if(acc_ng_cali)	//加速度计校准，计算offset，要求此段代码执行时飞机处于静止状态
 	{
+		//这段校准要使用160ms，所以解锁后螺旋桨不能马上起转
+		
 		if(acc_ng_cali==2)	//acc_ng_cali在解锁一瞬间会被置2
 		{
 			acc_ng_offset.x = 0;

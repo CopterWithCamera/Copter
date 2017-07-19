@@ -15,6 +15,7 @@
 #include "ak8975.h"
 #include "anotc_baro_ctrl.h"
 #include "fly_ctrl.h"
+#include "fly_mode.h"
 
 s8 CH_in_Mapping[CH_NUM] = {0,1,2,3,4,5,6,7};    //通道映射
 
@@ -56,10 +57,10 @@ void RC_Duty( float T , u16 tmp16_CH[CH_NUM] )
 	{
 		CH_Mapping_Fun(tmp16_CH,Mapped_CH);
 	}
-	else if( NS == 2 )
-	{
-		CH_Mapping_Fun(RX_CH,Mapped_CH);
-	}
+//	else if( NS == 2 )
+//	{
+//		CH_Mapping_Fun(RX_CH,Mapped_CH);
+//	}
 
 	//数值被存入 Mapped_CH[]
 	
@@ -110,7 +111,7 @@ void RC_Duty( float T , u16 tmp16_CH[CH_NUM] )
 				//从这里开始，信号数据传入 CH[i]
 			}
 		}	
-		else //未接接收机或无信号（遥控关闭或丢失信号）
+		else //未接接收机或无信号（遥控关闭或丢失信号）或处于其他模式
 		{
 			
 		}
@@ -141,7 +142,7 @@ void RC_Duty( float T , u16 tmp16_CH[CH_NUM] )
 		{
 			if(!fly_ready)
 			{
-				CH_filter[THR] = -500;
+				CH_filter[THR] = -500;	//遥控器丢信号时油门输入采纳值强制为最小
 			}
 		}
 	}
@@ -248,11 +249,15 @@ void Fly_Ready(float T,float height_speed_mm)
 	}
 	
 	//解锁后一定时间没有起飞（同时满足油门低和高度低），则上锁
-	if(fly_ready && (thr_stick_low == 1) && (ABS(height_speed_mm)<300))	//解锁 油门低 垂直速度低
+	//手动模式下解锁 油门低 垂直速度低
+	//自动模式下解锁 油门低 垂直速度低 手动控高度
+	//自动模式下用自动控高时不会自动锁定
+	if((fly_ready && (thr_stick_low == 1) && (ABS(height_speed_mm)<300) && (mode_state != 3)) || 
+		(fly_ready && (CH_ctrl[THR] < -400) && (ABS(height_speed_mm)<300) && (mode_state == 3) && (my_height_mode == 0)))	// 高度控制模式为手动控高（自动控高时不受此约束）
 	{
 		if(locked_cnt < 4000)	//4000ms = 4s
 		{
-			locked_cnt  += 1000*T;	//T大约为0.002
+			locked_cnt  += 1000*T;	//T大约为0.002(T的单位是us)
 		}
 		else
 		{

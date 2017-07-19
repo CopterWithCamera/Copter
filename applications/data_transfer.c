@@ -841,19 +841,20 @@ void ANO_DT_Data_Receive_Anl(u8 *data_buf,u8 num)
 	if(*(data_buf+2)==0X03)		//RCDATA（命令字03）
 	{
 		//如果NS模式不是1（不是接收机模式或接收机已经掉线），则用数传数据喂狗，喂狗时会把模式切换为数传数据模式
-		if( NS != 1 )
-		{
-			Feed_Rc_Dog(2);	//数传
-		}
+		//只有在一开始就没有遥控器的情况下NS才会是0（表示没有收到过遥控器信号）
+//		if( NS != 1 )
+//		{
+//			Feed_Rc_Dog(2);	//数传
+//		}
 
-		RX_CH[THR] = (vs16)(*(data_buf+4)<<8)|*(data_buf+5) ;
-		RX_CH[YAW] = (vs16)(*(data_buf+6)<<8)|*(data_buf+7) ;
-		RX_CH[ROL] = (vs16)(*(data_buf+8)<<8)|*(data_buf+9) ;
-		RX_CH[PIT] = (vs16)(*(data_buf+10)<<8)|*(data_buf+11) ;
-		RX_CH[AUX1] = (vs16)(*(data_buf+12)<<8)|*(data_buf+13) ;
-		RX_CH[AUX2] = (vs16)(*(data_buf+14)<<8)|*(data_buf+15) ;
-		RX_CH[AUX3] = (vs16)(*(data_buf+16)<<8)|*(data_buf+17) ;
-		RX_CH[AUX4] = (vs16)(*(data_buf+18)<<8)|*(data_buf+19) ;
+//		RX_CH[THR] = (vs16)(*(data_buf+4)<<8)|*(data_buf+5) ;
+//		RX_CH[YAW] = (vs16)(*(data_buf+6)<<8)|*(data_buf+7) ;
+//		RX_CH[ROL] = (vs16)(*(data_buf+8)<<8)|*(data_buf+9) ;
+//		RX_CH[PIT] = (vs16)(*(data_buf+10)<<8)|*(data_buf+11) ;
+//		RX_CH[AUX1] = (vs16)(*(data_buf+12)<<8)|*(data_buf+13) ;
+//		RX_CH[AUX2] = (vs16)(*(data_buf+14)<<8)|*(data_buf+15) ;
+//		RX_CH[AUX3] = (vs16)(*(data_buf+16)<<8)|*(data_buf+17) ;
+//		RX_CH[AUX4] = (vs16)(*(data_buf+18)<<8)|*(data_buf+19) ;
 	}
 
 	//PID1 赋值到运算用的结构体
