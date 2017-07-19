@@ -7,6 +7,7 @@
  * 技术Q群 ：190169595
 **********************************************************************************/
 
+#include "parameter.h"
 #include "include.h"
 #include "mpu6050.h"
 #include "ak8975.h"
@@ -29,6 +30,8 @@ user_parameter_t user_parameter;	//自定义的用户PID结构体
 static FATFS fs;
 static 	FIL file;
 static 	DIR DirInf;
+
+u8 parameter_read_error = 0;
 
 //========================================================================================================
 //========================================================================================================
@@ -61,11 +64,11 @@ static int32_t Para_ReadSettingFromFile(void)
 		{
 			/* 重新进行挂载 */
 			result = f_mount(&fs, "0:", 0);			/* Mount a logical drive */
-	   if (result != FR_OK)
-      {
-			 	/* 卸载文件系统 */
-	      f_mount(NULL, "0:", 0);
-			 return -2 ;
+			if (result != FR_OK)
+			{
+				/* 卸载文件系统 */
+				f_mount(NULL, "0:", 0);
+				return -2 ;
 			}
 		}
 	}
@@ -78,6 +81,8 @@ static int32_t Para_ReadSettingFromFile(void)
 		f_mount(NULL, "0:", 0);
 		return -3;
 	}
+	
+	/* ********************** 读取Sensor配置文件 并 存入sensor_setup结构体  ********************** */
 
 	/* 打开文件 */
 	result = f_open(&file, SENSOR_SETUP_FILE, FA_OPEN_EXISTING | FA_READ);	//打开Sensor配置文件
@@ -88,8 +93,6 @@ static int32_t Para_ReadSettingFromFile(void)
 		/* 文件不存在 */
 		return -4;
 	}
-
-	/* ********************** 读取Sensor配置文件 并 存入sensor_setup结构体  ********************** */
 	
 	/* 读取Sensor配置文件 */
 	result = f_read(&file, &sensor_setup.raw_data, sizeof(sensor_setup), &bw);
@@ -325,7 +328,7 @@ static void Param_SetSettingToFC(void)
 //参数恢复默认值
 void Para_ResetToFactorySetup(void)
 {
-
+	
 	/* ************** 修复文件系统 ************** */
 	/* 如果挂载不成功，进行格式化 */
 	f_mkfs("0:",1,0);
@@ -389,6 +392,11 @@ void Para_ResetToFactorySetup(void)
 	/* ************** 新结构体数值写入FLASH ************** */
 
 	Para_WriteSettingToFile();	//默认值写入到Flash中
+	u32 result = Para_ReadSettingFromFile();
+	if(result == 1)	//如果读取成功，则消除读取错误指示
+	{
+		parameter_read_error = 0;
+	}
 
 	/* ****************************** 用新数值初始化飞控 ****************************************** */
 	/* ************** （在单独收到恢复默认值指令时会需要在这个函数里赋值运行结构体） ************** */
@@ -414,6 +422,7 @@ void Para_Init()
 	if(result < 0)	//读取FLASH中文件发生错误
 	{
 		Para_ResetToFactorySetup();	//恢复默认参数
+		parameter_read_error = 1;
 	}
 
 	//2.参数恢复到运行结构体（也是读取参数的一个必要步骤）

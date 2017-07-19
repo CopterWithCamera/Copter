@@ -87,6 +87,8 @@ void Duty_2ms()
 				mpu6050.Acc.x, mpu6050.Acc.y, mpu6050.Acc.z,					//三轴加速度计数据（4096--1G）
 				&Roll,&Pitch,&Yaw);												//输出：ROL PIT YAW 姿态角
 
+	mydata.d2 = (s16)(Roll*100);
+	
 	//高度数据采集
 	baro_ctrl( inner_loop_time ,&hc_value);			//高度数据获取，为内环函数最后调用的高度控制函数做准备（获取气压计数据，调用超声波数据，融合计算高度数据）
 	

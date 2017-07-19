@@ -55,6 +55,13 @@ void set_attitude_calibration(u8 cmd)
 			flash_save_en_cnt = 1;	//存储使能
 		break;
 		
+		//清零
+		
+		case 0x06:	//清零（不存储）
+			mpu6050.vec_3d_cali.x = 0;
+			mpu6050.vec_3d_cali.y = 0;
+		break;
+		
 		default:
 			
 		break;
@@ -77,17 +84,17 @@ void hand(void)
 
 	//摇杆控高
 	my_height_mode = 0;
-	CH_ctrl[2] = CH_filter[2];	//2：油门 THR
+	CH_ctrl[THR] = CH_filter[THR];	//2：油门 THR
 	
 	if(NS==0) //丢失信号
 	{
-		CH_ctrl[2] = LIMIT(CH_ctrl[2],-499,0);	//保持当前油门值，但不能超过半油门，500这个数在定高代码里代表悬停
+		CH_ctrl[THR] = LIMIT(CH_ctrl[THR],-499,0);	//保持当前油门值，但不能超过半油门，500这个数在定高代码里代表悬停
 												//也就是说定高模式丢信号时只能悬停或下降（依照丢信号前状态）
 	}
 	
 	//依旧由油门控制Thr_Low位
 	//thr取值范围0-1000，改为CH_filter后取值范围+-500
-	if( CH_ctrl[2] < -400 )	//油门低判断（用于 ALL_Out 里的最低转速保护 和 ctrl2 里的Yaw轴起飞前处理）
+	if( CH_ctrl[THR] < -400 )	//油门低判断（用于 ALL_Out 里的最低转速保护 和 ctrl2 里的Yaw轴起飞前处理）
 	{
 		Thr_Low = 1;
 	}
@@ -161,9 +168,11 @@ void rising_to_50cm(void)
 //手动控制姿态
 void attitude_hand(void)
 {
-	CH_ctrl[0] = my_deathzoom( ( CH_filter[ROL]) ,0,30 );	//0：横滚 ROL
-	CH_ctrl[1] = my_deathzoom( ( CH_filter[PIT]) ,0,30 );	//1：俯仰 PIT
-	CH_ctrl[3] = CH_filter[3];	//3：航向 YAW
+	CH_ctrl[ROL] = my_deathzoom( ( CH_filter[ROL]) ,0,30 );	//0：横滚 ROL
+	CH_ctrl[PIT] = my_deathzoom( ( CH_filter[PIT]) ,0,30 );	//1：俯仰 PIT
+	CH_ctrl[YAW] = CH_filter[YAW];	//3：航向 YAW
+	
+	mydata.d1 = (s16)CH_ctrl[ROL];
 }
 
 //横滚角乒乓控制

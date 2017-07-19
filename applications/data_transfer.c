@@ -23,6 +23,7 @@
 #include "height_ctrl.h"
 #include "fly_ctrl.h"
 #include "adc.h"
+#include "camera_datatransfer.h"
 
 /////////////////////////////////////////////////////////////////////////////////////
 //数据拆分宏定义，在发送大于1字节的数据类型时，比如int16、float等，需要把数据拆分成单独字节进行发送
@@ -622,7 +623,7 @@ void ANO_DT_Data_Exchange(void)	//当前调用周期1ms
 	
 	if((cnt % location_cnt) == (location_cnt-3))
 	{
-		f.send_location += 1;		
+		f.send_location = 1;
 	}
 
 	if(++cnt>200) cnt = 0;
@@ -733,6 +734,13 @@ void ANO_DT_Data_Exchange(void)	//当前调用周期1ms
 			f.send_rcdata = 0;
 			ANO_DT_Send_RCData(CH[2]+1500,CH[3]+1500,CH[0]+1500,CH[1]+1500,CH[4]+1500,CH[5]+1500,CH[6]+1500,CH[7]+1500,-500 +1500,-500 +1500);
 		}
+		else if(f.send_location)
+		{
+			
+			f.send_location = 0;
+			ANO_DT_Send_Location(	0,			0,	length *10000000 ,	0 *10000000,	0		);
+			//						定位状态	卫星数量			经度 			纬度 			回航角
+		}
 		else if(f.send_motopwm)	//当前PWM输出值
 		{
 			f.send_motopwm = 0;
@@ -749,14 +757,7 @@ void ANO_DT_Data_Exchange(void)	//当前调用周期1ms
 			f.send_power = 0;
 			ANO_DT_Send_Power( Battry_Voltage ,456);	//传入数据为V*100，输入123则显示为1.23V
 		}
-		else if(f.send_location == 2)
-		{
-			
-			f.send_location = 0;
-			ANO_DT_Send_Location(	0,			0,		3 *10000000,	4 *10000000,	0		);
-			//						定位状态	卫星数量			经度 			纬度 			回航角
-			
-		}
+
 		
 	}
 	

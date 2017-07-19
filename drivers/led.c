@@ -8,7 +8,6 @@
 **********************************************************************************/
 #include "led.h"
 #include "include.h"
-//#include "ll_gps.h"
 #include "mymath.h"
 
 void LED_Init()
@@ -272,10 +271,13 @@ extern u8 height_ctrl_mode;
 
 void LED_Duty() //50ms一次
 {
-	
 	led_cnt_res_check();
 
-	if(Mag_CALIBRATED) //传感器校准指示优先
+	if(parameter_read_error)
+	{
+		light.RGB_Info = 8;
+	}
+	else if(Mag_CALIBRATED) //传感器校准指示优先
 	{
 		light.RGB_Info = 19;
 	}
@@ -334,6 +336,12 @@ void LED_Duty() //50ms一次
 		break;
 		case 1:
 			
+		break;
+		case 8:
+			LED_Brightness[X] = 0;
+			LED_Brightness[R] = 20;		
+			LED_Brightness[G] = 0;	
+			LED_Brightness[B] = 0;
 		break;
 		case 9:
 			LED_Brightness[X] = 0;

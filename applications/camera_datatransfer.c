@@ -80,7 +80,9 @@ void Get_Position(void)
 	angle    = *((float*)(&(Tmp_Buffer[4])));
 	speed = *((float*)(&(Tmp_Buffer[8])));
 	
-	printf("%.1f  %.1f   %.1f\r\n", length, angle, speed);
+	mydata.d3 = (s16)length;
+	
+//	printf("%.1f  %.1f   %.1f\r\n", length, angle, speed);
 }
 
 u8 counter = 0;

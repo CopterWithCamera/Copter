@@ -116,6 +116,7 @@ void Parameter_Save(void);
 void PID_Para_Init(void);
 
 extern u16 flash_save_en_cnt;
+extern u8 parameter_read_error;
 
 #endif
 
