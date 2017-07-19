@@ -121,7 +121,7 @@ void Usart3_IRQ(void)
 	
 	//发送（进入移位）中断
 	if( USART_GetITStatus(USART3,USART_IT_TXE ) )
-	{		
+	{
 		USART3->DR = TxBuffer3[TxCounter3++]; //写DR清除中断标志          
 		if(TxCounter3 == count3)
 		{

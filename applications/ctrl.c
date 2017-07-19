@@ -241,22 +241,6 @@ void Thr_Ctrl(float T , u8 state)	//计算生成 thr_value 和 Thr_Weight
 	{
 		thr = 500 + CH_ctrl[THR];	//油门值 0 ~ 1000
 		
-		//thr取值范围0-1000
-		if( thr < 100 )	//油门低判断（用于 ALL_Out 里的最低转速保护 和 ctrl2 里的Yaw轴起飞前处理）
-		{
-			Thr_Low = 1;
-		}
-		else
-		{
-			Thr_Low = 0;
-		}
-		
-		if(NS==0) //丢失信号
-		{
-			thr = LIMIT(thr,0,500);	//保持当前油门值，但不能超过半油门，500这个数在定高代码里代表悬停
-									//也就是说定高模式丢信号时只能悬停或下降（依照丢信号前状态）
-		}
-		
 		//油门输出值
 		thr_value = Height_Ctrl(T, my_height_mode, thr, my_except_height, fly_ready, 1);   //输出经过定高算法修正的值
 		
@@ -264,16 +248,6 @@ void Thr_Ctrl(float T , u8 state)	//计算生成 thr_value 和 Thr_Weight
 	else				//其余模式手动控制油门
 	{
 		thr = 500 + CH_filter[THR]; //油门值 0 ~ 1000
-		
-		//thr取值范围0-1000
-		if( thr < 100 )	//油门低判断（用于 ALL_Out 里的最低转速保护 和 ctrl2 里的Yaw轴起飞前处理）
-		{
-			Thr_Low = 1;
-		}
-		else
-		{
-			Thr_Low = 0;
-		}
 		
 		//根据飞行模式选择油门控制方法
 		
