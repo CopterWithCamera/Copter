@@ -271,9 +271,9 @@ void IMUupdate(float half_T,float gx, float gy, float gz, float ax, float ay, fl
 	//解算出的三轴角度（四元数转姿态角）
 	//rol、pit、yaw为角度制数值				360 / (2*PI) = 57.3f
 	//横滚
-	*rol = fast_atan2(2*(ref_q[0]*ref_q[1] + ref_q[2]*ref_q[3]),1 - 2*(ref_q[1]*ref_q[1] + ref_q[2]*ref_q[2])) *57.3f;// + mpu6050.vec_3d_cali.x;
+	*rol = fast_atan2(2*(ref_q[0]*ref_q[1] + ref_q[2]*ref_q[3]),1 - 2*(ref_q[1]*ref_q[1] + ref_q[2]*ref_q[2])) *57.3f + mpu6050.vec_3d_cali.x;
 	//俯仰
-	*pit = asin(2*(ref_q[1]*ref_q[3] - ref_q[0]*ref_q[2])) *57.3f;// + mpu6050.vec_3d_cali.y;															
+	*pit = asin(2*(ref_q[1]*ref_q[3] - ref_q[0]*ref_q[2])) *57.3f + mpu6050.vec_3d_cali.y;															
 	//航向
 	*yaw = fast_atan2(2*(-ref_q[1]*ref_q[2] - ref_q[0]*ref_q[3]), 2*(ref_q[0]*ref_q[0] + ref_q[1]*ref_q[1]) - 1) *57.3f;
 }
