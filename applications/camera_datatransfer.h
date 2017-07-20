@@ -6,8 +6,13 @@
 void Copter_Data_Send(void);
 void Copter_Receive_Handle(unsigned char data);
 
-extern float length;
+
 extern float angle;
 extern float speed;
+
+extern float length;
+extern float Roll_Image;	//采图时对应的Roll
+
+extern float real_length;
 
 #endif

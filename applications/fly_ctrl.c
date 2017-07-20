@@ -6,6 +6,7 @@
 #include "anotc_baro_ctrl.h"
 #include "camera_datatransfer.h"
 #include "ctrl.h"
+#include "mymath.h"
 
 float CH_ctrl[CH_NUM];	//具体输入给ctrl的遥控器值
 float my_except_height = 0;//期望高度
@@ -68,6 +69,23 @@ void set_attitude_calibration(u8 cmd)
 	}
 }
 
+void set_all_out_switch(u8 cmd)
+{
+	switch(cmd)	//第一个数据（u8）
+	{
+		case 0x01:	//急停
+			All_Out_Switch = 0;	//禁止输出
+		break;
+			
+		case 0x02:	//解急停
+			All_Out_Switch = 1;	//允许输出
+		break;
+
+		default:
+			
+		break;
+	}
+}
 
 //========================================================================================
 //========================================================================================
@@ -171,8 +189,7 @@ void attitude_hand(void)
 	CH_ctrl[ROL] = my_deathzoom( ( CH_filter[ROL]) ,0,30 );	//0：横滚 ROL
 	CH_ctrl[PIT] = my_deathzoom( ( CH_filter[PIT]) ,0,30 );	//1：俯仰 PIT
 	CH_ctrl[YAW] = CH_filter[YAW];	//3：航向 YAW
-	
-	mydata.d1 = (s16)CH_ctrl[ROL];
+
 }
 
 
@@ -186,16 +203,29 @@ void attitude_pingpong(void)
 		user_parameter.groups.self_def_1	横滚方向PID		对应地面站PID13
 	
 	*/
-	
+//	static float length_old;
+//	float lenthhhh;
+//	
+//	if(speed)
+//	{
+//		lenthhhh = length_old;
+//	}
+//	else
+//	{
+//		lenthhhh = real_length;
+//		length_old = real_length;
+//	}
+//	
+//	mydata.d3 = (s16)lenthhhh;
 	
 	//横滚自动控制
-	if(length > 20)	//偏左
+	if(real_length > 14)	//偏左
 	{
-		CH_ctrl[0] = 30 * user_parameter.groups.self_def_1.kp;	//横滚方向kp	向右调整（为正）
+		CH_ctrl[0] =  40 * user_parameter.groups.self_def_1.kp;	//横滚方向kp	向右调整（为正）
 	}
-	else if(length < -20)
+	else if(real_length < -14)
 	{
-		CH_ctrl[0] = -30 * user_parameter.groups.self_def_1.kp;	//向左调整（为负）
+		CH_ctrl[0] = -50 * user_parameter.groups.self_def_1.ki;	//向左调整（为负）
 	}
 	else
 	{
@@ -205,12 +235,37 @@ void attitude_pingpong(void)
 	//俯仰和航向手动控制
 	CH_ctrl[1] = my_deathzoom( ( CH_filter[PIT]) ,0,30 );	//1：俯仰 PIT
 	CH_ctrl[3] = CH_filter[3];								//3：航向 YAW
+	
+	
 }
 
 //根据偏移量进行单P调整
-void attitude_single_p(void)
+float roll_integration = 0;
+void attitude_single_p(u8 en)
 {
-
+	float p_out,i_out,d_out,out;
+	
+	if(en)
+	{
+		p_out = real_length * user_parameter.groups.self_def_2.kp;
+		
+		roll_integration += real_length * user_parameter.groups.self_def_2.ki;
+		roll_integration = LIMIT(roll_integration,-40,40);
+		i_out = roll_integration;
+		
+		out = p_out + i_out;
+		//out = LIMIT(out,-150,150);
+		
+		CH_ctrl[0] = out;
+		
+		//俯仰和航向手动控制
+		CH_ctrl[1] = my_deathzoom( ( CH_filter[PIT]) ,0,30 );	//1：俯仰 PIT
+		CH_ctrl[3] = CH_filter[3];								//3：航向 YAW
+	}
+	else
+	{
+		roll_integration = 0;
+	}
 }
 
 //========================================================================================
@@ -310,7 +365,11 @@ void Fly_Ctrl(void)		//调用周期5ms
 	//指令4
 	if(ctrl_command == 3)
 	{
-		attitude_hand();
+		attitude_single_p(1);
+	}
+	else
+	{
+		attitude_single_p(0);
 	}
 	
 	//指令5
@@ -383,17 +442,31 @@ void Ctrl_Mode(float *ch_in)
 		height_command = 2;
 	}
 	
-	//急停功能
+	//电机输出使能
 	//All_Out_Switch = 0时急停，All_Out_Switch = 1时正常运行
+	//*(ch_in+AUX4)>0时开关被扳动到下方，发出禁止输出指令
+	static u8 out_flag = 0;
+	static u8 stop_flag = 0;
 	if(*(ch_in+AUX4) > 0)			//SWA,输出使能开关，只有在开关播到上方时输出才能被输出到PWM
 	{
-		//禁止输出
-		All_Out_Switch = 0;
+		out_flag = 0;	//清out_flag
+		
+		if(stop_flag == 0)
+		{
+			stop_flag = 1;
+			All_Out_Switch = 0;	//禁止输出
+		}
+		
 	}
 	else
 	{
-		//允许输出
-		All_Out_Switch = 1;
+		stop_flag = 0;	//清stop_flag
+		
+		if(out_flag == 0)
+		{
+			out_flag = 1;
+			All_Out_Switch = 1;	//允许输出
+		}
 	}
 }
 

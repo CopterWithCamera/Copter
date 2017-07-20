@@ -319,7 +319,7 @@ float my_deathzoom(float x,float ref,float zoom)//my_deadzone
 /*
  * 死区设置
  * 如果在死区里，则为ref
- * 如果不在死去里，则为原来值，不用减去死区宽度
+ * 如果不在死区里，则为原来值，不用减去死区宽度
  */
 float my_deathzoom_2(float x,float ref,float zoom)
 {

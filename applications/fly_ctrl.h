@@ -21,6 +21,7 @@ void Ctrl_Mode(float *ch_in);	//在fly_mode里调用
 //数传输入处理函数
 void set_except_height(u8 height);	//接收高度数据
 void set_attitude_calibration(u8);
+void set_all_out_switch(u8 cmd);
 
 
 #endif

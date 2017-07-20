@@ -723,7 +723,7 @@ void ANO_DT_Data_Exchange(void)	//当前调用周期1ms
 		{
 			f.send_senser = 0;
 			ANO_DT_Send_Senser(mpu6050.Acc.x,mpu6050.Acc.y,mpu6050.Acc.z,mpu6050.Gyro.x,mpu6050.Gyro.y,mpu6050.Gyro.z,ak8975.Mag_Val.x,ak8975.Mag_Val.y,ak8975.Mag_Val.z);
-		}	
+		}
 		else if(f.send_senser2)	//气压计高度、超声高度
 		{
 			f.send_senser2 = 0;
@@ -736,7 +736,6 @@ void ANO_DT_Data_Exchange(void)	//当前调用周期1ms
 		}
 		else if(f.send_location)
 		{
-			
 			f.send_location = 0;
 			ANO_DT_Send_Location(	0,			0,	length *10000000 ,	0 *10000000,	0		);
 			//						定位状态	卫星数量			经度 			纬度 			回航角
@@ -1009,23 +1008,10 @@ void ANO_DT_Data_Receive_Anl(u8 *data_buf,u8 num)
 		flash_save_en_cnt = 1;
 	}
 
-	
 	if(*(data_buf+2)==0X40)			//急停控制
 	{
-		switch(*(data_buf+4))	//第一个数据（u8）
-		{
-			case 0x01:	//急停
-				
-			break;
-				
-			case 0x02:	//解急停
-				
-			break;
-			
-			default:
-				
-			break;
-		}
+		tmp = *(data_buf+4);
+		set_all_out_switch(tmp);
 	}
 	
 	if(*(data_buf+2)==0X41)			//姿态校准指令
