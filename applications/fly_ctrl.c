@@ -230,6 +230,7 @@ float roll_integration = 0;
 void attitude_single_p(u8 en)
 {
 	float p_out,i_out,d_out,out;
+	static float bias_old;
 	
 	if(en)
 	{
@@ -239,13 +240,14 @@ void attitude_single_p(u8 en)
 			if(bias>50)
 			{
 				//×óÆ«¹ı´ó
-				out = 40 * user_parameter.groups.self_def_1.kp;		//ÓÒ·É
+				p_out = 40 * user_parameter.groups.self_def_1.kp;		//ÓÒ·É
 			}
 			else if(bias<-50)
 			{
 				//ÓÒÆ«¹ı´ó
-				out = -40 * user_parameter.groups.self_def_1.ki;	//×ó·É
+				p_out = -40 * user_parameter.groups.self_def_1.ki;	//×ó·É
 			}
+			i_out = 0;
 		}
 		else
 		{
@@ -258,10 +260,15 @@ void attitude_single_p(u8 en)
 			roll_integration += bias_lpf * user_parameter.groups.self_def_2.ki;
 			roll_integration = LIMIT(roll_integration,-40,40);
 			i_out = roll_integration;
-			
-			out = p_out + i_out;
-			out = LIMIT(out,-150,150);
 		}
+		
+		//d
+		d_out = bias_lpf * user_parameter.groups.self_def_2.kd * ( ABS(bias_lpf) - ABS(bias_old) );
+	//	d_out = LIMIT(d_out,-40,2);
+		bias_old = bias_lpf;
+		
+		out = p_out + i_out + d_out;
+		out = LIMIT(out,-150,150);
 		
 		CH_ctrl[0] = out;
 
