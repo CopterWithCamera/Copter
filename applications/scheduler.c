@@ -134,8 +134,8 @@ void Duty_5ms()
 	mydata.d4 = (s16)processing_fps;
 	mydata.d5 = (s16)receive_fps;
 	mydata.d6 = (s16)bias;
-	mydata.d7 = (s16)bias_lpf;
-	mydata.d8 = (s16)bias_real;
+	mydata.d7 = (s16)bias_real;
+	mydata.d8 = (s16)bias_lpf;
 }
 
 //10ms线程

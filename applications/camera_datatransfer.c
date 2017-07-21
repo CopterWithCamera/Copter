@@ -145,14 +145,14 @@ float receive_fps = 0;
 //fc：截止频率
 float cam_bias_lpf(float bias ,float dt_us ,float fc,float last_bias_lpf)
 {
-	float q;
-	float out;
-	float T;
+	float q,out,T;
 	
 	T = dt_us / 1000000.0f;
 	q = 6.28f * T * fc;
 	
-	//q = 0.628;
+	if(q >0.95f)
+		q = 0.95f;
+	
 	out = q * bias + (1.0f-q) * last_bias_lpf;
 	
 	return out;
@@ -172,31 +172,24 @@ float Roll_Image = 0;		//结果对应的角度
 float Height_Image = 0;		//结果对应的高度
 void Real_Length_Calculate(float T)
 {
-	if(!speed)
+	static float bias_old;
+	
+	//全白时用+-100表示
+	if(speed)
 	{
-		if(bias > 0)
-			bias = 100;
+		if(bias_old > 0)
+			bias = +100;
 		else
 			bias = -100;
 	}
-	
-	if(ABS(bias)>50)
-	{
-		//偏移大于40的点都不可能存在，只可能是+-100（无黑线标志位）
-		bias_real = bias;
-	}
-	else
+	bias_old = bias;
+
+	//只有在合理范围内才会矫正
+	//矫正的同时进行低通滤波
+	if(ABS(bias)<50)
 	{
 		//正常情况
-		bias_real = bias_correct(Roll_Image,Height_Image,bias);	//姿态误差校准
-	}
-	
-	if(ABS(bias_real)>50)
-	{
-		
-	}
-	else
-	{
+		bias_real = bias_correct(Roll_Image,Height_Image/10.0f,bias);	//姿态误差校准
 		bias_lpf = cam_bias_lpf(bias_real,T,0.8f,bias_lpf);		//低通滤波器
 	}
 }

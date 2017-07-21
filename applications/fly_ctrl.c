@@ -233,11 +233,10 @@ void attitude_single_p(u8 en)
 	
 	if(en)
 	{
-		
-		if(ABS(bias_real)>50)
+		if(ABS(bias)>50)
 		{
 			//异常值
-			if(bias_real>50)
+			if(bias>50)
 			{
 				//左偏过大
 				out = 40 * user_parameter.groups.self_def_1.kp;		//右飞
@@ -251,9 +250,12 @@ void attitude_single_p(u8 en)
 		else
 		{
 			//正常值
-			p_out = bias_real * user_parameter.groups.self_def_2.kp;
 			
-			roll_integration += bias_real * user_parameter.groups.self_def_2.ki;
+			//p
+			p_out = bias_lpf * user_parameter.groups.self_def_2.kp;
+			
+			//i
+			roll_integration += bias_lpf * user_parameter.groups.self_def_2.ki;
 			roll_integration = LIMIT(roll_integration,-40,40);
 			i_out = roll_integration;
 			
