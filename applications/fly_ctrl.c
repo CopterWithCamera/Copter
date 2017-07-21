@@ -80,7 +80,7 @@ void set_all_out_switch(u8 cmd)
 		case 0x02:	//解急停
 			All_Out_Switch = 1;	//允许输出
 		break;
-
+			
 		default:
 			
 		break;
@@ -205,11 +205,11 @@ void attitude_pingpong(void)
 	*/
 	
 	//横滚自动控制
-	if(real_length > 14)	//偏左
+	if(bias_real > 14)	//偏左
 	{
 		CH_ctrl[0] =  40 * user_parameter.groups.self_def_1.kp;	//横滚方向kp	向右调整（为正）
 	}
-	else if(real_length < -14)
+	else if(bias_real < -14)
 	{
 		CH_ctrl[0] = -50 * user_parameter.groups.self_def_1.ki;	//向左调整（为负）
 	}
@@ -233,29 +233,67 @@ void attitude_single_p(u8 en)
 	
 	if(en)
 	{
-		p_out = real_length * user_parameter.groups.self_def_2.kp;
 		
-		roll_integration += real_length * user_parameter.groups.self_def_2.ki;
-		roll_integration = LIMIT(roll_integration,-40,40);
-		i_out = roll_integration;
-		
-		out = p_out + i_out;
-		//out = LIMIT(out,-150,150);
+		if(ABS(bias_real)>50)
+		{
+			//异常值
+			if(bias_real>50)
+			{
+				//左偏过大
+				out = 40 * user_parameter.groups.self_def_1.kp;		//右飞
+			}
+			else if(bias<-50)
+			{
+				//右偏过大
+				out = -40 * user_parameter.groups.self_def_1.ki;	//左飞
+			}
+		}
+		else
+		{
+			//正常值
+			p_out = bias_real * user_parameter.groups.self_def_2.kp;
+			
+			roll_integration += bias_real * user_parameter.groups.self_def_2.ki;
+			roll_integration = LIMIT(roll_integration,-40,40);
+			i_out = roll_integration;
+			
+			out = p_out + i_out;
+			out = LIMIT(out,-150,150);
+		}
 		
 		CH_ctrl[0] = out;
-		
+
 		//俯仰和航向手动控制
 		CH_ctrl[1] = my_deathzoom( ( CH_filter[PIT]) ,0,30 );	//1：俯仰 PIT
 		CH_ctrl[3] = CH_filter[3];								//3：航向 YAW
 		
-		mydata.d8 = (s16)p_out;
-		mydata.d9 = (s16)i_out;
-		mydata.d10 = (s16)out;
+		mydata.d9 = (s16)p_out;
+		mydata.d10 = (s16)i_out;
+		mydata.d11 = (s16)out;
 	}
 	else
 	{
 		roll_integration = 0;
 	}
+}
+
+void yaw_pid(void)
+{
+	float yaw_error,yaw_out;
+	
+	//计算偏差
+	yaw_error = angle - 0.0f;	//偏左 +，偏右 -
+	
+	//纠正输出
+	yaw_out = user_parameter.groups.param_A *yaw_error;
+	
+	CH_ctrl[YAW] = yaw_out;		//3：航向 YAW
+	
+	//=======================================
+	
+	CH_ctrl[ROL] = my_deathzoom( ( CH_filter[ROL]) ,0,30 );	//0：横滚 ROL
+	CH_ctrl[PIT] = my_deathzoom( ( CH_filter[PIT]) ,0,30 );	//1：俯仰 PIT
+	
 }
 
 //========================================================================================
@@ -365,7 +403,7 @@ void Fly_Ctrl(void)		//调用周期5ms
 	//指令5
 	if(ctrl_command == 4)
 	{
-		attitude_hand();
+		yaw_pid();
 	}
 	
 	//指令6

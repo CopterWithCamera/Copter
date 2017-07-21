@@ -133,8 +133,9 @@ void Duty_5ms()
 	mydata.d3 = (s16)sonar_fusion.fusion_displacement.out;
 	mydata.d4 = (s16)processing_fps;
 	mydata.d5 = (s16)receive_fps;
-	mydata.d6 = (s16)length;
-	mydata.d7 = (s16)real_length;
+	mydata.d6 = (s16)bias;
+	mydata.d7 = (s16)bias_lpf;
+	mydata.d8 = (s16)bias_real;
 }
 
 //10ms线程

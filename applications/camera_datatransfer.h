@@ -11,8 +11,9 @@ void Copter_Receive_Handle(unsigned char data);
 //可用参数表
 
 //偏移
-extern float length;
-extern float real_length;
+extern float bias;
+extern float bias_lpf;
+extern float bias_real;
 
 //角度
 extern float angle;

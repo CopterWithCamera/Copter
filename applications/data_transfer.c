@@ -753,7 +753,7 @@ void ANO_DT_Data_Exchange(void)	//当前调用周期1ms
 		else if(f.send_location)
 		{
 			f.send_location = 0;
-			ANO_DT_Send_Location(	0,			0,	length *10000000 ,	0 *10000000,	0		);
+			ANO_DT_Send_Location(	0,			0,	bias *10000000 ,	0 *10000000,	0		);
 			//						定位状态	卫星数量			经度 			纬度 			回航角
 		}
 		else if(f.send_motopwm)	//当前PWM输出值
