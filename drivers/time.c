@@ -165,7 +165,7 @@ enum
 u32 Get_Cycle_T(u8 item)	
 {
 	Cycle_T[item][OLD] = Cycle_T[item][NOW];	//上一次的时间
-	Cycle_T[item][NOW] = GetSysTime_us(); //本次的时间
+	Cycle_T[item][NOW] = GetSysTime_us(); 		//本次的时间
 	Cycle_T[item][NEW] = ( ( Cycle_T[item][NOW] - Cycle_T[item][OLD] ) );//间隔的时间（周期）
 	return Cycle_T[item][NEW];
 }

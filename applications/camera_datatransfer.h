@@ -6,13 +6,25 @@
 void Copter_Data_Send(void);
 void Copter_Receive_Handle(unsigned char data);
 
+//========================================================================
 
+//可用参数表
+
+//偏移
+extern float length;
+extern float real_length;
+
+//角度
 extern float angle;
+
+//速度
 extern float speed;
 
-extern float length;
-extern float Roll_Image;	//采图时对应的Roll
+//参数
+extern float fps;
+extern float processing_fps;
+extern float receive_fps;
 
-extern float real_length;
+//========================================================================
 
 #endif

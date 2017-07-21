@@ -209,7 +209,7 @@ void baro_ctrl(float dT,_hc_value_st *height_value)		//获取高度数据（调用周期2ms
 	//高度数据采纳融合后的气压计数据
 	height_value->fusion_acc = baro_fusion.fusion_acceleration.out;
 	height_value->fusion_speed = my_deathzoom(LIMIT( (f_speed),-MAX_VERTICAL_SPEED_DW,MAX_VERTICAL_SPEED_UP),height_value->fusion_speed,10);	//f_speed限幅+死区（如果变化小，就认为没变化）
-	height_value->fusion_height = baro_fusion.fusion_displacement.out; 
+	height_value->fusion_height = baro_fusion.fusion_displacement.out;
 }
 
 

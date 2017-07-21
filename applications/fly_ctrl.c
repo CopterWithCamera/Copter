@@ -203,20 +203,6 @@ void attitude_pingpong(void)
 		user_parameter.groups.self_def_1	横滚方向PID		对应地面站PID13
 	
 	*/
-//	static float length_old;
-//	float lenthhhh;
-//	
-//	if(speed)
-//	{
-//		lenthhhh = length_old;
-//	}
-//	else
-//	{
-//		lenthhhh = real_length;
-//		length_old = real_length;
-//	}
-//	
-//	mydata.d3 = (s16)lenthhhh;
 	
 	//横滚自动控制
 	if(real_length > 14)	//偏左
@@ -239,7 +225,7 @@ void attitude_pingpong(void)
 	
 }
 
-//根据偏移量进行单P调整
+//根据偏移量进行单PID调整
 float roll_integration = 0;
 void attitude_single_p(u8 en)
 {
@@ -261,6 +247,10 @@ void attitude_single_p(u8 en)
 		//俯仰和航向手动控制
 		CH_ctrl[1] = my_deathzoom( ( CH_filter[PIT]) ,0,30 );	//1：俯仰 PIT
 		CH_ctrl[3] = CH_filter[3];								//3：航向 YAW
+		
+		mydata.d8 = (s16)p_out;
+		mydata.d9 = (s16)i_out;
+		mydata.d10 = (s16)out;
 	}
 	else
 	{

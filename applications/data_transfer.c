@@ -525,6 +525,22 @@ void ANO_DT_Send_User()					//此函数发送s16类型的数据
 	_temp = mydata.d8; 										 			//8
 	data_to_send[_cnt++]=BYTE1(_temp);
 	data_to_send[_cnt++]=BYTE0(_temp);
+	
+	_temp = mydata.d9; 										 			//9
+	data_to_send[_cnt++]=BYTE1(_temp);
+	data_to_send[_cnt++]=BYTE0(_temp);
+	
+	_temp = mydata.d10; 										 		//10
+	data_to_send[_cnt++]=BYTE1(_temp);
+	data_to_send[_cnt++]=BYTE0(_temp);
+	
+	_temp = mydata.d11; 										 		//11
+	data_to_send[_cnt++]=BYTE1(_temp);
+	data_to_send[_cnt++]=BYTE0(_temp);
+	
+	_temp = mydata.d12; 										 		//12
+	data_to_send[_cnt++]=BYTE1(_temp);
+	data_to_send[_cnt++]=BYTE0(_temp);
 
 	data_to_send[3] = _cnt-4;											//LEN位，在这里补上（自动计算包长位）
 	

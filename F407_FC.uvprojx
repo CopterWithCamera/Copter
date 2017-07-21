@@ -542,6 +542,11 @@
               <FileType>1</FileType>
               <FilePath>.\applications\camera_datatransfer.c</FilePath>
             </File>
+            <File>
+              <FileName>camera_data_calculate.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\applications\camera_data_calculate.c</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>

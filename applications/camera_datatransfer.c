@@ -16,16 +16,22 @@ sonar_fusion.fusion_displacement.out	mm		float
 #define BYTE1(dwTemp)       ( *( (char *)(&dwTemp) + 1) )
 #define BYTE2(dwTemp)       ( *( (char *)(&dwTemp) + 2) )
 #define BYTE3(dwTemp)       ( *( (char *)(&dwTemp) + 3) )
-	
-void Real_Length_Calculate(void);
+
+
+//=========================================================================================================================
+//====================================================发送数据==============================================================
+//=========================================================================================================================
+//=========================================================================================================================
 
 unsigned char Data_Buffer[20];
 
+//发送数据接口
 void Send_to_Camera(unsigned char *DataToSend ,u8 data_num)
 {
 	Usart3_Send(DataToSend,data_num);
 }
 
+//发送高度数据
 void Copter_Send_Height(void)
 {
 	float tmp_f;
@@ -61,6 +67,7 @@ void Copter_Send_Height(void)
 	Send_to_Camera(Data_Buffer,cnt);
 }
 
+//发送姿态数据
 void Copter_Send_Attitude(void)
 {
 	float tmp_f;
@@ -96,40 +103,77 @@ void Copter_Send_Attitude(void)
 	Send_to_Camera(Data_Buffer,cnt);
 }
 
-//向Camera板发送数据
+//定时发送数据函数（scheduler.c中调用）
 void Copter_Data_Send(void)
 {
 	Copter_Send_Height();
 	Copter_Send_Attitude();
 }
 
-//========================================================================================================
+//=========================================================================================================================
+//=========================================================================================================================
+//=========================================================================================================================
+//=========================================================================================================================
+//=========================================================================================================================
 
-float Roll_Image_Last = 0;	//上一帧图像采纳时的roll
-float Height_Image_Last = 0;
+//可用参数表
 
+//偏移
+float length = 0;
 float real_length = 0;
 
-float length = 0;
+//角度
 float angle = 0;
+
+//速度
 float speed = 0;
 
+//参数
 float fps = 0;
 float processing_fps = 0;
+float receive_fps = 0;
+
+//=========================================================================================================================
+//=================================================== 校准运算 =============================================================
+//=========================================================================================================================
+
+//bias数据校准函数
+float bias_correct(float roll, float hight,float bias)   ///hight --超声波测量值   roll--横滚偏角  bias--图像像素点偏移
+{
+    float x1,real_bias;
+	x1=hight*my_sin(roll*3.141f/180.0f);
+	real_bias=0.65f*bias-x1;
+	return real_bias;
+}
+
+//实际偏移校准
+float Roll_Image = 0;		//结果对应的角度
+float Height_Image = 0;		//结果对应的高度
+void Real_Length_Calculate(void)
+{
+	if(!speed)
+		real_length = bias_correct(Roll_Image,Height_Image/10.0f,length);
+}
+
+//=========================================================================================================================
+//====================================================接收数据==============================================================
+//=========================================================================================================================
+//=========================================================================================================================
 
 //数据暂存数组
 unsigned char Tmp_Buffer[20];
 
+//接收Camera状态信息
 void Get_Camera_Status(void)
 {
 	fps = *((float*)(&(Tmp_Buffer[0])));
 	processing_fps = *((float*)(&(Tmp_Buffer[4])));
-	//speed = *((float*)(&(Tmp_Buffer[8])));
-	
-//	printf("%.1f  %.1f   %.1f\r\n", length, angle, speed);
+	//tmp = *((float*)(&(Tmp_Buffer[8])));
 }
 
-
+//接收图像采集时间信息
+float Roll_Image_Latest = 0;		//本次采集开始时对应的Roll
+float Height_Image_Latest = 0;	//本次采集开始时对应的Height
 void Get_Camera_Get_Image_Flag(u8 mode)
 {
 	static float roll_tmp = 0;	//临时保存roll数值
@@ -144,44 +188,39 @@ void Get_Camera_Get_Image_Flag(u8 mode)
 	else if(mode == 1)
 	{
 		//采图+运算开始
-		Roll_Image_Last = roll_tmp;	//读取图像采纳时的roll为当前数据的roll
-		Height_Image_Last = height_tmp;
+		Roll_Image_Latest = roll_tmp;	//读取图像采纳时的roll为当前数据的roll
+		Height_Image_Latest = height_tmp;
 		
 		roll_tmp = Roll;	//正常采图
 		height_tmp = sonar.displacement;
 	}
 }
 
-float Roll_Image = 0;		//结果对应的角度
-float Height_Image = 0;		//结果对应的高度
+//接收偏移信息
 void Get_Position(void)
 {
+	//计算接收频率
+	float tmp;
+	tmp = Get_Cycle_T(3);	//以us为单位
+	receive_fps = 1 * 1000000.0f / tmp;	//转化为以Hz为单位
+	
+	//获取数据
 	length  = *((float*)(&(Tmp_Buffer[0])));
 	angle    = *((float*)(&(Tmp_Buffer[4])));
 	speed = *((float*)(&(Tmp_Buffer[8])));
 	
-	Roll_Image = Roll_Image_Last;
-	Height_Image = Height_Image_Last;
+	//读取本次结果对应图像采集时的飞机姿态信息
+	Roll_Image = Roll_Image_Latest;
+	Height_Image = Height_Image_Latest;
 	
+	//数据补偿
 	Real_Length_Calculate();
 }
 
-float bias_correct(float roll, float hight,float bias)   ///hight --超声波测量值   roll--横滚偏角  bias--图像像素点偏移
-{
-    float x1,real_bias;
-	x1=hight*my_sin(roll*3.141f/180.0f);
-	real_bias=0.65f*bias-x1;
-	return real_bias;
-}
-
-void Real_Length_Calculate(void)
-{
-	if(!speed)
-		real_length = bias_correct(Roll_Image,Height_Image/10.0f,length);
-	
-	mydata.d1 = real_length;
-	mydata.d2 = length;
-}
+//=========================================================================================================================
+//=========================================================================================================================
+//=========================================================================================================================
+//=========================================================================================================================
 
 u8 counter = 0;
 void Copter_Receive_Handle(unsigned char data)

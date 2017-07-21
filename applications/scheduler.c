@@ -61,8 +61,8 @@ float test[5];
 //1ms线程
 void Duty_1ms()
 {
-	test[4] = Get_Cycle_T(1)/1000000.0f;	//返回本次调用和上次调用的时间差，数据来自 GetSysTime_us()
-
+//	float ms_loop_time;
+//	ms_loop_time = Get_Cycle_T(1)/1000000.0f;
 	ANO_DT_Data_Exchange();		//数传通信定时调用
 }
 
@@ -72,7 +72,7 @@ void Duty_2ms()
 	//获取本线程两次调用的时间差
 	float inner_loop_time;
 	inner_loop_time = Get_Cycle_T(0)/1000000.0f; 		//获取内环准确的执行周期（本次和上次调用的时间差，单位是s）
-	test[0] = GetSysTime_us()/1000000.0f;				//把GetSysTime_us所获取的数值存入，但似乎没有被调用，似乎是用来放在监视里看的。
+//	test[0] = GetSysTime_us()/1000000.0f;				//把GetSysTime_us所获取的数值存入，但似乎没有被调用，似乎是用来放在监视里看的。
 	
 	/* ********************* 姿态计算 ********************* */
 	
@@ -108,7 +108,7 @@ void Duty_2ms()
 	
 	RC_Duty( inner_loop_time , Rc_Pwm_In );				//遥控器通道数据处理 ，输入：执行周期，接收机pwm捕获的数据。
 	
-	test[1] = GetSysTime_us()/1000000.0f;
+//	test[1] = GetSysTime_us()/1000000.0f;
 }
 
 //5ms线程
@@ -116,7 +116,7 @@ void Duty_5ms()
 {
 	float outer_loop_time;
 	outer_loop_time = Get_Cycle_T(2)/1000000.0f;		//获取外环准确的执行周期，Get_Cycle_T(2)返回值的单位是us，除以1000000后单位是s
-	test[2] = GetSysTime_us()/1000000.0f;				//存储获取到的时间，但没有被调用
+//	test[2] = GetSysTime_us()/1000000.0f;				//存储获取到的时间，但没有被调用
 	
 	/* ****************** 自动控制功能实现函数 ****************** */
 	Fly_Ctrl();									//运算自动控制模式下飞行时的最外环控制值
@@ -125,7 +125,16 @@ void Duty_5ms()
  	CTRL_2( outer_loop_time ); 					//外环角度控制。输入：执行周期，期望角度（摇杆量），姿态角度；输出：期望角速度。<函数未封装>
 	
 	
-	test[3] = GetSysTime_us()/1000000.0f;		//存储获取到的时间，但没有被调用。应该是和test[2]一起使用，计算代码运行时间。
+//	test[3] = GetSysTime_us()/1000000.0f;		//存储获取到的时间，但没有被调用。应该是和test[2]一起使用，计算代码运行时间。
+	
+	//数值监控
+	mydata.d1 = (s16)ultra.height * 10;
+	mydata.d2 = (s16)sonar.displacement;
+	mydata.d3 = (s16)sonar_fusion.fusion_displacement.out;
+	mydata.d4 = (s16)processing_fps;
+	mydata.d5 = (s16)receive_fps;
+	mydata.d6 = (s16)length;
+	mydata.d7 = (s16)real_length;
 }
 
 //10ms线程
