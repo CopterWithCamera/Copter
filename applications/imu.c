@@ -55,7 +55,7 @@ void IMUupdate(float half_T,float gx, float gy, float gz, float ax, float ay, fl
 //	低通滤波器
 //====================================================================================================================
 	
-	//原理：Y(n) = qX(n) + (1-q)X(n-1)    ，  q = 2π * △t * fc，fc为截止频率
+	//原理：Y(n) = qX(n) + (1-q)Y(n-1)    ，  q = 2π * △t * fc，fc为截止频率
 	
 	//输入：		(float)ak8975.Mag_Val.x /( mag_norm_xyz )	归一化的磁通量数据
 	//输出：		mag_tmp.x									归一化后的经过滤波的各轴磁通量数据
