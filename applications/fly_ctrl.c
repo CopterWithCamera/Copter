@@ -139,7 +139,12 @@ void height_lock(u8 en)	//en -- 模式启用标志位，用于判断此模式是否被使用
 			height_lock_flag = 1;
 			
 			//设置期望高度
-			my_except_height = sonar_fusion.fusion_displacement.out;	//读取当前高度
+			
+			#if (HEIGHT_SOURCE == 1)
+				my_except_height = sonar_fusion.fusion_displacement.out;	//读取当前高度
+			#elif (HEIGHT_SOURCE == 2)
+				my_except_height = sonar.displacement;						//读取当前高度
+			#endif
 			
 			if( my_except_height < 150)		//容错处理，防止期望高度过低
 				my_except_height = 150;

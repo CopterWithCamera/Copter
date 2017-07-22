@@ -48,8 +48,7 @@ void TIM_CONF()   //APB1  84M
 void TIM_NVIC()
 {
     NVIC_InitTypeDef NVIC_InitStructure; 
-    
-//	NVIC_PriorityGroupConfig(NVIC_PriorityGroup_0);  													
+	
     NVIC_InitStructure.NVIC_IRQChannel = TIM2_IRQn;	  
     NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = NVIC_TIME_P;
     NVIC_InitStructure.NVIC_IRQChannelSubPriority = NVIC_TIME_S;	
@@ -57,7 +56,7 @@ void TIM_NVIC()
     NVIC_Init(&NVIC_InitStructure);
 }
 
-void TIM_INIT()
+void TIM_INIT(void)
 {
     TIM_CONF();
     TIM_NVIC();

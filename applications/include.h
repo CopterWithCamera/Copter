@@ -25,14 +25,14 @@
 
 //=======================================
 /***************中断优先级******************/
-#define NVIC_GROUP NVIC_PriorityGroup_3		//中断分组选择
-#define NVIC_PWMIN_P			1		//接收机采集
+#define NVIC_GROUP 				NVIC_PriorityGroup_3	//中断分组选择
+#define NVIC_PWMIN_P			1			//接收机采集
 #define NVIC_PWMIN_S			1
-#define NVIC_TIME_P       		2		//暂未使用
+#define NVIC_TIME_P       		2			//Timer2（配置但未使用）
 #define NVIC_TIME_S       		0
-#define NVIC_UART_P				5		//暂未使用
+#define NVIC_UART_P				5			//暂未使用
 #define NVIC_UART_S				1
-#define NVIC_UART2_P			3		//串口2中断
+#define NVIC_UART2_P			3			//串口2中断
 #define NVIC_UART2_S			1
 /***********************************************/
 
@@ -53,7 +53,9 @@
 #define MAX_ACC  			4096.0f				//  +-8G		加速度计量程
 #define TO_DEG_S 			500.0f      		//  T = 2ms  默认为2ms ，数值等于1/T
 
-#define	Voltage_To_V 		0.00886f	// 分压系数为11    11 * 3.3V / 4096 = 0.000805664 * 11 = 0.0088623
+#define	Voltage_To_V 		0.00886f			// 分压系数为11    11 * 3.3V / 4096 = 0.000805664 * 11 = 0.0088623
+
+#define HEIGHT_SOURCE		1					// 1：加速度融合数据		2：低通滤波数据
 
 enum
 {
