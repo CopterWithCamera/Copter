@@ -7,6 +7,8 @@ typedef struct
 {
 	u8 check_flag;
 	u8 err_flag;
+	u8 camera_data_ok;
+	s16 cnt_camera_data_ms;
 	s16 cnt_1ms;
 	s16 cnt_2ms;
 	s16 cnt_5ms;
@@ -23,6 +25,8 @@ void Duty_Loop(void);
 void Inner_Loop(float);
 
 void Outer_Loop(float);
+
+extern loop_t loop;
 
 
 #endif

@@ -9,5 +9,7 @@ extern float speed_d_bias;
 extern float speed_d_bias_lpf;
 extern float receive_fps;
 
+void Camera_Calculate(void);
+
 #endif
 

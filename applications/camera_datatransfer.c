@@ -199,6 +199,8 @@ void Get_Position(void)
 	Pitch_Image = Pitch_Image_Latest;
 	Yaw_Image = Yaw_Image_Latest;
 	Height_Image = Height_Image_Latest;
+	
+	loop.camera_data_ok = 1;
 }
 
 //=========================================================================================================================

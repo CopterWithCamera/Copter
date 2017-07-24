@@ -40,6 +40,7 @@ void Loop_check()  //TIME INTTERRUPT
 	loop.cnt_10ms++;
 	loop.cnt_20ms++;
 	loop.cnt_50ms++;
+	loop.cnt_camera_data_ms++;
 
 	if( loop.check_flag == 1)
 	{
@@ -137,6 +138,8 @@ void Duty_5ms()
 	mydata.d6 = (s16)bias;
 	mydata.d7 = (s16)bias_real;
 	mydata.d8 = (s16)bias_lpf;
+	mydata.d9 = (s16)speed_d_bias;
+	mydata.d10 = (s16)speed_d_bias_lpf;
 }
 
 //10ms线程
@@ -167,6 +170,15 @@ void Duty_50ms()
 	
 }
 
+void Duty_Camera()
+{
+	float camera_loop_time;
+	camera_loop_time = Get_Cycle_T(4);	//以us为单位
+	
+	Camera_Calculate();	//处理Camera数据
+	Fly_Ctrl_Cam();
+}
+
 //********************************************************************************************************
 
 
@@ -182,6 +194,13 @@ void Duty_Loop()   					//最短任务周期为1ms，总的代码执行时间需
 		loop_cnt = time_1ms;
 		
 		Duty_1ms();							//周期1ms的任务
+		
+		if( loop.camera_data_ok || loop.cnt_camera_data_ms >= 500 )
+		{
+			loop.camera_data_ok = 0;
+			loop.cnt_camera_data_ms = 0;
+			Duty_Camera();
+		}
 		
 		if( loop.cnt_2ms >= 2 )
 		{

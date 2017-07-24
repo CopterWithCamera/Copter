@@ -76,7 +76,7 @@ float get_speed(u32 T,float bias,float bias_last)
 
 //Camera数据处理
 float bias_lpf_old;	//上一个在可用范围内的bias
-void Camera_Calculate()
+void Camera_Calculate(void)
 {
 	static float bias_old;
 	
@@ -109,6 +109,7 @@ void Camera_Calculate()
 	else
 	{
 		speed_d_bias = 0;
+		speed_d_bias_lpf = 0;
 	}
 	
 }
