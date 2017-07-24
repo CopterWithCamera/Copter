@@ -55,7 +55,7 @@
 
 #define	Voltage_To_V 		0.00886f			// 分压系数为11    11 * 3.3V / 4096 = 0.000805664 * 11 = 0.0088623
 
-#define HEIGHT_SOURCE		1					// 1：加速度融合数据		2：低通滤波数据
+#define HEIGHT_SOURCE		2					// 1：加速度融合数据		2：低通滤波数据
 
 enum
 {

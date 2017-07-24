@@ -304,10 +304,6 @@ void attitude_single_p(u8 en)
 		//俯仰和航向手动控制
 		CH_ctrl[1] = my_deathzoom( ( CH_filter[PIT]) ,0,30 );	//1：俯仰 PIT
 		CH_ctrl[3] = CH_filter[3];								//3：航向 YAW
-		
-		mydata.d9 = (s16)p_out;
-		mydata.d10 = (s16)i_out;
-		mydata.d11 = (s16)out;
 	}
 	else
 	{
