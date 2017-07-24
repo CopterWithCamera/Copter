@@ -47,7 +47,7 @@ float bias_correct(float roll, float pitch, float hight, float bias)   ///hight 
 	x1 = hight * sin(roll*3.141f/180.0f);
 	
 	//系数
-	coe_bias = (0.0021f*hight*hight+0.2444*hight+8.9576) / 40.0f;
+	coe_bias = (0.0021f*hight*hight+0.2444f*hight+8.9576f) / 40.0f;
 	
 	real_bias = coe_bias * bias - x1;
 	
@@ -76,7 +76,7 @@ float get_speed(u32 T,float bias,float bias_last)
 
 //Camera数据处理
 float bias_lpf_old;	//上一个在可用范围内的bias
-void Camera_Calculate(float T)
+void Camera_Calculate()
 {
 	static float bias_old;
 	
@@ -100,7 +100,7 @@ void Camera_Calculate(float T)
 	{
 		//正常情况
 		bias_real = bias_correct(Roll_Image,Pitch_Image, Height_Image/10.0f,bias);	//姿态误差校准
-		bias_lpf = cam_bias_lpf(bias_real,T,0.8f,bias_lpf);		//低通滤波器
+		bias_lpf = cam_bias_lpf(bias_real,receive_T,0.8f,bias_lpf);		//低通滤波器
 		speed_d_bias = get_speed(receive_T,bias_lpf,bias_lpf_old);
 		speed_d_bias_lpf = cam_bias_lpf(speed_d_bias,receive_T,1.0f,speed_d_bias_lpf);
 		
