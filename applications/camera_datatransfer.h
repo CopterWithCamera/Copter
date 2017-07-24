@@ -10,21 +10,19 @@ void Copter_Receive_Handle(unsigned char data);
 
 //可用参数表
 
-//偏移
-extern float bias;
-extern float bias_lpf;
-extern float bias_real;
-
-//角度
-extern float angle;
-
-//速度
-extern float speed;
+extern float bias;		//偏移
+extern float angle;	//角度
+extern float speed;	//速度
 
 //参数
 extern float fps;
 extern float processing_fps;
-extern float receive_fps;
+extern float receive_T;
+
+extern float Roll_Image;		//结果对应的角度
+extern float Pitch_Image;
+extern float Yaw_Image;
+extern float Height_Image;		//结果对应的高度
 
 //========================================================================
 
