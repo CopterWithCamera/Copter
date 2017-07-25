@@ -10,9 +10,10 @@ void Copter_Receive_Handle(unsigned char data);
 
 //可用参数表
 
-extern float bias;		//偏移
-extern float angle;	//角度
-extern float speed;	//速度
+extern float bias;			//偏移
+extern float bias_pitch;	//pitch偏移
+extern float angle;			//角度
+
 
 //参数
 extern float fps;

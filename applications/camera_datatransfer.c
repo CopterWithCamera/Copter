@@ -121,7 +121,7 @@ void Copter_Data_Send(void)
 
 float bias = 0;		//偏移
 float angle = 0;	//角度
-float speed = 0;	//速度
+float bias_pitch = 0;	//速度
 
 //参数
 float fps = 0;
@@ -191,8 +191,8 @@ void Get_Position(void)
 	
 	//获取数据
 	bias  = *((float*)(&(Tmp_Buffer[0])));
-	angle    = *((float*)(&(Tmp_Buffer[4])));
-	speed = *((float*)(&(Tmp_Buffer[8])));
+	bias_pitch = *((float*)(&(Tmp_Buffer[4])));
+	angle = *((float*)(&(Tmp_Buffer[8])));
 	
 	//读取本次结果对应图像采集时的飞机姿态信息
 	Roll_Image = Roll_Image_Latest;

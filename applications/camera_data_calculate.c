@@ -85,7 +85,7 @@ void Camera_Calculate(void)
 	
 	//**************************************
 	//全白时用+-100表示
-	if(speed)
+	if(bias_pitch)
 	{
 		if(bias_old > 0)
 			bias = +100;
