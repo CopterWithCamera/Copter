@@ -85,14 +85,14 @@ void Camera_Calculate(void)
 	
 	//**************************************
 	//全白时用+-100表示
-	if(bias_pitch)
-	{
-		if(bias_old > 0)
-			bias = +100;
-		else
-			bias = -100;
-	}
-	bias_old = bias;
+//	if(bias_pitch)
+//	{
+//		if(bias_old > 0)
+//			bias = +100;
+//		else
+//			bias = -100;
+//	}
+//	bias_old = bias;
 
 	//**************************************
 	//数据校准与滤波

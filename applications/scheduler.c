@@ -140,6 +140,7 @@ void Duty_5ms()
 	mydata.d8 = (s16)bias_lpf;
 	mydata.d9 = (s16)speed_d_bias;
 	mydata.d10 = (s16)speed_d_bias_lpf;
+	mydata.d11 = (s16)angle;
 }
 
 //10ms线程
