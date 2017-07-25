@@ -27,7 +27,7 @@ void Ctrl_Para_Init()		//设置默认参数
 xyz_f_t except_A = {0,0,0};				//角度期望	
 
 //=================== filter ===================================
-//  全局输出，CH_filter[],0横滚，1俯仰，2油门，3航向 范围：+-500	
+//  全局输出，CH_filter[],0横滚，1俯仰，2油门，3航向 范围：+-500
 //	CH_filter[]的输入数值在输出前是经过限幅的
 //=================== filter =================================== 
 
@@ -381,46 +381,3 @@ void All_Out(float out_roll,float out_pitch,float out_yaw)
 
 /******************* (C) COPYRIGHT 2014 ANO TECH *****END OF FILE************/
 
-//一段不知道有什么用的矫正
-//原位置在 得到角度误差 前头
-
-// 	static xyz_f_t acc_no_g;
-// 	static xyz_f_t acc_no_g_lpf;
-
-//xyz_f_t compensation;
-
-//==============================================================================
-// 	acc_no_g.x =  mpu6050.Acc.x - reference_v.x *4096;
-// 	acc_no_g.y =  mpu6050.Acc.y - reference_v.y *4096;
-// 	acc_no_g.z =  mpu6050.Acc.z - reference_v.z *4096;
-// 	
-// 	acc_no_g_lpf.x += 0.5f *T *3.14f * ( acc_no_g.x - acc_no_g_lpf.x );
-// 	acc_no_g_lpf.y += 0.5f *T *3.14f * ( acc_no_g.y - acc_no_g_lpf.y );
-// 	acc_no_g_lpf.z += 0.5f *T *3.14f * ( acc_no_g.z - acc_no_g_lpf.z );
-// 	
-// 	compensation.x = LIMIT( 0.003f *acc_no_g_lpf.x, -10,10 );
-// 	compensation.y = LIMIT( 0.003f *acc_no_g_lpf.y, -10,10 );
-// 	compensation.z = LIMIT( 0.003f *acc_no_g_lpf.z, -10,10 );
-//==============================================================================	
-
-
-
-
-//一套被弃用的带油门曲线的电机输出计算方案
-
-//	float curve[MAXMOTORS];
-
-//	curve[0] = posture_value[0] ;//(0.55f + 0.45f *ABS(posture_value[0])/1000.0f) *
-//	curve[1] = posture_value[1] ;//(0.55f + 0.45f *ABS(posture_value[1])/1000.0f) *
-//	curve[2] = posture_value[2] ;//(0.55f + 0.45f *ABS(posture_value[2])/1000.0f) *
-//	curve[3] = posture_value[3] ;//(0.55f + 0.45f *ABS(posture_value[3])/1000.0f) *
-
-//  motor[0] = thr_value + Thr_Weight *curve[0] ;
-//	motor[1] = thr_value + Thr_Weight *curve[1] ;
-//	motor[2] = thr_value + Thr_Weight *curve[2] ;
-//	motor[3] = thr_value + Thr_Weight *curve[3] ;
-
-//	motor_out[0] = (s16)(motor[0]);  
-//	motor_out[1] = (s16)(motor[1]);	 
-//	motor_out[2] = (s16)(motor[2]);
-//	motor_out[3] = (s16)(motor[3]);

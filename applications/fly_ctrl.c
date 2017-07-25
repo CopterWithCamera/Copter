@@ -5,6 +5,7 @@
 #include "mymath.h"
 #include "anotc_baro_ctrl.h"
 #include "camera_datatransfer.h"
+#include "camera_data_calculate.h"
 #include "ctrl.h"
 #include "mymath.h"
 
@@ -201,7 +202,6 @@ void attitude_hand(void)
 	CH_ctrl[ROL] = my_deathzoom( ( CH_filter[ROL]) ,0,30 );	//0：横滚 ROL
 	CH_ctrl[PIT] = my_deathzoom( ( CH_filter[PIT]) ,0,30 );	//1：俯仰 PIT
 	CH_ctrl[YAW] = CH_filter[YAW];	//3：航向 YAW
-
 }
 
 
@@ -242,7 +242,6 @@ float roll_integration = 0;
 void attitude_single_p(u8 en)
 {
 	float p_out,i_out,d_out,out;
-	static float bias_old;
 	
 	if(en)
 	{
@@ -288,12 +287,8 @@ void attitude_single_p(u8 en)
 		}
 		
 		//d
-		d_out = ( bias_lpf - bias_old ) * user_parameter.groups.self_def_2.kd;		//bias_lpf左正右负
-																					//bias_lpf - bias_old	为正对应向左飞，为负对应向右飞
-																					//d控制的目的是对速度产生抑制，只要保证力的方向与速度方向相反即可
-																					//所以只需向速度反向提供加速度即可
+		d_out = speed_d_bias_lpf * user_parameter.groups.self_def_2.kd;		//speed_d_bias_lpf 左正右负
 		d_out = LIMIT(d_out,-70,70);	//限制输出幅度为+-70，允许d引起刹车动作
-		bias_old = bias_lpf;
 		
 		//输出整合
 		out = p_out + i_out + d_out;
@@ -304,10 +299,6 @@ void attitude_single_p(u8 en)
 		//俯仰和航向手动控制
 		CH_ctrl[1] = my_deathzoom( ( CH_filter[PIT]) ,0,30 );	//1：俯仰 PIT
 		CH_ctrl[3] = CH_filter[3];								//3：航向 YAW
-		
-		mydata.d9 = (s16)p_out;
-		mydata.d10 = (s16)i_out;
-		mydata.d11 = (s16)out;
 	}
 	else
 	{
@@ -351,7 +342,7 @@ void yaw_pid(void)
 //========================================================================================
 
 void Fly_Ctrl(void)		//调用周期5ms
-{	
+{
 	//只有自动模式才会执行自动控制代码
 	if(mode_state != 3)
 	{
@@ -431,11 +422,11 @@ void Fly_Ctrl(void)		//调用周期5ms
 	//指令4
 	if(ctrl_command == 3)
 	{
-		attitude_single_p(1);
+		//attitude_single_p(1);
 	}
 	else
 	{
-		attitude_single_p(0);
+		//attitude_single_p(0);
 	}
 	
 	//指令5
@@ -456,6 +447,64 @@ void Fly_Ctrl(void)		//调用周期5ms
 		attitude_hand();
 	}
 	
+}
+
+//Cam频率调用的飞行控制函数
+void Fly_Ctrl_Cam(void)		//调用周期5ms
+{	
+	//只有自动模式才会执行自动控制代码
+	if(mode_state != 3)
+	{
+		return;
+	}
+	
+/* ********************* 姿态控制 ********************* */
+	
+//	//指令1
+//	if(ctrl_command == 0)
+//	{
+//		attitude_hand();
+//	}
+//	
+//	//指令2
+//	if(ctrl_command == 1)
+//	{
+//		attitude_pingpong();	//横滚角乒乓控制
+//	}
+//	
+//	//指令3
+//	if(ctrl_command == 2)
+//	{
+//		attitude_hand();
+//	}
+	
+	//指令4
+	if(ctrl_command == 3)
+	{
+		attitude_single_p(1);
+	}
+	else
+	{
+		attitude_single_p(0);
+	}
+	
+//	//指令5
+//	if(ctrl_command == 4)
+//	{
+//		yaw_pid();
+//	}
+//	
+//	//指令6
+//	if(ctrl_command == 5)
+//	{
+//		attitude_hand();
+//	}
+	
+	//意外状况处理
+	if(ctrl_command > 5)
+	{
+		attitude_hand();
+	}
 }
 
 //========================================================================================
