@@ -1,11 +1,12 @@
 #include "include.h"
 #include "led.h"
 
+//RCC时钟安全系统
 void NMI_Handler(void)
 {
 }
 
-//内存异常
+//存储器管理异常
 void MemManage_Handler(void)
 {
   /* Go to infinite loop when Memory Manage exception occurs */
@@ -23,7 +24,7 @@ void BusFault_Handler(void)
   }
 }
 
-//检测到未定义指令或在存取内存时有未对齐
+//未定义的指令或非法状态
 void UsageFault_Handler(void)
 {
   /* Go to infinite loop when Usage Fault exception occurs */
@@ -51,10 +52,12 @@ void HardFault_Handler(void)
   }
 }
 
+//通过 SWI 指令调用的系统服务
 void SVC_Handler(void)
 {
 }
 
+//调试监控器
 void DebugMon_Handler(void)
 {
 }
