@@ -22,7 +22,7 @@ u8 my_height_mode = 0;	//模式使用的定高模式
 //========================================================================================
 //========================================================================================
 
-void set_except_height(u8 height)	//传入高度数据，单位cm，取值范围0cm-255cm
+void set_except_height(u8 height)	//地面站传入高度数据，单位cm，取值范围0cm-255cm
 {
 	my_except_height = height * 10;
 }
@@ -150,11 +150,27 @@ void height_lock(u8 en)	//en -- 模式启用标志位，用于判断此模式是否被使用
 			if( my_except_height < 150)		//容错处理，防止期望高度过低
 				my_except_height = 150;
 		}
-		
 	}
 	else
 	{
 		height_lock_flag = 0;
+	}
+}
+
+//降落
+void land(void)	//这个高度相当于降落了（起落架大约比15cm短一点点）
+{
+	Thr_Low = 1;	//油门低标志为1，允许螺旋桨停转
+	
+	//期望高度控制高度
+	my_height_mode = 1;
+
+	//设置期望高度
+	my_except_height = 100;		//下降到100mm = 10cm
+	
+	if(sonar.displacement < 140)	//小于14cm
+	{
+		fly_ready = 0;	//锁定
 	}
 }
 
@@ -167,7 +183,7 @@ void falling_to_15cm(void)	//这个高度相当于降落了（起落架大约比15cm短一点点）
 	my_height_mode = 1;
 
 	//设置期望高度
-	my_except_height = 150;		//下降到100mm = 10cm
+	my_except_height = 150;		//下降到150mm = 15cm
 }
 
 //上升到50cm
@@ -179,7 +195,7 @@ void rising_to_50cm(void)
 	my_height_mode = 1;
 
 	//设置期望高度
-	my_except_height = 500;		//下降到 150cm
+	my_except_height = 500;		//上升到50cm
 }
 
 //=====================================================================================================================================
@@ -233,16 +249,51 @@ void attitude_pingpong(void)
 	//俯仰和航向手动控制
 	CH_ctrl[1] = my_deathzoom( ( CH_filter[PIT]) ,0,30 );	//1：俯仰 PIT
 	CH_ctrl[3] = CH_filter[3];								//3：航向 YAW
-	
-	
 }
 
-//根据偏移量进行单PID调整
+//速度控制
+void speed_pid(u8 en)
+{
+	float p_out,i_out,d_out,out;
+	static float roll_speed_integration = 0.0f;
+	static float speed_d_bias_lpf_old = 0.0f;
+	
+	/*
+		speed_d_bias			速度值			+ <---  ---> -
+		speed_d_bias_lpf		lpf值			+ <---  ---> -
+	
+		CH_ctrl[0]	横滚输出						- <---  ---> +		左负右正（负数向左有加速度，正数向右有加速度）
+	*/
+	
+	if(en)
+	{
+		if( ABS(bias) > 50.0f )
+		{
 
-void attitude_pid(u8 en)
+		}
+		else
+		{
+
+		}
+
+		CH_ctrl[0] = out;
+
+		//俯仰和航向手动控制
+		CH_ctrl[1] = my_deathzoom( ( CH_filter[PIT]) ,0,30 );	//1：俯仰 PIT
+		CH_ctrl[3] = CH_filter[3];								//3：航向 YAW
+	}
+	else
+	{
+		
+	}
+}
+
+//位置控制
+void position_pid(u8 en)
 {
 	float p_out,i_out,d_out,out;
 	static float roll_integration = 0;
+	s32 out_tmp;
 	
 	if(en)
 	{
@@ -257,7 +308,7 @@ void attitude_pid(u8 en)
 		
 		*/
 		
-		if( ABS(bias) > 50.0f )
+		if( bias_error_flag != 0 )
 		{
 			//偏移过大，使用乒乓控制，系数对应 self_def_1
 			
@@ -296,6 +347,12 @@ void attitude_pid(u8 en)
 		out = p_out + i_out + d_out;
 		out = LIMIT(out,-150.0f,150.0f);
 		
+		//float变量安全隔离
+		out_tmp = (s32)(out*100.0f);	//放大100倍，保留小数点后2位精度
+		out_tmp = LIMIT(out_tmp,-15000,15000);	//限幅
+		out = ((float)out_tmp) / 100.0f;	//缩小100倍，回归float
+		
+		//横滚输出
 		CH_ctrl[0] = out;
 
 		//俯仰和航向手动控制
@@ -325,76 +382,6 @@ void yaw_pid(void)
 	CH_ctrl[ROL] = my_deathzoom( ( CH_filter[ROL]) ,0,30 );	//0：横滚 ROL
 	CH_ctrl[PIT] = my_deathzoom( ( CH_filter[PIT]) ,0,30 );	//1：俯仰 PIT
 	
-}
-
-void speed_pid(u8 en)
-{
-//	float p_out,i_out,d_out,out;
-//	static float roll_speed_integration = 0.0f;
-//	static float speed_d_bias_lpf_old = 0.0f;
-	
-	/*
-		speed_d_bias			速度值			+ <---  ---> -
-		speed_d_bias_lpf		lpf值			+ <---  ---> -
-	
-		CH_ctrl[0]	横滚输出						- <---  ---> +		左负右正（负数向左有加速度，正数向右有加速度）
-	*/
-	
-//	if(en)
-//	{
-//		if( ABS(bias) > 50.0f )
-//		{
-//			//异常值使用位置乒乓
-//			if( bias > 50.0f )
-//			{
-//				//左偏过大
-//				p_out = 40.0f * user_parameter.groups.self_def_1.kp;	//右飞
-//			}
-//			else if( bias < -50.0f )
-//			{
-//				//右偏过大
-//				p_out = -40.0f * user_parameter.groups.self_def_1.ki;	//左飞
-//			}
-//			i_out = 0.0f;
-//			d_out = 0.0f;
-//			
-//			speed_d_bias_lpf_old = speed_d_bias_lpf; //持续更新
-//		}
-//		else
-//		{
-//			//正常状态能够获得speed_d_bias_lpf
-//			
-//			//p
-//			p_out = speed_d_bias_lpf * user_parameter.groups.param_A;
-//			
-//			//i
-//			roll_speed_integration += speed_d_bias_lpf * user_parameter.groups.param_B;
-//			roll_speed_integration = LIMIT(roll_speed_integration,-40.0f,40.0f);
-//			i_out = roll_speed_integration;
-//			
-//			//d
-//			d_out = (speed_d_bias_lpf - speed_d_bias_lpf_old) * user_parameter.groups.param_C;					//speed_d_bias_lpf 左正右负
-//			d_out = LIMIT(d_out,-70.0f,70.0f);
-//			
-//			//记录old值
-//			speed_d_bias_lpf_old = speed_d_bias_lpf;
-//		}
-//		
-//		//输出整合
-//		out = p_out + i_out + d_out;
-//		out = LIMIT(out,-150.0f,150.0f);
-
-//		CH_ctrl[0] = out;
-
-//		//俯仰和航向手动控制
-//		CH_ctrl[1] = my_deathzoom( ( CH_filter[PIT]) ,0,30 );	//1：俯仰 PIT
-//		CH_ctrl[3] = CH_filter[3];								//3：航向 YAW
-//	}
-//	else
-//	{
-//		roll_speed_integration = 0;
-//		speed_d_bias_lpf_old = speed_d_bias_lpf;	//持续更新
-//	}
 }
 
 //========================================================================================
@@ -449,6 +436,10 @@ void Fly_Ctrl(void)		//调用周期5ms
 	{
 		hand();
 	}
+	else
+	{
+		
+	}
 	
 	if(height_command == 1)
 	{
@@ -461,7 +452,11 @@ void Fly_Ctrl(void)		//调用周期5ms
 	
 	if(height_command == 2)
 	{
-		falling_to_15cm();
+		land();	//降落模式
+	}
+	else
+	{
+		
 	}
 	
 	//意外状况处理
@@ -528,21 +523,29 @@ void Fly_Ctrl_Cam(void)		//调用周期与camera数据相同
 	
 	if(ctrl_command == 3)
 	{
-		attitude_pid(1);
+		position_pid(1);
 	}
 	else
 	{
-		attitude_pid(0);
+		position_pid(0);
 	}
 	
 	if(ctrl_command == 4)
 	{
 		yaw_pid();
 	}
+	else
+	{
+		
+	}
 	
 	if(ctrl_command == 5)
 	{
-		attitude_hand();
+		speed_pid(1);
+	}
+	else
+	{
+		speed_pid(0);
 	}
 	
 	//意外状况处理
