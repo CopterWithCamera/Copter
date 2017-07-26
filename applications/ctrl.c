@@ -333,18 +333,6 @@ void All_Out(float out_roll,float out_pitch,float out_yaw)
 		motor[i] = thr_value + Thr_Weight *posture_value[i] ;	//输出值 = 油门值 + 权重 * 姿态控制值
 	}
 	
-	s16 a,b,c,d;
-	
-	a = (motor[0]) + 5;
-	b = (motor[1]) + 5;
-	c = (motor[2]) + 5;
-	d = (motor[3]) + 5;
-	
-	mydata.d1 = a;
-	mydata.d2 = b;
-	mydata.d3 = c;
-	mydata.d4 = d;
-	
 	/* 是否解锁 */
 	if(fly_ready)
 	{

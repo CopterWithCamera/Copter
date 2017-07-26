@@ -256,21 +256,21 @@ void attitude_single_p(u8 en)
 		
 		*/
 		
-		if( ABS(bias) > 50 )
+		if( ABS(bias) > 50.0f )
 		{
 			//偏移过大
 			
-			if( bias > 50 )
+			if( bias > 50.0f )
 			{
 				//左偏过大
-				p_out = 40 * user_parameter.groups.self_def_1.kp;		//右飞
+				p_out = 40.0f * user_parameter.groups.self_def_1.kp;		//右飞
 			}
-			else if( bias < -50 )
+			else if( bias < -50.0f )
 			{
 				//右偏过大
-				p_out = -40 * user_parameter.groups.self_def_1.ki;	//左飞
+				p_out = -40.0f * user_parameter.groups.self_def_1.ki;	//左飞
 			}
-			i_out = 0;
+			i_out = 0.0f;
 			
 		}
 		else
@@ -282,17 +282,17 @@ void attitude_single_p(u8 en)
 			
 			//i
 			roll_integration += bias_lpf * user_parameter.groups.self_def_2.ki;
-			roll_integration = LIMIT(roll_integration,-40,40);
+			roll_integration = LIMIT(roll_integration,-40.0f,40.0f);
 			i_out = roll_integration;
+			
+			//d
+			d_out = speed_d_bias_lpf * user_parameter.groups.self_def_2.kd;		//speed_d_bias_lpf 左正右负
+			d_out = LIMIT(d_out,-70.0f,70.0f);	//限制输出幅度为+-70，允许d引起刹车动作
 		}
-		
-		//d
-		d_out = speed_d_bias_lpf * user_parameter.groups.self_def_2.kd;		//speed_d_bias_lpf 左正右负
-		d_out = LIMIT(d_out,-70,70);	//限制输出幅度为+-70，允许d引起刹车动作
 		
 		//输出整合
 		out = p_out + i_out + d_out;
-		out = LIMIT(out,-150,150);
+		out = LIMIT(out,-150.0f,150.0f);
 		
 		CH_ctrl[0] = out;
 
@@ -401,25 +401,21 @@ void Fly_Ctrl(void)		//调用周期5ms
 	
 /* ********************* 姿态控制 ********************* */
 	
-	//指令1
 	if(ctrl_command == 0)
 	{
 		attitude_hand();
 	}
 	
-	//指令2
 	if(ctrl_command == 1)
 	{
 		attitude_pingpong();	//横滚角乒乓控制
 	}
 	
-	//指令3
 	if(ctrl_command == 2)
 	{
 		attitude_hand();
 	}
 	
-//	//指令4
 //	if(ctrl_command == 3)
 //	{
 //		//attitude_single_p(1);
@@ -429,13 +425,11 @@ void Fly_Ctrl(void)		//调用周期5ms
 //		//attitude_single_p(0);
 //	}
 	
-	//指令5
 	if(ctrl_command == 4)
 	{
 		yaw_pid();
 	}
-	
-	//指令6
+
 	if(ctrl_command == 5)
 	{
 		attitude_hand();
@@ -460,14 +454,13 @@ void Fly_Ctrl_Cam(void)		//调用周期与camera数据相同
 	
 /* ********************* 姿态控制 ********************* */
 	
-	//指令4
 	if(ctrl_command == 3)
 	{
 		attitude_single_p(1);
 	}
 	else
 	{
-		attitude_single_p(0);
+//		attitude_single_p(0);
 	}
 	
 	//意外状况处理

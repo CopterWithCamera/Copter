@@ -2,6 +2,7 @@
 #include "camera_datatransfer.h"
 #include "mymath.h"
 #include "math.h"
+#include "stdio.h"
 
 float bias_lpf = 0;
 float bias_real = 0;
@@ -69,7 +70,8 @@ float get_speed(u32 T,float bias,float bias_last)
 	float dx,dt,speed;
 	dx = bias - bias_last;
 	dt = T / 1000000.0f;
-	speed = dx / dt;
+//	speed = dx / dt;
+	speed = safe_div(dx,dt,0);
 	
 	return speed;
 }
@@ -96,7 +98,7 @@ void Camera_Calculate(void)
 
 	//**************************************
 	//数据校准与滤波
-	if(ABS(bias)<50)	//只有在合理范围内才会矫正，矫正的同时进行低通滤波
+	if(ABS(bias)<50.0f)	//只有在合理范围内才会矫正，矫正的同时进行低通滤波
 	{
 		//正常情况
 		bias_real = bias_correct(Roll_Image,Pitch_Image, Height_Image/10.0f,bias);	//姿态误差校准
