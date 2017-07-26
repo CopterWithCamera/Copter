@@ -20,7 +20,7 @@
 #else
 //新版
 
-#define LED1_OFF         ANO_GPIO_LED->BSRRL = ANO_Pin_LED1   //H
+#define LED1_OFF         ANO_GPIO_LED->BSRRL = ANO_Pin_LED1   	//H
 #define LED1_ON          ANO_GPIO_LED->BSRRH = ANO_Pin_LED1		//L
 #define LED2_ON          ANO_GPIO_LED->BSRRL = ANO_Pin_LED2
 #define LED2_OFF         ANO_GPIO_LED->BSRRH = ANO_Pin_LED2

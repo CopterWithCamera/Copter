@@ -419,15 +419,15 @@ void Fly_Ctrl(void)		//调用周期5ms
 		attitude_hand();
 	}
 	
-	//指令4
-	if(ctrl_command == 3)
-	{
-		//attitude_single_p(1);
-	}
-	else
-	{
-		//attitude_single_p(0);
-	}
+//	//指令4
+//	if(ctrl_command == 3)
+//	{
+//		//attitude_single_p(1);
+//	}
+//	else
+//	{
+//		//attitude_single_p(0);
+//	}
 	
 	//指令5
 	if(ctrl_command == 4)
@@ -450,7 +450,7 @@ void Fly_Ctrl(void)		//调用周期5ms
 }
 
 //Cam频率调用的飞行控制函数
-void Fly_Ctrl_Cam(void)		//调用周期5ms
+void Fly_Ctrl_Cam(void)		//调用周期与camera数据相同
 {	
 	//只有自动模式才会执行自动控制代码
 	if(mode_state != 3)
@@ -459,24 +459,6 @@ void Fly_Ctrl_Cam(void)		//调用周期5ms
 	}
 	
 /* ********************* 姿态控制 ********************* */
-	
-//	//指令1
-//	if(ctrl_command == 0)
-//	{
-//		attitude_hand();
-//	}
-//	
-//	//指令2
-//	if(ctrl_command == 1)
-//	{
-//		attitude_pingpong();	//横滚角乒乓控制
-//	}
-//	
-//	//指令3
-//	if(ctrl_command == 2)
-//	{
-//		attitude_hand();
-//	}
 	
 	//指令4
 	if(ctrl_command == 3)
@@ -487,18 +469,6 @@ void Fly_Ctrl_Cam(void)		//调用周期5ms
 	{
 		attitude_single_p(0);
 	}
-	
-//	//指令5
-//	if(ctrl_command == 4)
-//	{
-//		yaw_pid();
-//	}
-//	
-//	//指令6
-//	if(ctrl_command == 5)
-//	{
-//		attitude_hand();
-//	}
 	
 	//意外状况处理
 	if(ctrl_command > 5)
