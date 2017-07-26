@@ -189,6 +189,8 @@ void Get_Position(void)
 {
 	receive_T = Get_Cycle_T(3);	//以us为单位
 	
+	receive_fps_counter++;	//计算接收帧率的变量累加
+	
 	//获取数据
 	bias  = *((float*)(&(Tmp_Buffer[0])));
 	bias_pitch = *((float*)(&(Tmp_Buffer[4])));

@@ -169,6 +169,14 @@ void Duty_50ms()
 	
 	ADC_Read();			//获取电池电压
 	
+	static u8 get_fps_funtion_counter = 0;
+	get_fps_funtion_counter++;
+	if(get_fps_funtion_counter >= 40)
+	{
+		get_fps_funtion_counter = 0;
+		get_fps();
+	}
+	
 }
 
 void Duty_Camera()

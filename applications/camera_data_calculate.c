@@ -76,14 +76,20 @@ float get_speed(u32 T,float bias,float bias_last)
 	return speed;
 }
 
-//Camera数据处理
+//定时读取帧率，要求调用频率为2s一次，在主循环中调用
+u16 receive_fps_counter = 0;	//每次读取数据时+1
+void get_fps(void)
+{
+	//计算接收帧率
+	receive_fps = receive_fps_counter / 2.0f;	//转化为以Hz为单位
+	receive_fps_counter = 0;
+}
+
+//Camera数据处理（根据标志位在主循环中调用）
 float bias_lpf_old;	//上一个在可用范围内的bias
 void Camera_Calculate(void)
 {
 	static float bias_old;
-	
-	//计算接收帧率
-	receive_fps = safe_div(1000000.0f,receive_T,0);	//转化为以Hz为单位
 
 	//**************************************
 	//数据校准与滤波
