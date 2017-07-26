@@ -129,18 +129,18 @@ void Duty_5ms()
 	
 //	test[3] = GetSysTime_us()/1000000.0f;		//存储获取到的时间，但没有被调用。应该是和test[2]一起使用，计算代码运行时间。
 	
-//	//数值监控
-//	mydata.d1 = (s16)ultra.height * 10;
-//	mydata.d2 = (s16)sonar.displacement;
-//	mydata.d3 = (s16)sonar_fusion.fusion_displacement.out;
-//	mydata.d4 = (s16)my_except_height;
-//	mydata.d5 = (s16)receive_fps;
-//	mydata.d6 = (s16)bias;
-//	mydata.d7 = (s16)bias_real;
-//	mydata.d8 = (s16)bias_lpf;
-//	mydata.d9 = (s16)speed_d_bias;
-//	mydata.d10 = (s16)speed_d_bias_lpf;
-//	mydata.d11 = (s16)angle;
+	//数值监控
+	mydata.d1 = (s16)ultra.height * 10;
+	mydata.d2 = (s16)sonar.displacement;
+	mydata.d3 = (s16)sonar_fusion.fusion_displacement.out;
+	mydata.d4 = (s16)my_except_height;
+	mydata.d5 = (s16)receive_fps;
+	mydata.d6 = (s16)bias;
+	mydata.d7 = (s16)bias_real;
+	mydata.d8 = (s16)bias_lpf;
+	mydata.d9 = (s16)speed_d_bias;
+	mydata.d10 = (s16)speed_d_bias_lpf;
+	mydata.d11 = (s16)angle;
 }
 
 //10ms线程

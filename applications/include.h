@@ -23,18 +23,13 @@
 #define ANO_DT_USE_USART2 		//开启串口2数传功能
 #define ANO_DT_USE_USB_HID		//开启飞控USBHID连接上位机功能
 
-//=======================================
-/***************中断优先级******************/
+//=============中断优先级=================
+
 #define NVIC_GROUP 				NVIC_PriorityGroup_3	//中断分组选择
 #define NVIC_PWMIN_P			1			//接收机采集
 #define NVIC_PWMIN_S			1
 #define NVIC_TIME_P       		2			//Timer2（配置但未使用）
 #define NVIC_TIME_S       		0
-#define NVIC_UART_P				5			//暂未使用
-#define NVIC_UART_S				1
-#define NVIC_UART2_P			3			//串口2中断
-#define NVIC_UART2_S			1
-/***********************************************/
 
 //================传感器===================
 #define ACC_ADJ_EN 								//是否允许校准加速度计,(定义则允许)
@@ -56,6 +51,24 @@
 #define	Voltage_To_V 		0.00886f			// 分压系数为11    11 * 3.3V / 4096 = 0.000805664 * 11 = 0.0088623
 
 #define HEIGHT_SOURCE		1					// 1：加速度融合数据		2：低通滤波数据
+
+//================控制=====================
+#define MAX_VERTICAL_SPEED_UP	5000										//最大上升速度mm/s
+#define MAX_VERTICAL_SPEED_DW	3000										//最大下降速度mm/s
+
+#define MAX_CTRL_ANGLE			30.0f										//遥控能达到的最大角度
+#define ANGLE_TO_MAX_AS 		30.0f										//角度误差N时，期望角速度达到最大（可以通过调整CTRL_2的P值调整）
+#define CTRL_2_INT_LIMIT 		0.5f *MAX_CTRL_ANGLE						//外环积分幅度
+
+#define MAX_CTRL_ASPEED 	 	300.0f										//ROL,PIT允许的最大控制角速度
+#define MAX_CTRL_YAW_SPEED 		150.0f										//YAW允许的最大控制角速度
+#define CTRL_1_INT_LIMIT 		0.5f *MAX_CTRL_ASPEED						//内环积分幅度
+
+
+#define MAX_PWM			100			///%	最大PWM输出为100%油门
+#define MAX_THR       	80 			///%	油门通道最大占比80%，留20%给控制量
+#define READY_SPEED   	20			///%	解锁后电机转速20%油门
+//=========================================
 
 enum
 {
@@ -81,29 +94,8 @@ enum
  AUX3 ,
  AUX4 ,
 };
+
 //=========================================
-
-//================控制=====================
-#define MAX_VERTICAL_SPEED_UP	5000										//最大上升速度mm/s
-#define MAX_VERTICAL_SPEED_DW	3000										//最大下降速度mm/s
-
-#define MAX_CTRL_ANGLE			30.0f										//遥控能达到的最大角度
-#define ANGLE_TO_MAX_AS 		30.0f										//角度误差N时，期望角速度达到最大（可以通过调整CTRL_2的P值调整）
-#define CTRL_2_INT_LIMIT 		0.5f *MAX_CTRL_ANGLE						//外环积分幅度
-
-#define MAX_CTRL_ASPEED 	 	300.0f										//ROL,PIT允许的最大控制角速度
-#define MAX_CTRL_YAW_SPEED 		150.0f										//YAW允许的最大控制角速度
-#define CTRL_1_INT_LIMIT 		0.5f *MAX_CTRL_ASPEED						//内环积分幅度
-
-
-#define MAX_PWM			100			///%	最大PWM输出为100%油门
-#define MAX_THR       	80 			///%	油门通道最大占比80%，留20%给控制量
-#define READY_SPEED   	20			///%	解锁后电机转速20%油门
-//=========================================
-
-
-
-
 
 
 #endif

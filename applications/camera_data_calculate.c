@@ -84,25 +84,18 @@ void Camera_Calculate(void)
 	
 	//计算接收帧率
 	receive_fps = safe_div(1000000.0f,receive_T,0);	//转化为以Hz为单位
-	
-	//**************************************
-	//全白时用+-100表示
-//	if(bias_pitch)
-//	{
-//		if(bias_old > 0)
-//			bias = +100;
-//		else
-//			bias = -100;
-//	}
-//	bias_old = bias;
 
 	//**************************************
 	//数据校准与滤波
 	if(ABS(bias)<50.0f)	//只有在合理范围内才会矫正，矫正的同时进行低通滤波
 	{
 		//正常情况
+		
+		//偏移运算
 		bias_real = bias_correct(Roll_Image,Pitch_Image, Height_Image/10.0f,bias);	//姿态误差校准
 		bias_lpf = cam_bias_lpf(bias_real,receive_T,0.8f,bias_lpf);		//低通滤波器
+		
+		//速度运算
 		speed_d_bias = get_speed(receive_T,bias_lpf,bias_lpf_old);
 		speed_d_bias_lpf = cam_bias_lpf(speed_d_bias,receive_T,1.0f,speed_d_bias_lpf);
 		

@@ -238,10 +238,11 @@ void attitude_pingpong(void)
 }
 
 //根据偏移量进行单PID调整
-float roll_integration = 0;
-void attitude_single_p(u8 en)
+
+void attitude_pid(u8 en)
 {
 	float p_out,i_out,d_out,out;
+	static float roll_integration = 0;
 	
 	if(en)
 	{
@@ -258,12 +259,12 @@ void attitude_single_p(u8 en)
 		
 		if( ABS(bias) > 50.0f )
 		{
-			//偏移过大
+			//偏移过大，使用乒乓控制，系数对应 self_def_1
 			
 			if( bias > 50.0f )
 			{
 				//左偏过大
-				p_out = 40.0f * user_parameter.groups.self_def_1.kp;		//右飞
+				p_out = 40.0f * user_parameter.groups.self_def_1.kp;	//右飞
 			}
 			else if( bias < -50.0f )
 			{
@@ -271,6 +272,7 @@ void attitude_single_p(u8 en)
 				p_out = -40.0f * user_parameter.groups.self_def_1.ki;	//左飞
 			}
 			i_out = 0.0f;
+			d_out = 0.0f;
 			
 		}
 		else
@@ -314,7 +316,7 @@ void yaw_pid(void)
 	yaw_error = angle - 0.0f;	//偏左 +，偏右 -
 	
 	//纠正输出
-	yaw_out = user_parameter.groups.param_A *yaw_error;
+	yaw_out = user_parameter.groups.self_def_1.kd * yaw_error;
 	
 	CH_ctrl[YAW] = yaw_out;		//3：航向 YAW
 	
@@ -323,6 +325,76 @@ void yaw_pid(void)
 	CH_ctrl[ROL] = my_deathzoom( ( CH_filter[ROL]) ,0,30 );	//0：横滚 ROL
 	CH_ctrl[PIT] = my_deathzoom( ( CH_filter[PIT]) ,0,30 );	//1：俯仰 PIT
 	
+}
+
+void speed_pid(u8 en)
+{
+	float p_out,i_out,d_out,out;
+	static float roll_speed_integration = 0.0f;
+	static float speed_d_bias_lpf_old = 0.0f;
+	
+	/*
+		speed_d_bias			速度值			+ <---  ---> -
+		speed_d_bias_lpf		lpf值			+ <---  ---> -
+	
+		CH_ctrl[0]	横滚输出						- <---  ---> +		左负右正（负数向左有加速度，正数向右有加速度）
+	*/
+	
+//	if(en)
+//	{
+//		if( ABS(bias) > 50.0f )
+//		{
+//			//异常值使用位置乒乓
+//			if( bias > 50.0f )
+//			{
+//				//左偏过大
+//				p_out = 40.0f * user_parameter.groups.self_def_1.kp;	//右飞
+//			}
+//			else if( bias < -50.0f )
+//			{
+//				//右偏过大
+//				p_out = -40.0f * user_parameter.groups.self_def_1.ki;	//左飞
+//			}
+//			i_out = 0.0f;
+//			d_out = 0.0f;
+//			
+//			speed_d_bias_lpf_old = speed_d_bias_lpf; //持续更新
+//		}
+//		else
+//		{
+//			//正常状态能够获得speed_d_bias_lpf
+//			
+//			//p
+//			p_out = speed_d_bias_lpf * user_parameter.groups.param_A;
+//			
+//			//i
+//			roll_speed_integration += speed_d_bias_lpf * user_parameter.groups.param_B;
+//			roll_speed_integration = LIMIT(roll_speed_integration,-40.0f,40.0f);
+//			i_out = roll_speed_integration;
+//			
+//			//d
+//			d_out = (speed_d_bias_lpf - speed_d_bias_lpf_old) * user_parameter.groups.param_C;					//speed_d_bias_lpf 左正右负
+//			d_out = LIMIT(d_out,-70.0f,70.0f);
+//			
+//			//记录old值
+//			speed_d_bias_lpf_old = speed_d_bias_lpf;
+//		}
+//		
+//		//输出整合
+//		out = p_out + i_out + d_out;
+//		out = LIMIT(out,-150.0f,150.0f);
+
+//		CH_ctrl[0] = out;
+
+//		//俯仰和航向手动控制
+//		CH_ctrl[1] = my_deathzoom( ( CH_filter[PIT]) ,0,30 );	//1：俯仰 PIT
+//		CH_ctrl[3] = CH_filter[3];								//3：航向 YAW
+//	}
+//	else
+//	{
+//		roll_speed_integration = 0;
+//		speed_d_bias_lpf_old = speed_d_bias_lpf;	//持续更新
+//	}
 }
 
 //========================================================================================
@@ -408,7 +480,7 @@ void Fly_Ctrl(void)		//调用周期5ms
 	
 	if(ctrl_command == 1)
 	{
-		attitude_pingpong();	//横滚角乒乓控制
+		attitude_hand();
 	}
 	
 	if(ctrl_command == 2)
@@ -425,15 +497,15 @@ void Fly_Ctrl(void)		//调用周期5ms
 //		//attitude_single_p(0);
 //	}
 	
-	if(ctrl_command == 4)
-	{
-		yaw_pid();
-	}
+//	if(ctrl_command == 4)
+//	{
+//		//yaw_pid();
+//	}
 
-	if(ctrl_command == 5)
-	{
-		attitude_hand();
-	}
+//	if(ctrl_command == 5)
+//	{
+//		attitude_hand();
+//	}
 	
 	//意外状况处理
 	if(ctrl_command > 5)
@@ -456,11 +528,21 @@ void Fly_Ctrl_Cam(void)		//调用周期与camera数据相同
 	
 	if(ctrl_command == 3)
 	{
-		attitude_single_p(1);
+		attitude_pid(1);
 	}
 	else
 	{
-//		attitude_single_p(0);
+		attitude_pid(0);
+	}
+	
+	if(ctrl_command == 4)
+	{
+		yaw_pid();
+	}
+	
+	if(ctrl_command == 5)
+	{
+		attitude_hand();
 	}
 	
 	//意外状况处理
