@@ -329,9 +329,9 @@ void yaw_pid(void)
 
 void speed_pid(u8 en)
 {
-	float p_out,i_out,d_out,out;
-	static float roll_speed_integration = 0.0f;
-	static float speed_d_bias_lpf_old = 0.0f;
+//	float p_out,i_out,d_out,out;
+//	static float roll_speed_integration = 0.0f;
+//	static float speed_d_bias_lpf_old = 0.0f;
 	
 	/*
 		speed_d_bias			ËÙ¶ÈÖµ			+ <---  ---> -
