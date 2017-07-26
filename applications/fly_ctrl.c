@@ -255,8 +255,10 @@ void attitude_pingpong(void)
 void speed_pid(u8 en)
 {
 	float p_out,i_out,d_out,out;
-	static float roll_speed_integration = 0.0f;
-	static float speed_d_bias_lpf_old = 0.0f;
+	float speed_error = 0.0f;
+	static float roll_speed_integration = 0.0f;	//积分变量
+	static float speed_error_old = 0.0f;	//old变量
+	s32 out_tmp;
 	
 	/*
 		speed_d_bias			速度值			+ <---  ---> -
@@ -267,14 +269,65 @@ void speed_pid(u8 en)
 	
 	if(en)
 	{
-		if( ABS(bias) > 50.0f )
+		//模式使能
+		
+		if( bias_error_flag != 0 )
 		{
+			//bias值异常
+			
+			//偏移过大，使用乒乓控制，系数对应 param_A param_B
+			
+			if( bias < -50.0f )
+			{
+				//右偏过大
+				p_out = -40.0f * user_parameter.groups.param_A;	//左飞
+			}
+			else if( bias > 50.0f )
+			{
+				//左偏过大
+				p_out =  40.0f * user_parameter.groups.param_B;	//右飞
+			}
 
+			i_out = 0.0f;
+			d_out = 0.0f;
+			
+			speed_error_old = 0;	// speed_error_old 清零（在一定程度上减小对d的影响）
+			
 		}
 		else
 		{
+			//bias值正常
 
+			speed_error =  0 - speed_d_bias_lpf;	//计算error   speed_error值
+													//error   负：期望向左速度小于当前向左速度，期望向左速度比较小，应该向右加速
+													//		  正：期望向左速度大于当前向左速度，期望向左速度比较大，应该向左加速
+			
+			//p
+			p_out = - speed_error * user_parameter.groups.self_def_1.kp;
+			
+			//i
+			roll_speed_integration += speed_error * user_parameter.groups.self_def_1.ki;
+			roll_speed_integration = LIMIT(roll_speed_integration,-40.0f,40.0f);
+			i_out = - roll_speed_integration;
+			
+			//d
+			//error    +   （应该向左加速）<-- --> （应该向右加速）   -
+			//error - error_old   正：更需要向左加速
+			//					  负：没那么需要向左加速了
+			d_out = -(speed_error - speed_error_old) * user_parameter.groups.self_def_1.kd;
+			d_out = LIMIT(d_out,-70.0f,70.0f);	//限制输出幅度为+-70，允许d引起刹车动作
+			
+			speed_error_old = speed_error;
 		}
+		
+		//输出整合
+		out = p_out + i_out + d_out;
+		out = LIMIT(out,-150.0f,150.0f);
+		
+		//float变量安全隔离
+		out_tmp = (s32)(out*100.0f);	//放大100倍，保留小数点后2位精度
+		out_tmp = LIMIT(out_tmp,-15000,15000);	//限幅
+		out = ((float)out_tmp) / 100.0f;	//缩小100倍，回归float
 
 		CH_ctrl[0] = out;
 
@@ -284,7 +337,8 @@ void speed_pid(u8 en)
 	}
 	else
 	{
-		
+		//非此模式执行清零
+		roll_speed_integration = 0.0;
 	}
 }
 
@@ -299,29 +353,28 @@ void position_pid(u8 en)
 	{
 		
 		/*
-		
 			bias		原始值					+ <---  ---> -
 			bias_real	校正值					+ <---  ---> -
 			bias_lpf	校正值过低通滤波器		+ <---  ---> -
 		
 			CH_ctrl[0]	横滚输出					- <---  ---> +		左负右正（负数向左有加速度，正数向右有加速度）
-		
 		*/
 		
 		if( bias_error_flag != 0 )
 		{
-			//偏移过大，使用乒乓控制，系数对应 self_def_1
+			//偏移过大，使用乒乓控制，系数对应 param_A param_B
 			
-			if( bias > 50.0f )
-			{
-				//左偏过大
-				p_out = 40.0f * user_parameter.groups.self_def_1.kp;	//右飞
-			}
-			else if( bias < -50.0f )
+			if( bias < -50.0f )
 			{
 				//右偏过大
-				p_out = -40.0f * user_parameter.groups.self_def_1.ki;	//左飞
+				p_out = -40.0f * user_parameter.groups.param_A;	//左飞
 			}
+			else if( bias > 50.0f )
+			{
+				//左偏过大
+				p_out =  40.0f * user_parameter.groups.param_B;	//右飞
+			}
+
 			i_out = 0.0f;
 			d_out = 0.0f;
 			
@@ -329,6 +382,8 @@ void position_pid(u8 en)
 		else
 		{
 			//正常值
+			
+			//不用计算error，因为期望为0
 			
 			//p
 			p_out = bias_lpf * user_parameter.groups.self_def_2.kp;
@@ -369,11 +424,16 @@ void yaw_pid(void)
 {
 	float yaw_error,yaw_out;
 	
+	/*
+		angle：			偏左 - ，偏右 +
+		CH_ctrl[YAW]：	左转 - ，右转 +
+	*/
+	
 	//计算偏差
-	yaw_error = angle - 0.0f;	//偏左 +，偏右 -
+	yaw_error = 0.0f - angle;	
 	
 	//纠正输出
-	yaw_out = user_parameter.groups.self_def_1.kd * yaw_error;
+	yaw_out = yaw_error * user_parameter.groups.param_C;
 	
 	CH_ctrl[YAW] = yaw_out;		//3：航向 YAW
 	
