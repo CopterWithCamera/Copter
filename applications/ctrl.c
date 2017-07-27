@@ -38,6 +38,7 @@ void CTRL_2(float T)
 	//=========================== 输入数据切换 ========================================
 
 	//根据飞行模式选取控制数据
+	//x，y轴处理
 	if(mode_state == 3)	//自动控制模式下没有死区
 	{
 		//无死区
@@ -53,16 +54,20 @@ void CTRL_2(float T)
 		except_A.y  = MAX_CTRL_ANGLE  *( my_deathzoom( ( CH_filter[PIT]) ,0,30 )/500.0f );
 	}
 	
-	//=========================== 期望角度控制 ========================================
-	
 	//z轴处理，将输入值转化为期望角速度
 	if( Thr_Low == 0 )	//这东西顶多跟起不起飞有关系，跟油门低不低有啥关系？？
 	{
 		//油门非低
 		//设置死区，进行归一化处理，最大角度值由最大角速度值 MAX_CTRL_YAW_SPEED 对 时间的积分 来影响
-//		except_A.z += (s16)( MAX_CTRL_YAW_SPEED *( my_deathzoom_2( (CH_filter[YAW]) ,0,40 )/500.0f ) ) *T ;
-		
-		except_A.z += (s16)( MAX_CTRL_YAW_SPEED *( my_deathzoom_2( (CH_ctrl[YAW]) ,0,40 )/500.0f ) ) *T ;
+
+		if(mode_state == 3)
+		{
+			except_A.z += (s16)( MAX_CTRL_YAW_SPEED *( my_deathzoom_2( (CH_ctrl[YAW]) ,0,40 )/500.0f ) ) *T ;
+		}
+		else
+		{
+			except_A.z += (s16)( MAX_CTRL_YAW_SPEED *( my_deathzoom_2( (CH_filter[YAW]) ,0,40 )/500.0f ) ) *T ;
+		}
 	}
 	else	//油门低
 	{

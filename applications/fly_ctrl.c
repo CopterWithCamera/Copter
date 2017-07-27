@@ -251,6 +251,12 @@ void attitude_pingpong(void)
 	CH_ctrl[3] = CH_filter[3];								//3：航向 YAW
 }
 
+//位置控制（对接到速度控制）
+void postion_to_speed_pid(void)
+{
+	
+}
+
 //速度控制
 void speed_pid(u8 en)
 {
@@ -261,6 +267,8 @@ void speed_pid(u8 en)
 	s32 out_tmp;
 	
 	/*
+		CH_filter[0]			遥控器横滚输入	- <---  ---> +
+	
 		speed_d_bias			速度值			+ <---  ---> -
 		speed_d_bias_lpf		lpf值			+ <---  ---> -
 	
@@ -298,7 +306,7 @@ void speed_pid(u8 en)
 		{
 			//bias_detect值正常
 
-			speed_error =  0 - speed_d_bias_lpf;	//计算error   speed_error值
+			speed_error =  -(CH_filter[0]/5.0f) - speed_d_bias_lpf;	//计算error   speed_error值
 													//error   负：期望向左速度小于当前向左速度，期望向左速度比较小，应该向右加速
 													//		  正：期望向左速度大于当前向左速度，期望向左速度比较大，应该向左加速
 			
