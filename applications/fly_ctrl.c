@@ -252,14 +252,82 @@ void attitude_pingpong(void)
 }
 
 //位置控制（对接到速度控制）
-void postion_to_speed_pid(void)
+float position_except_speed = 0.0f;		//输出速度期望，单位cm/s，方向 + <-- --> -
+void position_to_speed_pid(u8 en)
 {
+	float p_out,i_out,d_out,out;
+	static float position_roll_integration = 0;
 	
+	if(en)
+	{
+		
+		/*
+			bias		原始值					+ <---  ---> -
+			bias_detect 原始值的统计滤波结果		+ <---  ---> -
+			bias_real	校正值					+ <---  ---> -
+			bias_lpf	校正值过低通滤波器		+ <---  ---> -
+		
+			CH_ctrl[0]	横滚输出					- <---  ---> +		左负右正（负数向左有加速度，正数向右有加速度）
+		*/
+		
+		if( bias_error_flag != 0 )
+		{
+			//偏移过大，使用乒乓控制
+			
+			if( bias_detect < -50.0f )
+			{
+				//右偏过大
+				p_out = -5;		//左飞
+			}
+			else if( bias_detect > 50.0f )
+			{
+				//左偏过大
+				p_out =  5;		//右飞
+			}
+
+			i_out = 0.0f;
+			d_out = 0.0f;
+		}
+		else
+		{
+			//正常值
+			
+			//不用计算error，因为期望为0
+			
+			//p
+			p_out = bias_lpf * user_parameter.groups.self_def_2.kp;
+			
+			//i
+			position_roll_integration += bias_lpf * user_parameter.groups.self_def_2.ki;
+			position_roll_integration = LIMIT(position_roll_integration,-10.0f,10.0f);
+			i_out = position_roll_integration;
+			
+			//d
+			d_out = speed_d_bias_lpf * user_parameter.groups.self_def_2.kd;		//speed_d_bias_lpf 左正右负
+			d_out = LIMIT(d_out,-10.0f,10.0f);	//限制输出幅度为+-70，允许d引起刹车动作
+		}
+		
+		//输出整合
+		//PID输出 out： - <-- --> +
+		out = p_out + i_out + d_out;
+		out = LIMIT(out,-15.0f,15.0f);
+		
+		//输出给 position_except_speed
+		//输出的值应该在-15到+15之间
+		position_except_speed = -out;
+
+	}
+	else
+	{
+		position_roll_integration = 0;
+	}
 }
 
 //速度控制
+//接口：except_speed      + <-- --> -      单位cm/s
 void speed_pid(u8 en)
 {
+	float except_speed = 0.0f;
 	float p_out,i_out,d_out,out;
 	float speed_error = 0.0f;
 	static float roll_speed_integration = 0.0f;	//积分变量
@@ -279,9 +347,16 @@ void speed_pid(u8 en)
 	{
 		//模式使能
 		
+		//except_speed      + <-- --> -      单位cm/s
+		
+		except_speed = position_except_speed;	//-( my_deathzoom( ( CH_filter[ROL] ) , 0, 30 ) / 5.0f );
+		
+		except_speed = my_deathzoom( except_speed , 0, 1 );	//设置+-1的死区
+		except_speed = LIMIT(except_speed,-15,15);			//限幅
+		
 		if( bias_error_flag != 0 )
 		{
-			//bias_detect值异常
+			// bias_detect（水平偏差）值异常处理
 			
 			//偏移过大，使用乒乓控制，系数对应 param_A param_B
 			
@@ -305,10 +380,10 @@ void speed_pid(u8 en)
 		else
 		{
 			//bias_detect值正常
-
-			speed_error =  -(CH_filter[0]/5.0f) - speed_d_bias_lpf;	//计算error   speed_error值
-													//error   负：期望向左速度小于当前向左速度，期望向左速度比较小，应该向右加速
-													//		  正：期望向左速度大于当前向左速度，期望向左速度比较大，应该向左加速
+			
+			speed_error = except_speed - speed_d_bias_lpf;	//计算error   speed_error值
+															//error   负：期望向左速度小于当前向左速度，期望向左速度比较小，应该向右加速
+															//		  正：期望向左速度大于当前向左速度，期望向左速度比较大，应该向左加速
 			
 			//p
 			p_out = - speed_error * user_parameter.groups.self_def_1.kp;
@@ -395,15 +470,15 @@ void position_pid(u8 en)
 			//不用计算error，因为期望为0
 			
 			//p
-			p_out = bias_lpf * user_parameter.groups.self_def_2.kp;
+			p_out = bias_lpf * user_parameter.groups.param_D;
 			
 			//i
-			roll_integration += bias_lpf * user_parameter.groups.self_def_2.ki;
+			roll_integration += bias_lpf * user_parameter.groups.param_E;
 			roll_integration = LIMIT(roll_integration,-40.0f,40.0f);
 			i_out = roll_integration;
 			
 			//d
-			d_out = speed_d_bias_lpf * user_parameter.groups.self_def_2.kd;		//speed_d_bias_lpf 左正右负
+			d_out = speed_d_bias_lpf * user_parameter.groups.param_F;		//speed_d_bias_lpf 左正右负
 			d_out = LIMIT(d_out,-70.0f,70.0f);	//限制输出幅度为+-70，允许d引起刹车动作
 		}
 		
@@ -610,10 +685,12 @@ void Fly_Ctrl_Cam(void)		//调用周期与camera数据相同
 	
 	if(ctrl_command == 5)
 	{
+		position_to_speed_pid(1);
 		speed_pid(1);
 	}
 	else
 	{
+		position_to_speed_pid(0);
 		speed_pid(0);
 	}
 	
