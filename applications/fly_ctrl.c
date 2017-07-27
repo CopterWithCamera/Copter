@@ -220,8 +220,6 @@ void attitude_hand(void)
 	CH_ctrl[YAW] = CH_filter[YAW];	//3：航向 YAW
 }
 
-
-
 //横滚角乒乓控制
 void attitude_pingpong(void)
 {
@@ -249,6 +247,14 @@ void attitude_pingpong(void)
 	//俯仰和航向手动控制
 	CH_ctrl[1] = my_deathzoom( ( CH_filter[PIT]) ,0,30 );	//1：俯仰 PIT
 	CH_ctrl[3] = CH_filter[3];								//3：航向 YAW
+}
+
+//近地面姿态锁定
+void land_attitude(void)
+{
+	CH_ctrl[ROL] = 0;	//0：横滚 ROL
+	CH_ctrl[PIT] = 0;	//1：俯仰 PIT
+	CH_ctrl[YAW] = 0;	//3：航向 YAW
 }
 
 //位置控制（对接到速度控制）
@@ -685,8 +691,21 @@ void Fly_Ctrl_Cam(void)		//调用周期与camera数据相同
 	
 	if(ctrl_command == 5)
 	{
-		position_to_speed_pid(1);
-		speed_pid(1);
+		if(sonar.displacement >= 250)
+		{
+			//离地后使用pid
+			position_to_speed_pid(1);
+			speed_pid(1);
+		}
+		else
+		{
+			//近地面姿态锁定
+			land_attitude();
+			
+			//停用位置控制pid
+			position_to_speed_pid(0);
+			speed_pid(0);
+		}
 	}
 	else
 	{
