@@ -4,6 +4,7 @@
 #include "math.h"
 #include "stdio.h"
 
+float bias_detect = 0.0;
 float bias_lpf = 0;
 float bias_real = 0;
 float speed_d_bias = 0;
@@ -86,23 +87,78 @@ void get_fps(void)
 }
 
 //Camera数据处理（根据标志位在主循环中调用）
-float bias_lpf_old;	//上一个在可用范围内的bias
-u8 bias_error_flag = 0;	//bias值异常指示		0：正常    1：从异常中恢复回来后的第一帧    2：异常
+u8 bias_error_flag = 0;	//bias_detect值异常指示		0：正常    1：从异常中恢复回来后的第一帧    2：异常
 void Camera_Calculate(void)
 {
-	static float bias_old;
 	
 	//**************************************
+	//数据的三帧决断
+	static u8 detect_100_counter = 0;
+	static float bias_old = 0.0f;
+	static u8 mode = 0;
+	if(receive_fps>25.0f)	//帧率大于25帧才允许使用
+	{
+		if(ABS(bias)>50)	//异常值部分（排除跳+-100）
+		{	
+			if(detect_100_counter>=3)
+			{
+				bias_detect = bias;
+			}
+			else
+			{
+				detect_100_counter++;
+				//bias_detect不变
+			}
+		}
+		else	//正常值部分
+		{
+			detect_100_counter = 0;
+			
+			if( ABS(bias-bias_old)>=8 )
+			{
+				mode = 1;
+				//bias_detect不变
+				bias_old = bias;
+			}
+			else
+			{
+				if(mode == 0)
+				{
+					mode = 0;
+					bias_old = bias;
+					bias_detect = bias;
+				}
+				else if(mode == 1)
+				{
+					mode = 2;
+					bias_old = bias;
+					//bias_detect不变
+				}
+				else
+				{
+					mode = 0;
+					bias_old = bias;
+					bias_detect = bias;
+				}
+			}
+		}
+	}
+	else
+	{
+		bias_detect = bias;
+	}
+	
 	//数据校准与滤波
-	if(ABS(bias)<50.0f)	//只有在合理范围内才会矫正，矫正的同时进行低通滤波
+	static float bias_lpf_old;	//上一个在可用范围内的bias_lpf
+	if(ABS(bias_detect)<50.0f)	//只有在合理范围内才会矫正，矫正的同时进行低通滤波
 	{
 		//正常情况
 		
 		//偏移运算
-		bias_real = bias_correct(Roll_Image,Pitch_Image, Height_Image/10.0f,bias);	//姿态误差校准
+		bias_real = bias_correct(Roll_Image,Pitch_Image, Height_Image/10.0f, bias_detect);	//姿态误差校准
 		bias_lpf = cam_bias_lpf(bias_real,receive_T,0.8f,bias_lpf);		//低通滤波器
 		
-		//速度运算
+		//速度运算（使用 bias_lpf 为数据源）
 		if(bias_error_flag == 2)	//这一帧要等着bias_lpf_old更新
 		{
 			speed_d_bias = 0;		//无法运算speed_d_bias，所以归零
@@ -123,11 +179,11 @@ void Camera_Calculate(void)
 			speed_d_bias_lpf = cam_bias_lpf(speed_d_bias,receive_T,1.0f,speed_d_bias_lpf);
 		}
 		
-		bias_lpf_old = bias_lpf;	//更新上一帧的bias（只有bias有效时才会更新bias_old，防止+-100的异常值加入运算）
+		bias_lpf_old = bias_lpf;	//更新上一帧的bias_lpf（只有bias_detect有效时才会更新 bias_lpf_old ，防止+-100的异常值加入运算）
 	}
 	else
 	{
-		bias_error_flag = 2;	//表示bias数据处于异常值（微分运算得到速度需要两帧）
+		bias_error_flag = 2;	//表示bias_detect数据处于异常值（微分运算得到速度需要两帧）
 		
 		speed_d_bias = 0;
 		speed_d_bias_lpf = 0;

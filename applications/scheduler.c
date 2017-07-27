@@ -134,8 +134,8 @@ void Duty_5ms()
 	mydata.d2 = (s16)sonar.displacement;
 	mydata.d3 = (s16)sonar_fusion.fusion_displacement.out;
 	mydata.d4 = (s16)my_except_height;
-	mydata.d5 = (s16)receive_fps;
-	mydata.d6 = (s16)bias;
+	mydata.d5 = (s16)bias;
+	mydata.d6 = (s16)bias_detect;
 	mydata.d7 = (s16)bias_real;
 	mydata.d8 = (s16)bias_lpf;
 	mydata.d9 = (s16)speed_d_bias;

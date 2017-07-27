@@ -203,7 +203,7 @@ void rising_to_50cm(void)
 //
 //									                     姿态（位置）控制函数
 //
-//					可以使用的参数：	float bias、float bias_real、float bias_lpf	左正右负（数值为正则偏左，数值为负则偏右）
+//					可以使用的参数：	float bias、float bias_detect、float bias_real、float bias_lpf	左正右负（数值为正则偏左，数值为负则偏右）
 //									float angle、
 //									float speed
 //
@@ -273,16 +273,16 @@ void speed_pid(u8 en)
 		
 		if( bias_error_flag != 0 )
 		{
-			//bias值异常
+			//bias_detect值异常
 			
 			//偏移过大，使用乒乓控制，系数对应 param_A param_B
 			
-			if( bias < -50.0f )
+			if( bias_detect < -50.0f )
 			{
 				//右偏过大
 				p_out = -40.0f * user_parameter.groups.param_A;	//左飞
 			}
-			else if( bias > 50.0f )
+			else if( bias_detect > 50.0f )
 			{
 				//左偏过大
 				p_out =  40.0f * user_parameter.groups.param_B;	//右飞
@@ -296,7 +296,7 @@ void speed_pid(u8 en)
 		}
 		else
 		{
-			//bias值正常
+			//bias_detect值正常
 
 			speed_error =  0 - speed_d_bias_lpf;	//计算error   speed_error值
 													//error   负：期望向左速度小于当前向左速度，期望向左速度比较小，应该向右加速
@@ -354,6 +354,7 @@ void position_pid(u8 en)
 		
 		/*
 			bias		原始值					+ <---  ---> -
+			bias_detect 原始值的统计滤波结果		+ <---  ---> -
 			bias_real	校正值					+ <---  ---> -
 			bias_lpf	校正值过低通滤波器		+ <---  ---> -
 		
@@ -364,12 +365,12 @@ void position_pid(u8 en)
 		{
 			//偏移过大，使用乒乓控制，系数对应 param_A param_B
 			
-			if( bias < -50.0f )
+			if( bias_detect < -50.0f )
 			{
 				//右偏过大
 				p_out = -40.0f * user_parameter.groups.param_A;	//左飞
 			}
-			else if( bias > 50.0f )
+			else if( bias_detect > 50.0f )
 			{
 				//左偏过大
 				p_out =  40.0f * user_parameter.groups.param_B;	//右飞
