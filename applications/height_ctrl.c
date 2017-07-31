@@ -169,7 +169,7 @@ float Height_Pid(float T,float en,u8 mode,float height_error,float except_speed_
 	float acc_i_lim;
 	acc_i_lim = safe_div(150,h_acc_arg.ki,0);		//acc_i_lim = 150 / h_acc_arg.ki
 													//避免除零错误（如果出现除零情况，就得0）
-	//计算加速度
+	//计算加速度（加速度来自融合速度微分）
 	fb_speed_old = fb_speed;						//存储上一次的速度
 	fb_speed = hc_value.fusion_speed;				//读取当前速度
 	fb_acc = safe_div(fb_speed - fb_speed_old,T,0);	//计算得到加速度：a = dy/dt = [ x(n)-x(n-1)]/dt
@@ -198,14 +198,17 @@ float Height_Pid(float T,float en,u8 mode,float height_error,float except_speed_
 	{
 		if(thr_take_off<THR_TAKE_OFF_LIMIT)
 		{
+			//thr_take_off += 0.3，h_acc_val.err_i -= 15
 			thr_take_off += 150 *T;
-			h_acc_val.err_i -= safe_div(150,h_acc_arg.ki,0) *T;
+			h_acc_val.err_i -= safe_div(150,h_acc_arg.ki,0) *T;	//h_acc_arg.ki = 0.02f*pid_setup.groups.hc_sp.kp   是个常数，是0.02
+																//150 / 0.02 * 0.002 = 15
 		}
 	}
 	else if(h_acc_val.err_i < (-acc_i_lim * 0.2f))
 	{
 		if(thr_take_off>0)
 		{
+			//thr_take_off -= 0.3，h_acc_val.err_i += 15
 			thr_take_off -= 150 *T;
 			h_acc_val.err_i += safe_div(150,h_acc_arg.ki,0) *T;
 		}

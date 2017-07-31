@@ -22,7 +22,9 @@
 #define NORM_ACC_LPF_HZ 10  			//(Hz)
 #define REF_ERR_LPF_HZ  1				//(Hz)
 
-xyz_f_t reference_v;
+xyz_f_t reference_v;  //z轴
+xyz_f_t reference_x;  //X轴
+xyz_f_t reference_y;  //y轴
 ref_t 	ref;
 
 //xyz_f_t Gravity_Vec;  				//解算的重力向量
@@ -36,7 +38,7 @@ float norm_acc_lpf;
 float mag_norm ,mag_norm_xyz ;
 
 xyz_f_t	mag_sim_3d,
-		acc_3d_hg,		//排除重力加速度影响的地理坐标系的三轴加速度值
+		acc_3d_hg,		//排除重力加速度影响的地理坐标系的三轴加速度值（单位cm/s2）
 		acc_ng;			//排除重力加速度影响的机体坐标系三轴加速度值
 
 xyz_f_t acc_ng_offset;	//加速度计快速校准积分变量
@@ -102,11 +104,20 @@ void IMUupdate(float half_T,float gx, float gy, float gz, float ax, float ay, fl
 	
 	//=============================================================================
 	// 计算等效重力向量（生成reference_v.x/y/z）
-	
+	//z轴
 	reference_v.x = 2*(ref_q[1]*ref_q[3] - ref_q[0]*ref_q[2]);
 	reference_v.y = 2*(ref_q[0]*ref_q[1] + ref_q[2]*ref_q[3]);
 	reference_v.z = 1 - 2*(ref_q[1]*ref_q[1] + ref_q[2]*ref_q[2]);//ref_q[0]*ref_q[0] - ref_q[1]*ref_q[1] - ref_q[2]*ref_q[2] + ref_q[3]*ref_q[3];
 
+	 //等效x轴向量
+	reference_x.x=1-2*(ref_q[2]*ref_q[2]+ref_q[3]*ref_q[3]);
+	reference_x.y=2*(ref_q[1]*ref_q[2]-ref_q[0]*ref_q[3]);
+	reference_x.z=2*(ref_q[1]*ref_q[3]+ref_q[0]*ref_q[2]);
+	
+	//等效y轴向量
+	reference_y.x=2*(ref_q[1]*ref_q[2]+ref_q[0]*ref_q[3]);
+	reference_y.y=1-2*(ref_q[1]*ref_q[1]+ref_q[3]*ref_q[3]);
+	reference_y.z=2*(ref_q[2]*ref_q[3]-ref_q[0]*ref_q[1]);
 	/*
 	
 	参考文献：http://www.cnblogs.com/andychenforever/p/6298073.html
@@ -173,10 +184,15 @@ void IMUupdate(float half_T,float gx, float gy, float gz, float ax, float ay, fl
 	//地球坐标系上飞机的z方向加速度值（垂直于地面方向）
 	//reference_v的三个数值可以用于把地理系Z轴映射到机体xyz，从物理意义上也能把机体xyz上的向量上的地理Z轴分量算出来
 	//这个变量用于高度数据融合
-	acc_3d_hg.z = acc_ng.x *reference_v.x + acc_ng.y *reference_v.y + acc_ng.z *reference_v.z;
 	
+	//地球系三轴加速度（不包含重力分量）（单位cm/s2）
+	acc_3d_hg.x = acc_ng.x * reference_x.x + acc_ng.y * reference_x.y + acc_ng.z * reference_x.z;
+	acc_3d_hg.y = acc_ng.x * reference_y.x + acc_ng.y * reference_y.y + acc_ng.z * reference_y.z;
+	acc_3d_hg.z = acc_ng.x * reference_v.x + acc_ng.y * reference_v.y + acc_ng.z * reference_v.z;
 	
-	
+	mydata.d1 = (s16)acc_3d_hg.x;
+	mydata.d2 = (s16)acc_3d_hg.y;
+	mydata.d3 = (s16)acc_3d_hg.z;
 	
 	//=============================================================================
 	//更新四元数
