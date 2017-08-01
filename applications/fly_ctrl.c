@@ -212,6 +212,196 @@ void rising_to_50cm(void)
 //=====================================================================================================================================
 //=====================================================================================================================================
 
+//速度控制环
+void speed_ctrl(u8 en)
+{
+	//非此模式时的清零处理
+	if(!en)
+	{
+		//en = 0
+		
+		return;
+	}
+	
+//	float except_speed_roll = 0.0f,except_speed_pitch = 0.0f;
+//	float p_out,i_out,d_out,out;
+//	float speed_error = 0.0f;
+//	static float roll_speed_integration = 0.0f;	//积分变量
+//	static float speed_error_old = 0.0f;	//old变量
+//	s32 out_tmp;
+	
+	
+	//*********************************************************
+	
+	//pitch方向
+	
+	float except_speed_pitch = 0.0f;
+	float speed_error_pitch = 0.0f;
+	static float speed_error_old_pitch = 0.0f;
+	static float speed_error_integration_pitch = 0.0f;
+	float p_out_pitch = 0.0f, i_out_pitch = 0.0f, d_out_pitch = 0.0f, out_pitch = 0.0f;
+	
+	u8 pitch_mode = 0;	//0：悬停，1：前进，2：后退
+	
+	/*
+								   前               				前
+		speed_error_pitch：		   /\  +         CH_ctrl[PIT]：   	/\  -
+								   ||								||
+								   ||								||
+								   \/  -							\/  +
+								   后								后
+	*/
+	
+	if(pitch_mode == 0)
+	{
+		//悬停
+		
+		//期望输入（单位是cm/s）
+		except_speed_pitch = 0.0f;	//-( my_deathzoom( ( CH_filter[RIT] ) , 0, 30 ) / 5.0f );
+		except_speed_pitch = my_deathzoom( except_speed_pitch , 0, 1 );		//设置+-1的死区
+		except_speed_pitch = LIMIT(except_speed_pitch , -15, 15);			//限幅 -15 -- +15
+		
+		//计算error
+		speed_error_pitch = except_speed_pitch - speed_d_bias_lpf_pitch;	//计算error   speed_error值
+																//error   负：期望向前速度小于当前向后速度，期望向前速度比较小，应该向前加速
+																//		  正：期望向前速度大于当前向后速度，期望向前速度比较大，应该向后加速
+	}
+	else
+	{
+		//前进或后退（恒速）
+		//数据可用时控制速度，不可用时飘过去
+		
+		
+		if(pitch_mode == 1)	//前进
+		{
+			speed_error_pitch = 4;	//向前给一个很小的期望速度差
+		}
+		else	//pitch_mode = 2  后退
+		{
+			speed_error_pitch = -4;	//向后给一个很小的期望速度差
+		}
+	}
+	
+	if(bias_error_flag_pitch != 0)
+	{
+		//速度反馈值不可信
+		
+		//使用乒乓控制，系数对应 param_A param_B（根据期望速度方向设置加速度方向）
+		
+		//PID输出为正代表需要向左有加速度
+		
+		if( speed_error_pitch > 0.0f)	//需要向左的加速度
+		{
+			p_out_pitch = 20.0f * user_parameter.groups.param_A;	//左飞
+			
+		}
+		else							//需要向右的加速度
+		{
+			p_out_pitch =  -20.0f * user_parameter.groups.param_B;	//右飞
+		}
+
+		i_out_pitch = 0.0f;
+		d_out_pitch = 0.0f;
+		
+		speed_error_old_pitch = 0;	// speed_error_old 清零（在一定程度上减小对d的影响）
+	}
+	else
+	{
+		
+	}
+	
+	CH_ctrl[1] = my_deathzoom( ( CH_filter[PIT]) ,0,30 );	//1：俯仰 PIT
+	
+	//*********************************************************
+	
+	//roll方向
+	
+	float except_speed_roll = 0.0f;
+	float speed_error_roll = 0.0f;
+	static float speed_error_old_roll = 0.0f;
+	static float speed_error_integration_roll = 0.0f;
+	float p_out_roll = 0.0f, i_out_roll = 0.0f, d_out_roll = 0.0f, out_roll = 0.0f;
+	
+	
+	//期望输入（单位是cm/s）
+	except_speed_roll = 0.0f;	//-( my_deathzoom( ( CH_filter[ROL] ) , 0, 30 ) / 5.0f );
+	except_speed_roll = my_deathzoom( except_speed_roll , 0, 1 );	//设置+-1的死区
+	except_speed_roll = LIMIT(except_speed_roll , -15, 15);			//限幅 -15 -- +15
+	
+	//计算error
+	speed_error_roll = except_speed_roll - speed_d_bias_lpf;	//计算error   speed_error值
+																//error   负：期望向左速度小于当前向左速度，期望向左速度比较小，应该向右加速
+																//		  正：期望向左速度大于当前向左速度，期望向左速度比较大，应该向左加速
+	
+	//PID输出左正右负 + <-- --> -
+	
+	if( bias_error_flag != 0 )
+	{
+		//速度反馈值不可信
+		
+		//使用乒乓控制，系数对应 param_A param_B（根据期望速度方向设置加速度方向）
+		
+		//PID输出为正代表需要向左有加速度
+		
+		if( speed_error_roll > 0.0f)	//需要向左的加速度
+		{
+			p_out_roll = 40.0f * user_parameter.groups.param_A;	//左飞
+		}
+		else							//需要向右的加速度
+		{
+			p_out_roll =  -40.0f * user_parameter.groups.param_B;	//右飞
+		}
+
+		i_out_roll = 0.0f;
+		d_out_roll = 0.0f;
+		
+		speed_error_old_roll = 0;	// speed_error_old 清零（在一定程度上减小对d的影响）
+		
+	}
+	else
+	{
+		//bias_detect值正常
+		
+		//PID输出数值为正代表需要向左有加速度
+		
+		//p
+		p_out_roll = speed_error_roll * user_parameter.groups.self_def_1.kp;
+		
+		//i
+		speed_error_integration_roll += speed_error_roll * user_parameter.groups.self_def_1.ki;
+		speed_error_integration_roll = LIMIT(speed_error_integration_roll,-40.0f,40.0f);
+		i_out_roll = speed_error_integration_roll;
+		
+		//d
+		//error    +   （应该向左加速）<-- --> （应该向右加速）   -
+		//error - error_old   正：向左的期望速度差变大了，需要向左加速
+		//					  负：向左的期望速度差变小了，可以放缓向左加速/向右加速
+		d_out_roll = (speed_error_roll - speed_error_old_roll) * user_parameter.groups.self_def_1.kd;
+		d_out_roll = LIMIT(d_out_roll,-70.0f,70.0f);	//限制输出幅度为+-70，允许d引起刹车动作
+		
+		speed_error_old_roll = speed_error_roll;
+	}
+
+	//输出整合
+	out_roll = p_out_roll + i_out_roll + d_out_roll;
+	out_roll = LIMIT(out_roll,-150.0f,150.0f);			//单位是0.1°
+
+	CH_ctrl[0] = - out_roll;	//CH_ctrl   - <-- --> +
+								//out_roll	+ <-- --> -
+								//接口需要加负号
+	
+	//*********************************************************
+	
+	
+	//俯仰和航向手动控制
+	CH_ctrl[3] = CH_filter[3];								//3：航向 YAW
+	
+}
+
+
+
+
+
 //手动控制姿态
 void attitude_hand(void)
 {

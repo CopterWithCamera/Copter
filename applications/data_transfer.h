@@ -45,6 +45,14 @@ typedef struct
 	s16 d10;
 	s16 d11;
 	s16 d12;
+	s16 d13;
+	s16 d14;
+	s16 d15;
+	s16 d16;
+	s16 d17;
+	s16 d18;
+	s16 d19;
+	s16 d20;
 }User_Data1;
 
 extern dt_flag_t f;	//发送数据的标志位
