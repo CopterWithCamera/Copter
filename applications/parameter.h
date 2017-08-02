@@ -58,16 +58,16 @@ typedef union
 	uint8_t raw_data[192];
 	struct
 	{
-		pid_group_t ctrl1;	//有3*3=9个
-		pid_group_t ctrl2;
+		pid_group_t ctrl1;	//包含3组PID，9个
+		pid_group_t ctrl2;	//包含3组PID，9个
 
-		pid_t hc_sp;		//3个
-		pid_t hc_height;	//3个
-		pid_t ctrl3;		//3个
-		pid_t ctrl4;		//3个
+		pid_t hc_sp;		//1组，3个
+		pid_t hc_height;	//1组，3个
+		pid_t ctrl3;		//1组，3个
+		pid_t ctrl4;		//1组，3个
 
-		pid_t ctrl5;		//3个
-		pid_t ctrl6;		//3个
+		pid_t ctrl5;		//1组，3个
+		pid_t ctrl6;		//1组，3个
 		
 	}groups;
 
