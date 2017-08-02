@@ -27,6 +27,7 @@
 #include "camera_datatransfer.h"
 #include "camera_data_calculate.h"
 #include "adc.h"
+#include "ano_of.h"
 
 s16 loop_cnt;
 
@@ -130,35 +131,49 @@ void Duty_5ms()
 //	test[3] = GetSysTime_us()/1000000.0f;		//存储获取到的时间，但没有被调用。应该是和test[2]一起使用，计算代码运行时间。
 	
 	//数值监控
+
+//	mydata.d1 = (s16)ultra.height * 10;	//height
+//	mydata.d2 = (s16)sonar.displacement;
+//	mydata.d3 = (s16)sonar_fusion.fusion_displacement.out;
+//	mydata.d4 = (s16)my_except_height;
+//	mydata.d5 = (s16)bias;				//roll方向
+//	mydata.d6 = (s16)bias_detect;
+//	mydata.d7 = (s16)bias_real;
+//	mydata.d8 = (s16)bias_lpf;
+//	mydata.d9 = (s16)speed_d_bias;
+//	mydata.d10 = (s16)speed_d_bias_lpf;
+//	mydata.d11 = (s16)angle;			//yaw
+//	mydata.d12 = (s16)bias_pitch;		//pitch方向
+//	mydata.d13 = (s16)bias_detect_pitch;
+//	mydata.d14 = (s16)bias_real_pitch;
+//	mydata.d15 = (s16)bias_lpf_pitch;
+//	mydata.d16 = (s16)speed_d_bias_pitch;
+//	mydata.d17 = (s16)speed_d_bias_lpf_pitch;
+//	mydata.d18 = (s16)0;
+//	mydata.d19 = (s16)0;
+//	mydata.d20 = (s16)0;
 	
-	//height
-	mydata.d1 = (s16)ultra.height * 10;
+	mydata.d1 = (s16)ultra.height * 10;	//height
 	mydata.d2 = (s16)sonar.displacement;
 	mydata.d3 = (s16)sonar_fusion.fusion_displacement.out;
 	mydata.d4 = (s16)my_except_height;
+	mydata.d5 = (s16)OF_QUA;	//质量参数
+	mydata.d6 = (s16)OF_LIGHT;
+	mydata.d7 = (s16)OF_DX;		//x方向
+	mydata.d8 = (s16)OF_DX2;
+	mydata.d9 = (s16)OF_DX2FIX;
+	mydata.d10 = (s16)OF_DY;	//y方向
+	mydata.d11 = (s16)OF_DY2;
+	mydata.d12 = (s16)OF_DY2FIX;
+	mydata.d13 = (s16)OF_ALT;	//高度数据
+	mydata.d14 = (s16)OF_ALT2;
+	mydata.d15 = (s16)bias;				//roll方向
+	mydata.d16 = (s16)bias_real;
+	mydata.d17 = (s16)bias_lpf;			
+	mydata.d18 = (s16)bias_pitch;		//pitch方向
+	mydata.d19 = (s16)bias_real_pitch;
+	mydata.d20 = (s16)bias_lpf_pitch;
 	
-	//roll方向
-	mydata.d5 = (s16)bias;
-	mydata.d6 = (s16)bias_detect;
-	mydata.d7 = (s16)bias_real;
-	mydata.d8 = (s16)bias_lpf;
-	mydata.d9 = (s16)speed_d_bias;
-	mydata.d10 = (s16)speed_d_bias_lpf;
-	
-	//yaw
-	mydata.d11 = (s16)angle;
-	
-	//pitch方向
-	mydata.d12 = (s16)bias_pitch;
-	mydata.d13 = (s16)bias_detect_pitch;
-	mydata.d14 = (s16)bias_real_pitch;
-	mydata.d15 = (s16)bias_lpf_pitch;
-	mydata.d16 = (s16)speed_d_bias_pitch;
-	mydata.d17 = (s16)speed_d_bias_lpf_pitch;
-	
-	mydata.d18 = (s16)0;
-	mydata.d19 = (s16)0;
-	mydata.d20 = (s16)0;
 }
 
 //10ms线程
