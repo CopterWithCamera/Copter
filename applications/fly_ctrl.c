@@ -399,6 +399,10 @@ void position_ctrl(u8 en,u8 mode)
 **************************************************************************************/
 void speed_ctrl(u8 en)
 {
+	u8 pitch_mode;
+	float except_speed_pitch;
+	float except_speed_roll;
+	
 	static float speed_error_integration_pitch = 0.0f;
 	static float speed_error_integration_roll = 0.0f;
 	
@@ -412,9 +416,10 @@ void speed_ctrl(u8 en)
 	}
 	
 	//来自position_ctrl的数据接口
-	u8 pitch_mode = position_mode_out;
-	float except_speed_pitch = position_pitch_out;
-	float except_speed_roll = position_roll_out;
+	
+	pitch_mode = position_mode_out;
+	except_speed_pitch = position_pitch_out;
+	except_speed_roll = position_roll_out;
 	
 	//*********************************************************
 	

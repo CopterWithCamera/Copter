@@ -24,6 +24,8 @@ void Ultrasonic_Init()
 	#endif
 }
 
+_height_st ultra;
+u16 ultra_distance_old;
 s8 ultra_start_f;
 
 void Ultra_Duty()
@@ -56,7 +58,23 @@ void Ultra_Duty()
 		temp[0] = 0x55;
 		Uart5_Send(temp ,1);
 	#elif defined(USE_ANO_OF)
-		//光流不需要测距指令，而且更新频率高于50ms
+		//光流模式下直接读取光流数据
+		ultra.height = OF_ALT2;
+		if(ultra.height < 180)	//光流数据最大能够测量2m（200cm），输入数据小于180cm保证安全
+		{
+			ultra.relative_height = OF_ALT2;	//融合姿态的当前高度，单位是cm
+			ultra.measure_ok = 1;
+		}
+		else
+		{
+			ultra.measure_ok = 2; //数据超范围
+		}
+		
+		ultra.measure_ot_cnt = 0; //清除超时计数（喂狗）
+		ultra_start_f = 0;
+		ultra.h_delta = ultra.relative_height - ultra_distance_old;
+		ultra_distance_old = ultra.relative_height;
+
 	#endif
 
 	ultra_start_f = 1;
@@ -71,10 +89,6 @@ void Ultra_Duty()
 	}
 }
 
-u16 ultra_distance_old;
-
-_height_st ultra;
-
 //数据接收处理函数，在串口接收中断中自动调用
 void Ultra_Get(u8 com_data)
 {
@@ -86,7 +100,7 @@ void Ultra_Get(u8 com_data)
 		ultra_start_f = 2;
 	}
 	else if( ultra_start_f == 2 )	//返回了第二个数值（低八位）
-	{	
+	{
 		#if defined(USE_KS103)
 			ultra.height =  ((ultra_tmp<<8) + com_data)/10;		//单位是cm（传入数据单位是mm，÷10后单位是cm）
 			if(ultra.height < 180) // KS103在1.8m内数据稳定
@@ -102,11 +116,9 @@ void Ultra_Get(u8 com_data)
 				ultra.measure_ok = 1;
 			}
 		#elif defined(USE_ANO_OF)
-			ultra.height = OF_ALT2;
-			if(ultra.height < 180)	//光流数据最大能够测量2m（200cm），输入数据小于180cm保证安全
+			if(1)	//光流数据不使用此函数处理串口数据
 			{
-				ultra.relative_height = OF_ALT2;	//融合姿态的当前高度，单位是cm
-				ultra.measure_ok = 1;
+				
 			}
 		#endif
 			else
@@ -116,10 +128,8 @@ void Ultra_Get(u8 com_data)
 		
 		ultra_start_f = 0;
 	}
-	ultra.measure_ot_cnt = 0; //清除超时计数（喂狗）
-	
+	ultra.measure_ot_cnt = 0; 	//清除超时计数（喂狗）
 	ultra.h_delta = ultra.relative_height - ultra_distance_old;
-	
 	ultra_distance_old = ultra.relative_height;
 	
 }
