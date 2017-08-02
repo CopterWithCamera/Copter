@@ -190,10 +190,6 @@ void IMUupdate(float half_T,float gx, float gy, float gz, float ax, float ay, fl
 	acc_3d_hg.y = acc_ng.x * reference_y.x + acc_ng.y * reference_y.y + acc_ng.z * reference_y.z;
 	acc_3d_hg.z = acc_ng.x * reference_v.x + acc_ng.y * reference_v.y + acc_ng.z * reference_v.z;
 	
-	mydata.d1 = (s16)acc_3d_hg.x;
-	mydata.d2 = (s16)acc_3d_hg.y;
-	mydata.d3 = (s16)acc_3d_hg.z;
-	
 	//=============================================================================
 	//更新四元数
 	
