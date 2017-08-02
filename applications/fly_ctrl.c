@@ -8,6 +8,7 @@
 #include "camera_data_calculate.h"
 #include "ctrl.h"
 #include "mymath.h"
+#include "ano_of.h"
 
 float CH_ctrl[CH_NUM];	//具体输入给ctrl的遥控器值
 float my_except_height = 0;//期望高度
@@ -415,11 +416,16 @@ void speed_ctrl(u8 en)
 		return;
 	}
 	
-	//来自position_ctrl的数据接口
+	//*********************************************************
 	
-	pitch_mode = position_mode_out;
-	except_speed_pitch = position_pitch_out;
+	//速度环输入接口
+	
+//	pitch_mode = position_mode_out;
+//	except_speed_pitch = position_pitch_out;
 	except_speed_roll = position_roll_out;
+	
+	pitch_mode = 0;
+	except_speed_pitch = -CH_filter[1]/3.0f;
 	
 	//*********************************************************
 	
@@ -622,22 +628,167 @@ void speed_ctrl(u8 en)
 	
 }
 
+/**************************************************************************************
+
+				速度控制环（使用光流数据）
+
+	输入：	pitch_mode				0：定点，根据except_speed_pitch控制		1：前进（恒定10cm/s）	2：后退（恒定-10cm/s）
+			except_speed_pitch		pitch方向期望速度，单位cm/s，前正后负
+			except_speed_roll		roll方向期望速度，单位cm/s，左正右负
+			OF_DY2					飞机俯仰方向速度，单位（cm/s），前正后负
+			OF_DX2					飞机横滚方向速度，单位（cm/s），左负右正
+			
+			
+	输出：	CH_ctrl[0]				roll方向角度期望（左负右正）
+			CH_ctrl[1]				pitch方向角度期望（前负后正）
+			CH_ctrl[3]				yaw方向角速度期望（左负右正）
 
 
-
-
-//手动控制姿态
-void attitude_hand(void)
+**************************************************************************************/
+void speed_ctrl_flow(u8 en)
 {
-	CH_ctrl[ROL] = my_deathzoom( ( CH_filter[ROL]) ,0,30 );	//0：横滚 ROL
-	CH_ctrl[PIT] = my_deathzoom( ( CH_filter[PIT]) ,0,30 );	//1：俯仰 PIT
-	CH_ctrl[YAW] = CH_filter[YAW];	//3：航向 YAW
+	float except_speed_pitch;
+	float except_speed_roll;
+	
+	static float speed_error_integration_pitch = 0.0f;
+	static float speed_error_integration_roll = 0.0f;
+	
+	//非此模式时的清零处理
+	if(!en)
+	{
+		speed_error_integration_pitch = 0;
+		speed_error_integration_roll = 0;
+		
+		return;
+	}
+	
+	//*********************************************************
+	
+	//速度环输入接口
+	
+	except_speed_pitch = position_pitch_out;
+	except_speed_roll = position_roll_out;
+	
+//	except_speed_pitch = -( my_deathzoom( ( CH_filter[PIT] ) , 0, 30 ) / 3.0f );
+//	except_speed_roll  = -( my_deathzoom( ( CH_filter[ROL] ) , 0, 30 ) / 3.0f );
+	
+	//*********************************************************
+	
+	//pitch方向
+	
+	float speed_error_pitch = 0.0f;
+	static float speed_error_old_pitch = 0.0f;
+	float p_out_pitch = 0.0f, i_out_pitch = 0.0f, d_out_pitch = 0.0f, out_pitch = 0.0f;
+	
+	/*
+								   前               				前
+		speed_error_pitch：		   /\  +         CH_ctrl[PIT]：   	/\  -
+								   ||								||
+								   ||								||
+								   \/  -							\/  +
+								   后								后
+	*/
+	
+	//期望输入（单位是cm/s）
+	//except_speed_pitch = my_deathzoom( except_speed_pitch , 0, 1 );		//设置+-1的死区
+	except_speed_pitch = LIMIT(except_speed_pitch , -30, 30);			//限幅 -15 -- +15
+
+	//计算error
+	speed_error_pitch = except_speed_pitch - OF_DY2;	//计算error   speed_error值
+																		//error   负：期望向前速度小于当前向后速度，期望向前速度比较小，应该向前加速
+																		//		  正：期望向前速度大于当前向后速度，期望向前速度比较大，应该向后加速
+	
+	if(bias_error_flag_pitch != 0)
+	{
+		//速度反馈值不可信
+		
+		p_out_pitch = 0.0f;
+		i_out_pitch = 0.0f;
+		d_out_pitch = 0.0f;
+
+		speed_error_old_pitch = 0;	// speed_error_old 清零（在一定程度上减小对d的影响）
+	}
+	else
+	{
+		//p
+		p_out_pitch = speed_error_pitch * pid_setup.groups.ctrl4.kp;
+		
+		//i
+		speed_error_integration_pitch += speed_error_pitch * pid_setup.groups.ctrl4.ki;
+		speed_error_integration_pitch = LIMIT(speed_error_integration_pitch,-40.0f,40.0f);
+		i_out_pitch = speed_error_integration_pitch;
+		
+		//d
+		//error    +   （应该向左加速）<-- --> （应该向右加速）   -
+		//error - error_old   正：向左的期望速度差变大了，需要向左加速
+		//					  负：向左的期望速度差变小了，可以放缓向左加速/向右加速
+		d_out_pitch = (speed_error_pitch - speed_error_old_pitch) * pid_setup.groups.ctrl4.kd;
+		d_out_pitch = LIMIT(d_out_pitch,-70.0f,70.0f);												//限制输出幅度为+-70，允许d引起刹车动作
+		
+		speed_error_old_pitch = speed_error_pitch;
+	}
+	
+	//整合输出
+	out_pitch = p_out_pitch + i_out_pitch + d_out_pitch;
+	out_pitch = LIMIT(out_pitch,-150.0f,150.0f);			//单位是0.1°
+	
+	CH_ctrl[1] = -out_pitch;		//my_deathzoom( ( CH_filter[PIT]) ,0,30 );	//1：俯仰 PIT
+	
+	//*********************************************************
+	
+	//roll方向
+	
+	float speed_error_roll = 0.0f;
+	static float speed_error_old_roll = 0.0f;
+	float p_out_roll = 0.0f, i_out_roll = 0.0f, d_out_roll = 0.0f, out_roll = 0.0f;
+	
+	//期望输入（单位是cm/s）
+	//except_speed_roll = my_deathzoom( except_speed_roll , 0, 1 );	//设置+-1的死区
+	except_speed_roll = LIMIT(except_speed_roll , -30, 30);			//限幅 -15 -- +15
+	
+	//计算error
+	speed_error_roll = except_speed_roll + OF_DX2;		//计算error   speed_error 值
+														//error   负：期望向左速度小于当前向左速度，期望向左速度比较小，应该向右加速
+														//		  正：期望向左速度大于当前向左速度，期望向左速度比较大，应该向左加速
+	
+	//PID输出左正右负 + <-- --> -
+	
+	//PID输出数值为正代表需要向左有加速度
+	
+	//p
+	p_out_roll = speed_error_roll * user_parameter.groups.self_def_1.kp;
+	
+	//i
+	speed_error_integration_roll += speed_error_roll * user_parameter.groups.self_def_1.ki;
+	speed_error_integration_roll = LIMIT(speed_error_integration_roll,-40.0f,40.0f);
+	i_out_roll = speed_error_integration_roll;
+	
+	//d
+	//error    +   （应该向左加速）<-- --> （应该向右加速）   -
+	//error - error_old   正：向左的期望速度差变大了，需要向左加速
+	//					  负：向左的期望速度差变小了，可以放缓向左加速/向右加速
+	d_out_roll = (speed_error_roll - speed_error_old_roll) * user_parameter.groups.self_def_1.kd;
+	d_out_roll = LIMIT(d_out_roll,-70.0f,70.0f);	//限制输出幅度为+-70，允许d引起刹车动作
+	
+	speed_error_old_roll = speed_error_roll;
+
+	//输出整合
+	out_roll = p_out_roll + i_out_roll + d_out_roll;
+	out_roll = LIMIT(out_roll,-150.0f,150.0f);			//单位是0.1°
+
+	CH_ctrl[ROL] = -out_roll;	//CH_ctrl   - <-- --> +
+								//out_roll	+ <-- --> -
+								//接口需要加负号
+	
+	//*********************************************************
+	
+	//俯仰和航向手动控制
+	CH_ctrl[3] = CH_filter[3];								//3：航向 YAW
+	
 }
 
 
-//********************************************************************************************************************
-//													测试函数
-//********************************************************************************************************************
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 //横滚角乒乓控制
 void attitude_pingpong(void)
@@ -667,6 +818,7 @@ void attitude_pingpong(void)
 	CH_ctrl[1] = my_deathzoom( ( CH_filter[PIT]) ,0,30 );	//1：俯仰 PIT
 	CH_ctrl[3] = CH_filter[3];								//3：航向 YAW
 }
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 //近地面姿态锁定
 void land_attitude(void)
@@ -850,6 +1002,8 @@ void speed_pid(u8 en)
 	}
 }
 
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
 //位置控制
 void position_pid(u8 en)
 {
@@ -929,6 +1083,8 @@ void position_pid(u8 en)
 	}
 }
 
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
 void yaw_pid(void)
 {
 	float yaw_error,yaw_out;
@@ -953,6 +1109,95 @@ void yaw_pid(void)
 	
 }
 
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+//手动控制姿态
+void attitude_hand(void)
+{
+	CH_ctrl[ROL] = my_deathzoom( ( CH_filter[ROL]) ,0,30 );	//0：横滚 ROL
+	CH_ctrl[PIT] = my_deathzoom( ( CH_filter[PIT]) ,0,30 );	//1：俯仰 PIT
+	CH_ctrl[YAW] = CH_filter[YAW];	//3：航向 YAW
+}
+
+//========================================================================================
+//========================================================================================
+//	Cam频率调用的飞行控制函数
+//
+//	根据ctrl_command调用不同的自动控制函数
+//
+//	mode_state：
+//	0：手动				1：气压计
+//	2：超声波+气压计		3：自动
+//
+//	height_command：
+//	0：手动控高			1：定高
+//	2：降落											
+//========================================================================================
+//========================================================================================
+
+void Fly_Ctrl_Cam(void)		//调用周期与camera数据相同
+{	
+	//只有自动模式才会执行自动控制代码
+	if(mode_state != 3)
+	{
+		return;
+	}
+	
+/* ********************* 姿态控制 ********************* */
+	
+	if(ctrl_command == 3)
+	{
+		position_ctrl(1,0);		//速度位置定点
+		speed_ctrl_flow(1);
+	}
+	else
+	{
+		position_ctrl(0,0);
+		speed_ctrl_flow(0);
+	}
+	
+	if(ctrl_command == 4)
+	{
+		position_ctrl(1,0);		//速度位置定点
+		speed_ctrl(1);
+	}
+	else
+	{
+		position_ctrl(0,0);
+		speed_ctrl(0);
+	}
+	
+	if(ctrl_command == 5)					//水平速度位置环
+	{
+		if(sonar.displacement >= 250)
+		{
+			//离地后使用pid
+			position_to_speed_pid(1);
+			speed_pid(1);
+		}
+		else
+		{
+			//近地面姿态锁定
+			land_attitude();
+			
+			//停用位置控制pid
+			position_to_speed_pid(0);
+			speed_pid(0);
+		}
+	}
+	else
+	{
+		position_to_speed_pid(0);
+		speed_pid(0);
+	}
+	
+	//意外状况处理
+	if(ctrl_command > 5)
+	{
+		attitude_hand();
+	}
+}
+
 //========================================================================================
 //========================================================================================
 //	飞行自动控制函数
@@ -963,9 +1208,9 @@ void yaw_pid(void)
 //	0：手动				1：气压计
 //	2：超声波+气压计		3：自动
 //
-//	ctrl_command：
-//	0：正常的手动飞行模式（超声波+气压计定高）		1：高度锁定
-//	2：高度锁定+姿态归零							3：降落模式												
+//	height_command：
+//	0：手动控高			1：定高
+//	2：降落
 //========================================================================================
 //========================================================================================
 
@@ -1077,68 +1322,6 @@ void Fly_Ctrl(void)		//调用周期5ms
 		attitude_hand();
 	}
 	
-}
-
-//Cam频率调用的飞行控制函数
-void Fly_Ctrl_Cam(void)		//调用周期与camera数据相同
-{	
-	//只有自动模式才会执行自动控制代码
-	if(mode_state != 3)
-	{
-		return;
-	}
-	
-/* ********************* 姿态控制 ********************* */
-	
-	if(ctrl_command == 3)
-	{
-		position_pid(1);
-	}
-	else
-	{
-		position_pid(0);
-	}
-	
-	if(ctrl_command == 4)
-	{
-		position_ctrl(1,0);
-		speed_ctrl(1);
-	}
-	else
-	{
-		position_ctrl(0,0);
-		speed_ctrl(0);
-	}
-	
-	if(ctrl_command == 5)
-	{
-		if(sonar.displacement >= 250)
-		{
-			//离地后使用pid
-			position_to_speed_pid(1);
-			speed_pid(1);
-		}
-		else
-		{
-			//近地面姿态锁定
-			land_attitude();
-			
-			//停用位置控制pid
-			position_to_speed_pid(0);
-			speed_pid(0);
-		}
-	}
-	else
-	{
-		position_to_speed_pid(0);
-		speed_pid(0);
-	}
-	
-	//意外状况处理
-	if(ctrl_command > 5)
-	{
-		attitude_hand();
-	}
 }
 
 //========================================================================================

@@ -74,7 +74,6 @@ void Ultra_Duty()
 		ultra_start_f = 0;
 		ultra.h_delta = ultra.relative_height - ultra_distance_old;
 		ultra_distance_old = ultra.relative_height;
-
 	#endif
 
 	ultra_start_f = 1;
