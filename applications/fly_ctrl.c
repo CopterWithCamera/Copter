@@ -372,7 +372,6 @@ void land_attitude(void)
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 //Pitch位置控制
-//Roll位置控制
 float position_pitch_out = 0.0f;		//输出速度期望，单位cm/s，方向 + <-- --> -
 void position_pitch(u8 en)
 {
@@ -777,7 +776,10 @@ void Fly_Ctrl_Cam(void)		//调用周期与camera数据相同
 	}
 	else
 	{
-
+		position_roll(0);
+		speed_roll(0);
+		position_pitch(0);
+		speed_pitch(0);
 	}
 	
 	if(ctrl_command == 4)
@@ -788,8 +790,8 @@ void Fly_Ctrl_Cam(void)		//调用周期与camera数据相同
 	}
 	else
 	{
-		position_pitch(0);
-		speed_pitch(0);
+//		position_pitch(0);
+//		speed_pitch(0);
 	}
 	
 	if(ctrl_command == 5)					//水平速度位置环
@@ -800,8 +802,8 @@ void Fly_Ctrl_Cam(void)		//调用周期与camera数据相同
 	}
 	else
 	{
-		position_roll(0);
-		speed_roll(0);
+//		position_roll(0);
+//		speed_roll(0);
 	}
 	
 	//意外状况处理
