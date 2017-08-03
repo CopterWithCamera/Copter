@@ -449,8 +449,9 @@ void speed_roll(u8 en)
 	float except_speed = 0.0f;
 	float p_out,i_out,d_out,out;
 	float speed_error = 0.0f;
-	static float roll_speed_integration = 0.0f;	//积分变量
+	static float speed_integration = 0.0f;	//积分变量
 	static float speed_error_old = 0.0f;	//old变量
+	static u8 d_stop_flag = 0;		//停止d运算的标志位，表示speed_error_old数值无效
 	s32 out_tmp;
 	
 	/*
@@ -478,22 +479,24 @@ void speed_roll(u8 en)
 			
 			//偏移过大，使用乒乓控制，系数对应 param_A param_B
 			
-			if( bias_detect < -50.0f )
+			if( except_speed > 1.0f )	//速度期望向左
 			{
-				//右偏过大
 				p_out = -40.0f * user_parameter.groups.param_A;	//左飞
 			}
-			else if( bias_detect > 50.0f )
+			else if(except_speed < -1.0f)	//速度期望向右
 			{
-				//左偏过大
 				p_out =  40.0f * user_parameter.groups.param_B;	//右飞
+			}
+			else						
+			{
+				p_out = 0.0f;	//中间设置死区
 			}
 
 			i_out = 0.0f;
 			d_out = 0.0f;
 			
 			speed_error_old = 0;	// speed_error_old 清零（在一定程度上减小对d的影响）
-			
+			d_stop_flag = 1;	//表示speed_error_old无效，无法进行d运算
 		}
 		else
 		{
@@ -507,18 +510,26 @@ void speed_roll(u8 en)
 			p_out = - speed_error * user_parameter.groups.self_def_1.kp;
 			
 			//i
-			roll_speed_integration += speed_error * user_parameter.groups.self_def_1.ki;
-			roll_speed_integration = LIMIT(roll_speed_integration,-40.0f,40.0f);
-			i_out = - roll_speed_integration;
+			speed_integration += speed_error * user_parameter.groups.self_def_1.ki;
+			speed_integration = LIMIT(speed_integration,-40.0f,40.0f);
+			i_out = - speed_integration;
 			
 			//d
 			//error    +   （应该向左加速）<-- --> （应该向右加速）   -
 			//error - error_old   正：更需要向左加速
 			//					  负：没那么需要向左加速了
-			d_out = -(speed_error - speed_error_old) * user_parameter.groups.self_def_1.kd;
-			d_out = LIMIT(d_out,-70.0f,70.0f);	//限制输出幅度为+-70，允许d引起刹车动作
+			if(d_stop_flag)
+			{
+				d_out = -(speed_error - speed_error_old) * user_parameter.groups.self_def_1.kd;
+				d_out = LIMIT(d_out,-70.0f,70.0f);	//限制输出幅度为+-70，允许d引起刹车动作
+			}
+			else
+			{
+				d_out = 0.0f;
+			}
 			
 			speed_error_old = speed_error;
+			d_stop_flag = 0;
 		}
 		
 		//输出整合
@@ -539,7 +550,7 @@ void speed_roll(u8 en)
 	else
 	{
 		//非此模式执行清零
-		roll_speed_integration = 0.0;
+		speed_integration = 0.0;
 	}
 }
 
