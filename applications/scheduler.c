@@ -156,7 +156,7 @@ void Duty_5ms()
 	mydata.d1 = (s16)ultra.height * 10;	//height
 	mydata.d2 = (s16)sonar.displacement;
 	mydata.d3 = (s16)sonar_fusion.fusion_displacement.out;
-	mydata.d4 = (s16)my_except_height;
+	mydata.d4 = (s16)angle;
 	mydata.d5 = (s16)OF_QUA;	//质量参数
 	mydata.d6 = (s16)OF_LIGHT;
 	mydata.d7 = (s16)OF_DX;		//x方向
