@@ -48,7 +48,11 @@ u8 All_Init()
 	
 	Delay_ms(100);						//延时
 	
-	Ultrasonic_Init();   			//超声波初始化（串口5初始化）
+	#if defined(USE_ANO_OF)	//使用光流	//初始化光流串口（跟超声波公用一个口）
+		Uart5_Init(500000);	
+	#else					//使用超声波	//超声波初始化（串口5初始化）
+		Ultrasonic_Init();
+	#endif
 	
 	ak8975_ok = !(ANO_AK8975_Run());
 	

@@ -99,7 +99,7 @@ float bias_pitch_correct(float roll, float pitch, float hight, float bias)   ///
 	bias：本次水平偏移量（单位cm）
 	bias_old：上次水平偏移量（单位cm）
 */
-float get_speed(u32 T,float bias,float bias_last)
+float get_speed(u32 T,float bias,float bias_last,float speed_last)
 {
 	/*
 		bias数值： 	+ <--- ---> -
@@ -111,8 +111,11 @@ float get_speed(u32 T,float bias,float bias_last)
 	float dx,dt,speed;
 	dx = bias - bias_last;
 	dt = T / 1000000.0f;
-//	speed = dx / dt;
 	speed = safe_div(dx,dt,0);
+	
+	//数值过大则舍弃
+	if( ABS(speed) > 25)
+		speed = speed_last;
 	
 	return speed;
 }
@@ -156,14 +159,14 @@ void Camera_Calculate(void)
 		}
 		else if(bias_error_flag == 1)
 		{
-			speed_d_bias = get_speed(receive_T,bias_lpf,bias_lpf_old);
+			speed_d_bias = get_speed(receive_T,bias_lpf,bias_lpf_old,speed_d_bias_lpf);
 			speed_d_bias_lpf = speed_d_bias;	//由于之前的数值是0，所以直接采纳本帧结果
 			
 			bias_error_flag--;	//这个函数处理完了 bias_error_flag 就是0了，速度和速度lpf都恢复了
 		}
 		else
 		{
-			speed_d_bias = get_speed(receive_T,bias_lpf,bias_lpf_old);
+			speed_d_bias = get_speed(receive_T,bias_lpf,bias_lpf_old,speed_d_bias_lpf);
 			speed_d_bias_lpf = cam_bias_lpf(speed_d_bias,receive_T,1.0f,speed_d_bias_lpf);
 		}
 		
@@ -201,15 +204,15 @@ void Camera_Calculate(void)
 		}
 		else if(bias_error_flag_pitch == 1)
 		{
-			speed_d_bias_pitch = get_speed(receive_T,bias_lpf_pitch,bias_lpf_old_pitch);
+			speed_d_bias_pitch = get_speed(receive_T,bias_lpf_pitch,bias_lpf_old_pitch,speed_d_bias_lpf_pitch);
 			speed_d_bias_lpf_pitch = speed_d_bias_pitch;	//由于之前的数值是0，所以直接采纳本帧结果
 			
 			bias_error_flag_pitch--;	//这个函数处理完了 bias_error_flag 就是0了，速度和速度lpf都恢复了
 		}
 		else
 		{
-			speed_d_bias = get_speed(receive_T,bias_lpf_pitch,bias_lpf_old_pitch);
-			speed_d_bias_lpf = cam_bias_lpf(speed_d_bias_pitch,receive_T,1.0f,speed_d_bias_lpf_pitch);
+			speed_d_bias_pitch = get_speed(receive_T,bias_lpf_pitch,bias_lpf_old_pitch,speed_d_bias_lpf_pitch);
+			speed_d_bias_lpf_pitch = cam_bias_lpf(speed_d_bias_pitch,receive_T,1.0f,speed_d_bias_lpf_pitch);
 		}
 		
 		bias_lpf_old_pitch = bias_lpf_pitch;	//更新上一帧的bias_lpf_pitch（只有bias_detect_pitch有效时才会更新 bias_lpf_old_pitch ，防止+-100的异常值加入运算）
@@ -224,66 +227,3 @@ void Camera_Calculate(void)
 	}
 	
 }
-
-
-//	//**************************************
-//	//数据的三帧决断
-//	static u8 detect_100_counter = 0;
-//	static float bias_old = 0.0f;
-//	static u8 mode = 0;
-//	if(receive_fps>25.0f)	//帧率大于25帧才允许使用
-//	{
-//		if(ABS(bias)>50)	//异常值部分（排除跳+-100）
-//		{	
-//			if(detect_100_counter>=3)
-//			{
-//				//异常值状态下直接赋值
-//
-//				bias_detect = bias;
-//			}
-//			else	
-//			{
-//				//持续3帧异常值才认为出现异常值
-//
-//				detect_100_counter++;
-//				//bias_detect不变
-//			}
-//		}
-//		else	//正常值部分
-//		{
-//			detect_100_counter = 0;
-//			
-//			if( ABS(bias-bias_old)>=8 )
-//			{
-//				mode = 1;
-//				//bias_detect不变
-//				bias_old = bias;
-//			}
-//			else
-//			{
-//				if(mode == 0)
-//				{
-//					mode = 0;
-//					bias_old = bias;
-//					bias_detect = bias;
-//				}
-//				else if(mode == 1)
-//				{
-//					mode = 2;
-//					bias_old = bias;
-//					//bias_detect不变
-//				}
-//				else
-//				{
-//					mode = 0;
-//					bias_old = bias;
-//					bias_detect = bias;
-//				}
-//			}
-//		}
-//	}
-//	else
-//	{
-//		bias_detect = bias;
-//	}
-

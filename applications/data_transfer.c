@@ -637,15 +637,15 @@ void ANO_DT_Data_Exchange(void)	//当前调用周期1ms
 	static u8 cnt = 0;					//计数器变量
 	
 	//定时调用周期表
-	static u8 senser_cnt 	= 10;	//9轴姿态传感器数值
+	static u8 senser_cnt 	= 20;	//9轴姿态传感器数值
 	static u8 senser2_cnt 	= 100;	//气压计高度、超声高度
-	static u8 user_cnt 	  	= 20;	//用户数据
+	static u8 user_cnt 	  	= 40;	//用户数据
 	static u8 status_cnt 	= 50;	//姿态+高度+飞行模式+安全锁
 	static u8 rcdata_cnt 	= 40;	//RC接收机数值
 	static u8 motopwm_cnt	= 40;	//输出PWM数值
-	static u8 power_cnt		= 100;	//电压和电流数据
+	static u8 power_cnt		= 200;	//电压和电流数据
 	static u8 speed_cnt   	= 100;	//当前速度数值
-	static u8 location_cnt  = 50;	//位置信息
+//	static u8 location_cnt  = 50;	//位置信息
 	
 	//调用周期处理（这代码写的很别扭，但是大约能够实现每隔一定周期调用一次的功能）
 	if((cnt % senser_cnt) == (senser_cnt-1))
@@ -672,10 +672,10 @@ void ANO_DT_Data_Exchange(void)	//当前调用周期1ms
 	if((cnt % speed_cnt) == (speed_cnt-3))
 		f.send_speed = 1;
 	
-	if((cnt % location_cnt) == (location_cnt-3))
-	{
-		f.send_location = 1;
-	}
+//	if((cnt % location_cnt) == (location_cnt-3))
+//	{
+//		f.send_location = 1;
+//	}
 
 	if(++cnt>200) cnt = 0;
 

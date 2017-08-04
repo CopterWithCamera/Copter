@@ -8,6 +8,7 @@
 #include "camera_data_calculate.h"
 #include "ctrl.h"
 #include "mymath.h"
+#include "ano_of.h"
 
 float CH_ctrl[CH_NUM];	//具体输入给ctrl的遥控器值
 float my_except_height = 0;//期望高度
@@ -212,428 +213,6 @@ void rising_to_50cm(void)
 //=====================================================================================================================================
 //=====================================================================================================================================
 
-/***********************************************
-
-					位置控制函数
-
-	输入：	en		模式启用标志			0：停用		1：启用
-			mode	位置控制工作模式		0：定点		1：前进		2：后退
-			
-	输出：	position_roll_out			输出roll方向速度期望，单位cm/s			左正右负
-			position_pitch_out			输出pitch方向速度期望，单位cm/s			前正后负
-			position_mode_out			0：定点		1：前进		2：后退
-
-************************************************/
-float position_roll_out = 0.0f;
-float position_pitch_out = 0.0f;
-u8 position_mode_out = 0;
-void position_ctrl(u8 en,u8 mode)
-{
-	static float position_integration_roll = 0;
-	static float position_integration_pitch = 0;
-	
-	position_mode_out = mode;
-	
-	if(en == 0)
-	{
-		position_integration_roll = 0;
-		position_integration_pitch = 0;
-	}
-		
-	/*
-		bias_error_flag		bias_detect数据值异常指示		0：正常		1：从异常中恢复回来后的第一帧    2：异常
-		bias		原始值					+ <---  ---> -
-		bias_detect 原始值的统计滤波结果		+ <---  ---> -
-		bias_real	校正值					+ <---  ---> -
-		bias_lpf	校正值过低通滤波器		+ <---  ---> -
-	
-		bias_error_flag_pitch;	bias_detect_pitch值异常指示		0：正常		1：从异常中恢复回来后的第一帧    2：异常
-		bias_pitch				原始值						前 
-		bias_detect_pitch;		原始值的统计滤波结果			/\   +
-		bias_real_pitch;		校正值					    ||
-		bias_lpf_pitch;			校正值过低通滤波器			\/	 -
-															后
-	
-		CH_ctrl[0]	横滚输出					- <---  ---> +		左负右正（负数向左有加速度，正数向右有加速度）
-		CH_ctrl[1]	俯仰输出					前 -   后 +
-	*/
-
-	//***************************************************
-	//pitch方向
-	
-	float p_out_pitch,i_out_pitch,d_out_pitch,out_pitch;
-	
-	if(mode == 0)
-	{
-		//定点（PID）
-		
-		if( bias_error_flag_pitch != 0 )
-		{
-			//偏移过大，使用乒乓控制
-			
-			if( bias_detect_pitch < -30.0f )
-			{
-				//右偏过大
-				p_out_pitch = -100;		//左飞
-			}
-			else if( bias_detect_pitch > 30.0f )
-			{
-				//左偏过大
-				p_out_pitch =  100;		//右飞
-			}
-
-			i_out_pitch = 0.0f;
-			d_out_pitch = 0.0f;
-		}
-		else
-		{
-			//正常值
-			
-			//不用计算error，因为期望为0
-			
-			//p
-			p_out_pitch = bias_lpf_pitch * pid_setup.groups.ctrl5.kp;
-			
-			//i
-			position_integration_pitch += bias_lpf * pid_setup.groups.ctrl5.ki;
-			position_integration_pitch = LIMIT(position_integration_pitch,-10.0f,10.0f);
-			i_out_pitch = position_integration_pitch;
-			
-			//d
-			d_out_pitch = speed_d_bias_lpf * pid_setup.groups.ctrl5.kd;		//speed_d_bias_lpf 左正右负
-			d_out_pitch = LIMIT(d_out_pitch,-10.0f,10.0f);	//限制输出幅度为+-70，允许d引起刹车动作
-		}
-		
-		//输出整合
-		//PID输出 out： - <-- --> +
-		out_pitch = p_out_pitch + i_out_pitch + d_out_pitch;
-		out_pitch = LIMIT(out_pitch,-15.0f,15.0f);
-		
-		//输出给 position_pitch_out
-		//输出的值应该在-15到+15之间
-		position_pitch_out = -out_pitch;
-	}
-	else
-	{
-		//前进或后退
-		
-		if(mode == 1)	//前进
-		{
-			position_pitch_out = 100;
-		}
-		else
-		{
-			position_pitch_out = -100;
-		}
-	}
-	
-	
-	
-	//***************************************************
-	//roll方向
-	
-	float p_out_roll,i_out_roll,d_out_roll,out_roll;
-	
-	if( bias_error_flag != 0 )
-	{
-		//偏移过大，使用乒乓控制
-		
-		if( bias_detect < -50.0f )
-		{
-			//右偏过大
-			p_out_roll = -5;		//左飞
-		}
-		else if( bias_detect > 50.0f )
-		{
-			//左偏过大
-			p_out_roll =  5;		//右飞
-		}
-
-		i_out_roll = 0.0f;
-		d_out_roll = 0.0f;
-	}
-	else
-	{
-		//正常值
-		
-		//不用计算error，因为期望为0
-		
-		//p
-		p_out_roll = bias_lpf * user_parameter.groups.self_def_2.kp;
-		
-		//i
-		position_integration_roll += bias_lpf * user_parameter.groups.self_def_2.ki;
-		position_integration_roll = LIMIT(position_integration_roll,-10.0f,10.0f);
-		i_out_roll = position_integration_roll;
-		
-		//d
-		d_out_roll = speed_d_bias_lpf * user_parameter.groups.self_def_2.kd;		//speed_d_bias_lpf 左正右负
-		d_out_roll = LIMIT(d_out_roll,-10.0f,10.0f);	//限制输出幅度为+-70，允许d引起刹车动作
-	}
-	
-	//输出整合
-	//PID输出 out： - <-- --> +
-	out_roll = p_out_roll + i_out_roll + d_out_roll;
-	out_roll = LIMIT(out_roll,-15.0f,15.0f);
-
-	
-	//输出给 position_roll_out
-	//输出的值应该在-15到+15之间
-	position_roll_out = -out_roll;
-
-}
-
-/**************************************************************************************
-
-				速度控制环
-
-	输入：	pitch_mode				0：定点，根据except_speed_pitch控制		1：前进（恒定10cm/s）	2：后退（恒定-10cm/s）
-			except_speed_pitch		pitch方向期望速度，单位cm/s，前正后负
-			except_speed_roll		roll方向期望速度，单位cm/s，左正右负
-			
-	输出：	CH_ctrl[0]				roll方向角度期望（左负右正）
-			CH_ctrl[1]				pitch方向角度期望（前负后正）
-			CH_ctrl[3]				yaw方向角速度期望（左负右正）
-
-
-**************************************************************************************/
-void speed_ctrl(u8 en)
-{
-	static float speed_error_integration_pitch = 0.0f;
-	static float speed_error_integration_roll = 0.0f;
-	
-	//非此模式时的清零处理
-	if(!en)
-	{
-		speed_error_integration_pitch = 0;
-		speed_error_integration_roll = 0;
-		
-		return;
-	}
-	
-	//来自position_ctrl的数据接口
-	u8 pitch_mode = position_mode_out;
-	float except_speed_pitch = position_pitch_out;
-	float except_speed_roll = position_roll_out;
-	
-	//*********************************************************
-	
-	//pitch方向
-	
-	float speed_error_pitch = 0.0f;
-	static float speed_error_old_pitch = 0.0f;
-
-	float p_out_pitch = 0.0f, i_out_pitch = 0.0f, d_out_pitch = 0.0f, out_pitch = 0.0f;
-	
-	
-	/*
-								   前               				前
-		speed_error_pitch：		   /\  +         CH_ctrl[PIT]：   	/\  -
-								   ||								||
-								   ||								||
-								   \/  -							\/  +
-								   后								后
-	*/
-	
-	if(pitch_mode == 0)
-	{
-		//悬停
-		
-		//期望输入（单位是cm/s）
-		//except_speed_pitch = 0.0f;	//-( my_deathzoom( ( CH_filter[RIT] ) , 0, 30 ) / 5.0f );
-		except_speed_pitch = my_deathzoom( except_speed_pitch , 0, 1 );		//设置+-1的死区
-		except_speed_pitch = LIMIT(except_speed_pitch , -15, 15);			//限幅 -15 -- +15
-		
-	}
-	else
-	{
-		//前进或后退（恒速）
-		//数据可用时控制速度，不可用时飘过去
-		
-		if(pitch_mode == 1)	//前进
-		{
-			except_speed_pitch = 10;	//向前的期望速度为10cm/s
-		}
-		else	//pitch_mode = 2  后退
-		{
-			except_speed_pitch = -10;	//向后的期望速度为-10cm/s
-		}
-	}
-	
-	//计算error
-	//在摄像头无数据时speed_d_bias_lpf_pitch为0
-	speed_error_pitch = except_speed_pitch - speed_d_bias_lpf_pitch;	//计算error   speed_error值
-																		//error   负：期望向前速度小于当前向后速度，期望向前速度比较小，应该向前加速
-																		//		  正：期望向前速度大于当前向后速度，期望向前速度比较大，应该向后加速
-	
-	if(bias_error_flag_pitch != 0)
-	{
-		//速度反馈值不可信
-		
-		//使用乒乓控制，系数对应 pid_setup.groups.ctrl6.kp、pid_setup.groups.ctrl6.ki（根据期望速度方向设置加速度方向）
-		
-		//PID输出为正代表需要向前有加速度
-		
-		if(pitch_mode == 0)	//定点
-		{
-			
-			if( speed_error_pitch > 0.0f)	//需要向前的加速度
-			{
-				p_out_pitch = 20.0f * pid_setup.groups.ctrl6.kp;	//前飞
-				
-			}
-			else							//需要向后的加速度
-			{
-				p_out_pitch =  -20.0f * pid_setup.groups.ctrl6.ki;	//后飞
-			}
-			
-		}
-		else
-		{
-			//前进或后退
-			
-			if(pitch_mode == 1)	//前进
-			{
-				p_out_pitch = 2 * pid_setup.groups.ctrl6.kp;	//前飘
-			}
-			else	//后退
-			{
-				p_out_pitch = -2 * pid_setup.groups.ctrl6.ki;	//后飘
-			}
-
-		}
-		
-		i_out_pitch = 0.0f;
-		d_out_pitch = 0.0f;
-
-		speed_error_old_pitch = 0;	// speed_error_old 清零（在一定程度上减小对d的影响）
-	}
-	else
-	{
-		//p
-		p_out_pitch = speed_error_pitch * pid_setup.groups.ctrl4.kp;
-		
-		//i
-		speed_error_integration_pitch += speed_error_pitch * pid_setup.groups.ctrl4.ki;
-		speed_error_integration_pitch = LIMIT(speed_error_integration_pitch,-40.0f,40.0f);
-		i_out_pitch = speed_error_integration_pitch;
-		
-		//d
-		//error    +   （应该向左加速）<-- --> （应该向右加速）   -
-		//error - error_old   正：向左的期望速度差变大了，需要向左加速
-		//					  负：向左的期望速度差变小了，可以放缓向左加速/向右加速
-		d_out_pitch = (speed_error_pitch - speed_error_old_pitch) * pid_setup.groups.ctrl4.kd;
-		d_out_pitch = LIMIT(d_out_pitch,-70.0f,70.0f);												//限制输出幅度为+-70，允许d引起刹车动作
-		
-		speed_error_old_pitch = speed_error_pitch;
-	}
-	
-	//整合输出
-	out_pitch = p_out_pitch + i_out_pitch + d_out_pitch;
-	out_pitch = LIMIT(out_pitch,-150.0f,150.0f);			//单位是0.1°
-	
-	CH_ctrl[1] = -out_pitch;		//my_deathzoom( ( CH_filter[PIT]) ,0,30 );	//1：俯仰 PIT
-	
-	//*********************************************************
-	
-	//roll方向
-	
-	float speed_error_roll = 0.0f;
-	static float speed_error_old_roll = 0.0f;
-	float p_out_roll = 0.0f, i_out_roll = 0.0f, d_out_roll = 0.0f, out_roll = 0.0f;
-	
-	
-	//期望输入（单位是cm/s）
-	//except_speed_roll = 0.0f;	//-( my_deathzoom( ( CH_filter[ROL] ) , 0, 30 ) / 5.0f );
-	except_speed_roll = my_deathzoom( except_speed_roll , 0, 1 );	//设置+-1的死区
-	except_speed_roll = LIMIT(except_speed_roll , -15, 15);			//限幅 -15 -- +15
-	
-	//计算error
-	speed_error_roll = except_speed_roll - speed_d_bias_lpf;	//计算error   speed_error值
-																//error   负：期望向左速度小于当前向左速度，期望向左速度比较小，应该向右加速
-																//		  正：期望向左速度大于当前向左速度，期望向左速度比较大，应该向左加速
-	
-	//PID输出左正右负 + <-- --> -
-	
-	if( bias_error_flag != 0 )
-	{
-		//速度反馈值不可信
-		
-		//使用乒乓控制，系数对应 param_A param_B（根据期望速度方向设置加速度方向）
-		
-		//PID输出为正代表需要向左有加速度
-		
-		if( speed_error_roll > 0.0f)	//需要向左的加速度
-		{
-			p_out_roll = 40.0f * user_parameter.groups.param_A;	//左飞
-		}
-		else							//需要向右的加速度
-		{
-			p_out_roll =  -40.0f * user_parameter.groups.param_B;	//右飞
-		}
-
-		i_out_roll = 0.0f;
-		d_out_roll = 0.0f;
-		
-		speed_error_old_roll = 0;	// speed_error_old 清零（在一定程度上减小对d的影响）
-		
-	}
-	else
-	{
-		//bias_detect值正常
-		
-		//PID输出数值为正代表需要向左有加速度
-		
-		//p
-		p_out_roll = speed_error_roll * user_parameter.groups.self_def_1.kp;
-		
-		//i
-		speed_error_integration_roll += speed_error_roll * user_parameter.groups.self_def_1.ki;
-		speed_error_integration_roll = LIMIT(speed_error_integration_roll,-40.0f,40.0f);
-		i_out_roll = speed_error_integration_roll;
-		
-		//d
-		//error    +   （应该向左加速）<-- --> （应该向右加速）   -
-		//error - error_old   正：向左的期望速度差变大了，需要向左加速
-		//					  负：向左的期望速度差变小了，可以放缓向左加速/向右加速
-		d_out_roll = (speed_error_roll - speed_error_old_roll) * user_parameter.groups.self_def_1.kd;
-		d_out_roll = LIMIT(d_out_roll,-70.0f,70.0f);	//限制输出幅度为+-70，允许d引起刹车动作
-		
-		speed_error_old_roll = speed_error_roll;
-	}
-
-	//输出整合
-	out_roll = p_out_roll + i_out_roll + d_out_roll;
-	out_roll = LIMIT(out_roll,-150.0f,150.0f);			//单位是0.1°
-
-	CH_ctrl[0] = -out_roll;	//CH_ctrl   - <-- --> +
-								//out_roll	+ <-- --> -
-								//接口需要加负号
-	
-	//*********************************************************
-	
-	//俯仰和航向手动控制
-	CH_ctrl[3] = CH_filter[3];								//3：航向 YAW
-	
-}
-
-
-
-
-
-//手动控制姿态
-void attitude_hand(void)
-{
-	CH_ctrl[ROL] = my_deathzoom( ( CH_filter[ROL]) ,0,30 );	//0：横滚 ROL
-	CH_ctrl[PIT] = my_deathzoom( ( CH_filter[PIT]) ,0,30 );	//1：俯仰 PIT
-	CH_ctrl[YAW] = CH_filter[YAW];	//3：航向 YAW
-}
-
-
-//********************************************************************************************************************
-//													测试函数
-//********************************************************************************************************************
-
 //横滚角乒乓控制
 void attitude_pingpong(void)
 {
@@ -663,190 +242,10 @@ void attitude_pingpong(void)
 	CH_ctrl[3] = CH_filter[3];								//3：航向 YAW
 }
 
-//近地面姿态锁定
-void land_attitude(void)
-{
-	CH_ctrl[ROL] = 0;	//0：横滚 ROL
-	CH_ctrl[PIT] = 0;	//1：俯仰 PIT
-	CH_ctrl[YAW] = 0;	//3：航向 YAW
-}
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-//位置控制（对接到速度控制）
-float position_except_speed = 0.0f;		//输出速度期望，单位cm/s，方向 + <-- --> -
-void position_to_speed_pid(u8 en)
-{
-	float p_out,i_out,d_out,out;
-	static float position_roll_integration = 0;
-	
-	if(en)
-	{
-		
-		/*
-			bias		原始值					+ <---  ---> -
-			bias_detect 原始值的统计滤波结果		+ <---  ---> -
-			bias_real	校正值					+ <---  ---> -
-			bias_lpf	校正值过低通滤波器		+ <---  ---> -
-		
-			CH_ctrl[0]	横滚输出					- <---  ---> +		左负右正（负数向左有加速度，正数向右有加速度）
-		*/
-		
-		if( bias_error_flag != 0 )
-		{
-			//偏移过大，使用乒乓控制
-			
-			if( bias_detect < -50.0f )
-			{
-				//右偏过大
-				p_out = -5;		//左飞
-			}
-			else if( bias_detect > 50.0f )
-			{
-				//左偏过大
-				p_out =  5;		//右飞
-			}
-
-			i_out = 0.0f;
-			d_out = 0.0f;
-		}
-		else
-		{
-			//正常值
-			
-			//不用计算error，因为期望为0
-			
-			//p
-			p_out = bias_lpf * user_parameter.groups.self_def_2.kp;
-			
-			//i
-			position_roll_integration += bias_lpf * user_parameter.groups.self_def_2.ki;
-			position_roll_integration = LIMIT(position_roll_integration,-10.0f,10.0f);
-			i_out = position_roll_integration;
-			
-			//d
-			d_out = speed_d_bias_lpf * user_parameter.groups.self_def_2.kd;		//speed_d_bias_lpf 左正右负
-			d_out = LIMIT(d_out,-10.0f,10.0f);	//限制输出幅度为+-70，允许d引起刹车动作
-		}
-		
-		//输出整合
-		//PID输出 out： - <-- --> +
-		out = p_out + i_out + d_out;
-		out = LIMIT(out,-15.0f,15.0f);
-		
-		//输出给 position_except_speed
-		//输出的值应该在-15到+15之间
-		position_except_speed = -out;
-
-	}
-	else
-	{
-		position_roll_integration = 0;
-	}
-}
-
-//速度控制
-//接口：except_speed      + <-- --> -      单位cm/s
-void speed_pid(u8 en)
-{
-	float except_speed = 0.0f;
-	float p_out,i_out,d_out,out;
-	float speed_error = 0.0f;
-	static float roll_speed_integration = 0.0f;	//积分变量
-	static float speed_error_old = 0.0f;	//old变量
-	s32 out_tmp;
-	
-	/*
-		CH_filter[0]			遥控器横滚输入	- <---  ---> +
-	
-		speed_d_bias			速度值			+ <---  ---> -
-		speed_d_bias_lpf		lpf值			+ <---  ---> -
-	
-		CH_ctrl[0]	横滚输出						- <---  ---> +		左负右正（负数向左有加速度，正数向右有加速度）
-	*/
-	
-	if(en)
-	{
-		//模式使能
-		
-		//except_speed      + <-- --> -      单位cm/s
-		
-		except_speed = position_except_speed;	//-( my_deathzoom( ( CH_filter[ROL] ) , 0, 30 ) / 5.0f );
-		
-		except_speed = my_deathzoom( except_speed , 0, 1 );	//设置+-1的死区
-		except_speed = LIMIT(except_speed,-15,15);			//限幅
-		
-		if( bias_error_flag != 0 )
-		{
-			// bias_detect（水平偏差）值异常处理
-			
-			//偏移过大，使用乒乓控制，系数对应 param_A param_B
-			
-			if( bias_detect < -50.0f )
-			{
-				//右偏过大
-				p_out = -40.0f * user_parameter.groups.param_A;	//左飞
-			}
-			else if( bias_detect > 50.0f )
-			{
-				//左偏过大
-				p_out =  40.0f * user_parameter.groups.param_B;	//右飞
-			}
-
-			i_out = 0.0f;
-			d_out = 0.0f;
-			
-			speed_error_old = 0;	// speed_error_old 清零（在一定程度上减小对d的影响）
-			
-		}
-		else
-		{
-			//bias_detect值正常
-			
-			speed_error = except_speed - speed_d_bias_lpf;	//计算error   speed_error值
-															//error   负：期望向左速度小于当前向左速度，期望向左速度比较小，应该向右加速
-															//		  正：期望向左速度大于当前向左速度，期望向左速度比较大，应该向左加速
-			
-			//p
-			p_out = - speed_error * user_parameter.groups.self_def_1.kp;
-			
-			//i
-			roll_speed_integration += speed_error * user_parameter.groups.self_def_1.ki;
-			roll_speed_integration = LIMIT(roll_speed_integration,-40.0f,40.0f);
-			i_out = - roll_speed_integration;
-			
-			//d
-			//error    +   （应该向左加速）<-- --> （应该向右加速）   -
-			//error - error_old   正：更需要向左加速
-			//					  负：没那么需要向左加速了
-			d_out = -(speed_error - speed_error_old) * user_parameter.groups.self_def_1.kd;
-			d_out = LIMIT(d_out,-70.0f,70.0f);	//限制输出幅度为+-70，允许d引起刹车动作
-			
-			speed_error_old = speed_error;
-		}
-		
-		//输出整合
-		out = p_out + i_out + d_out;
-		out = LIMIT(out,-150.0f,150.0f);
-		
-		//float变量安全隔离
-		out_tmp = (s32)(out*100.0f);	//放大100倍，保留小数点后2位精度
-		out_tmp = LIMIT(out_tmp,-15000,15000);	//限幅
-		out = ((float)out_tmp) / 100.0f;	//缩小100倍，回归float
-
-		CH_ctrl[0] = out;
-
-		//俯仰和航向手动控制
-		CH_ctrl[1] = my_deathzoom( ( CH_filter[PIT]) ,0,30 );	//1：俯仰 PIT
-		CH_ctrl[3] = CH_filter[3];								//3：航向 YAW
-	}
-	else
-	{
-		//非此模式执行清零
-		roll_speed_integration = 0.0;
-	}
-}
-
-//位置控制
-void position_pid(u8 en)
+//单位置控制
+void single_position_pid(u8 en)
 {
 	float p_out,i_out,d_out,out;
 	static float roll_integration = 0;
@@ -924,6 +323,8 @@ void position_pid(u8 en)
 	}
 }
 
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
 void yaw_pid(void)
 {
 	float yaw_error,yaw_out;
@@ -948,6 +349,470 @@ void yaw_pid(void)
 	
 }
 
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+//手动控制姿态
+void attitude_hand(void)
+{
+	CH_ctrl[ROL] = my_deathzoom( ( CH_filter[ROL]) ,0,30 );	//0：横滚 ROL
+	CH_ctrl[PIT] = my_deathzoom( ( CH_filter[PIT]) ,0,30 );	//1：俯仰 PIT
+	CH_ctrl[YAW] = CH_filter[YAW];	//3：航向 YAW
+}
+
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+//近地面姿态锁定
+void land_attitude(void)
+{
+	CH_ctrl[ROL] = 0;	//0：横滚 ROL
+	CH_ctrl[PIT] = 0;	//1：俯仰 PIT
+	CH_ctrl[YAW] = 0;	//3：航向 YAW
+}
+
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+//Pitch位置控制
+float position_pitch_out = 0.0f;		//输出速度期望，单位cm/s，方向 + <-- --> -
+void position_pitch(u8 en)
+{
+	float p_out,i_out,d_out,out;
+	static float position_integration = 0;
+	
+	if(en)
+	{
+		
+		/*
+			bias_pitch				原始值					+ <前---  ---后> -
+			bias_detect_pitch 		原始值的统计滤波结果		+ <前---  ---后> -
+			bias_error_flag_pitch	偏移值无效指示			0：偏移值正常	1：偏移值异常
+			bias_real_pitch			校正值					+ <前---  ---后> -
+			bias_lpf_pitch			校正值过低通滤波器		+ <前---  ---后> -
+		
+			CH_ctrl[1]				俯仰输出					- <---  ---> +		前负后正（负数向前有加速度，正数向后有加速度）
+		*/
+		
+		if( bias_error_flag_pitch != 0 )
+		{
+			//偏移过大，使用乒乓控制
+			
+			if( bias_detect_pitch < -30.0f )
+			{
+				//后偏过大
+				p_out = -5;		//前飞
+			}
+			else if( bias_detect_pitch > 30.0f )
+			{
+				//前偏过大
+				p_out =  5;		//后飞
+			}
+
+			i_out = 0.0f;
+			d_out = 0.0f;
+		}
+		else
+		{
+			//正常值
+			
+			//不用计算error，因为期望为0
+			
+			//p
+			p_out = bias_lpf_pitch * pid_setup.groups.ctrl5.kp; //user_parameter.groups.self_def_2.kp;
+			
+			//i
+			position_integration += bias_lpf_pitch * pid_setup.groups.ctrl5.ki; //user_parameter.groups.self_def_2.ki;
+			position_integration = LIMIT(position_integration,-10.0f,10.0f);
+			i_out = position_integration;
+			
+			//d
+			d_out = speed_d_bias_lpf_pitch * pid_setup.groups.ctrl5.kd; //user_parameter.groups.self_def_2.kd;		//speed_d_bias_lpf 左正右负
+			d_out = LIMIT(d_out,-10.0f,10.0f);	//限制输出幅度为+-70，允许d引起刹车动作
+		}
+		
+		//输出整合
+		//PID输出 out： - <前-- --后> +
+		out = p_out + i_out + d_out;
+		out = LIMIT(out,-15.0f,15.0f);
+		
+		//输出的值应该在-15到+15之间		+ <前-- --后> -
+		position_pitch_out = -out;
+
+	}
+	else
+	{
+		position_integration = 0;
+	}
+}
+
+//速度控制
+//接口：except_speed      + <-- --> -      单位cm/s
+void speed_pitch(u8 en)
+{
+	float except_speed = 0.0f;
+	float p_out,i_out,d_out,out;
+	float speed_error = 0.0f;
+	static float speed_integration = 0.0f;	//积分变量
+	static float speed_error_old = 0.0f;	//old变量
+	static u8 d_stop_flag = 0;		//停止d运算的标志位，表示speed_error_old数值无效
+	s32 out_tmp;
+	
+	/*
+		speed_d_bias_pitch			速度值			+ <前---  ---后> -
+		speed_d_bias_lpf_pitch		lpf值			+ <前---  ---后> -
+	
+		CH_filter[1]				遥控器俯仰输入	- <前---  ---后> +
+	*/
+	
+	if(en)
+	{
+		//模式使能
+		
+		//except_speed_pitch      + <-- --> -      单位cm/s
+		
+		except_speed = position_pitch_out;	//-( my_deathzoom( ( CH_filter[ROL] ) , 0, 30 ) / 5.0f );
+		
+		except_speed = LIMIT(except_speed,-15,15);			//限幅（速度调整要求平稳）
+		
+		if( bias_error_flag != 0 )
+		{
+			// bias_detect（水平偏差）值异常处理
+			
+			//偏移过大，使用乒乓控制，系数对应 param_A param_B
+			
+			if( except_speed > 1.0f )	//速度期望向前
+			{
+				p_out = -20.0f * pid_setup.groups.ctrl6.kp; //user_parameter.groups.param_A;	//前飞
+			}
+			else if(except_speed < -1.0f)	//速度期望向后
+			{
+				p_out =  20.0f * pid_setup.groups.ctrl6.ki; //user_parameter.groups.param_B;	//后飞
+			}
+			else						
+			{
+				p_out = 0.0f;	//中间设置死区
+			}
+
+			i_out = 0.0f;
+			d_out = 0.0f;
+			
+			speed_error_old = 0;	// speed_error_old 清零（在一定程度上减小对d的影响）
+			d_stop_flag = 1;	//表示speed_error_old无效，无法进行d运算
+		}
+		else
+		{
+			//bias_detect值正常
+			
+			speed_error = except_speed - speed_d_bias_lpf_pitch;	//计算error   speed_error值
+																	//error   负：期望向左速度小于当前向左速度，期望向左速度比较小，应该向右加速
+																	//		  正：期望向左速度大于当前向左速度，期望向左速度比较大，应该向左加速
+			
+			//p
+			p_out = - speed_error * pid_setup.groups.ctrl4.kp; //user_parameter.groups.self_def_1.kp;
+			
+			//i
+			speed_integration += speed_error * pid_setup.groups.ctrl4.ki; //user_parameter.groups.self_def_1.ki;
+			speed_integration = LIMIT(speed_integration,-40.0f,40.0f);
+			i_out = - speed_integration;
+			
+			//d
+			//error    +   （应该向左加速）<-- --> （应该向右加速）   -
+			//error - error_old   正：更需要向左加速
+			//					  负：没那么需要向左加速了
+			if(d_stop_flag)
+			{
+				d_out = -(speed_error - speed_error_old) * pid_setup.groups.ctrl4.kd; //user_parameter.groups.self_def_1.kd;
+				d_out = LIMIT(d_out,-70.0f,70.0f);	//限制输出幅度为+-70，允许d引起刹车动作
+			}
+			else
+			{
+				d_out = 0.0f;
+			}
+			
+			speed_error_old = speed_error;
+			d_stop_flag = 0;
+		}
+		
+		//输出整合
+		out = p_out + i_out + d_out;
+		out = LIMIT(out,-150.0f,150.0f);
+		
+		//float变量安全隔离
+		out_tmp = (s32)(out*100.0f);	//放大100倍，保留小数点后2位精度
+		out_tmp = LIMIT(out_tmp,-15000,15000);	//限幅
+		out = ((float)out_tmp) / 100.0f;	//缩小100倍，回归float
+
+		CH_ctrl[1] = out;	//根据经验值，CH_ctrl的输入值应该在50-100之间
+
+		//俯仰和航向手动控制
+//		CH_ctrl[0] = my_deathzoom( ( CH_filter[0]) ,0,30 );		//0：俯仰
+//		CH_ctrl[3] = CH_filter[3];								//3：航向 YAW
+	}
+	else
+	{
+		//非此模式执行清零
+		speed_integration = 0.0;
+	}
+}
+
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+//Roll位置控制
+float position_roll_out = 0.0f;		//输出速度期望，单位cm/s，方向 + <-- --> -
+void position_roll(u8 en)
+{
+	float p_out,i_out,d_out,out;
+	static float position_integration = 0;
+	
+	if(en)
+	{
+		
+		/*
+			bias		原始值					+ <---  ---> -
+			bias_detect 原始值的统计滤波结果		+ <---  ---> -
+			bias_real	校正值					+ <---  ---> -
+			bias_lpf	校正值过低通滤波器		+ <---  ---> -
+		
+			CH_ctrl[0]	横滚输出					- <---  ---> +		左负右正（负数向左有加速度，正数向右有加速度）
+		*/
+		
+		if( bias_error_flag != 0 )
+		{
+			//偏移过大，使用乒乓控制
+			
+			if( bias_detect < -50.0f )
+			{
+				//右偏过大
+				p_out = -5;		//左飞
+			}
+			else if( bias_detect > 50.0f )
+			{
+				//左偏过大
+				p_out =  5;		//右飞
+			}
+
+			i_out = 0.0f;
+			d_out = 0.0f;
+		}
+		else
+		{
+			//正常值
+			
+			//不用计算error，因为期望为0
+			
+			//p
+			p_out = bias_lpf * user_parameter.groups.self_def_2.kp;
+			
+			//i
+			position_integration += bias_lpf * user_parameter.groups.self_def_2.ki;
+			position_integration = LIMIT(position_integration,-10.0f,10.0f);
+			i_out = position_integration;
+			
+			//d
+			d_out = speed_d_bias_lpf * user_parameter.groups.self_def_2.kd;		//speed_d_bias_lpf 左正右负
+			d_out = LIMIT(d_out,-10.0f,10.0f);	//限制输出幅度为+-70，允许d引起刹车动作
+		}
+		
+		//输出整合
+		//PID输出 out： - <-- --> +
+		out = p_out + i_out + d_out;
+		out = LIMIT(out,-15.0f,15.0f);
+		
+		//输出的值应该在-15到+15之间
+		position_roll_out = -out;
+
+	}
+	else
+	{
+		position_integration = 0;
+	}
+}
+
+//速度控制
+//接口：except_speed      + <-- --> -      单位cm/s
+void speed_roll(u8 en)
+{
+	float except_speed = 0.0f;
+	float p_out,i_out,d_out,out;
+	float speed_error = 0.0f;
+	static float speed_integration = 0.0f;	//积分变量
+	static float speed_error_old = 0.0f;	//old变量
+	static u8 d_stop_flag = 0;		//停止d运算的标志位，表示speed_error_old数值无效
+	s32 out_tmp;
+	
+	/*
+		CH_filter[0]			遥控器横滚输入	- <---  ---> +
+	
+		speed_d_bias			速度值			+ <---  ---> -
+		speed_d_bias_lpf		lpf值			+ <---  ---> -
+	
+		CH_ctrl[0]	横滚输出						- <---  ---> +		左负右正（负数向左有加速度，正数向右有加速度）
+	*/
+	
+	if(en)
+	{
+		//模式使能
+		
+		//except_speed      + <-- --> -      单位cm/s
+		
+		except_speed = position_roll_out;	//-( my_deathzoom( ( CH_filter[ROL] ) , 0, 30 ) / 5.0f );
+		
+		except_speed = LIMIT(except_speed,-15,15);			//限幅（速度调整要求平稳）
+		
+		if( bias_error_flag != 0 )
+		{
+			// bias_detect（水平偏差）值异常处理
+			
+			// 根据期望速度进行处理，不适用速度差（因为速度反馈无效）
+			
+			//使用乒乓控制，系数对应 param_A param_B
+			
+			if( except_speed > 1.0f )	//速度期望向左
+			{
+				p_out = -40.0f * user_parameter.groups.param_A;	//左飞
+			}
+			else if(except_speed < -1.0f)	//速度期望向右
+			{
+				p_out =  40.0f * user_parameter.groups.param_B;	//右飞
+			}
+			else						
+			{
+				p_out = 0.0f;	//中间设置死区
+			}
+
+			i_out = 0.0f;
+			d_out = 0.0f;
+			
+			speed_error_old = 0;	// speed_error_old 清零（在一定程度上减小对d的影响）
+			d_stop_flag = 1;	//表示speed_error_old无效，无法进行d运算
+		}
+		else
+		{
+			//bias_detect值正常
+			
+			speed_error = except_speed - speed_d_bias_lpf;	//计算error   speed_error值
+															//error   负：期望向左速度小于当前向左速度，期望向左速度比较小，应该向右加速
+															//		  正：期望向左速度大于当前向左速度，期望向左速度比较大，应该向左加速
+			
+			//p
+			p_out = - speed_error * user_parameter.groups.self_def_1.kp;
+			
+			//i
+			speed_integration += speed_error * user_parameter.groups.self_def_1.ki;
+			speed_integration = LIMIT(speed_integration,-40.0f,40.0f);
+			i_out = - speed_integration;
+			
+			//d
+			//error    +   （应该向左加速）<-- --> （应该向右加速）   -
+			//error - error_old   正：更需要向左加速
+			//					  负：没那么需要向左加速了
+			if(d_stop_flag)
+			{
+				d_out = -(speed_error - speed_error_old) * user_parameter.groups.self_def_1.kd;
+				d_out = LIMIT(d_out,-70.0f,70.0f);	//限制输出幅度为+-70，允许d引起刹车动作
+			}
+			else
+			{
+				d_out = 0.0f;
+			}
+			
+			speed_error_old = speed_error;
+			d_stop_flag = 0;
+		}
+		
+		//输出整合
+		out = p_out + i_out + d_out;
+		out = LIMIT(out,-150.0f,150.0f);
+		
+		//float变量安全隔离
+		out_tmp = (s32)(out*100.0f);	//放大100倍，保留小数点后2位精度
+		out_tmp = LIMIT(out_tmp,-15000,15000);	//限幅
+		out = ((float)out_tmp) / 100.0f;	//缩小100倍，回归float
+
+		CH_ctrl[0] = out;	//根据经验值，CH_ctrl的输入值应该在50-100之间
+
+		//俯仰和航向手动控制
+//		CH_ctrl[1] = my_deathzoom( ( CH_filter[PIT]) ,0,30 );	//1：俯仰 PIT
+//		CH_ctrl[3] = CH_filter[3];								//3：航向 YAW
+	}
+	else
+	{
+		//非此模式执行清零
+		speed_integration = 0.0;
+	}
+}
+
+//========================================================================================
+//========================================================================================
+//	Cam频率调用的飞行控制函数
+//
+//	根据ctrl_command调用不同的自动控制函数
+//
+//	mode_state：
+//	0：手动				1：气压计
+//	2：超声波+气压计		3：自动
+//
+//	height_command：
+//	0：手动控高			1：定高
+//	2：降落											
+//========================================================================================
+//========================================================================================
+
+void Fly_Ctrl_Cam(void)		//调用周期与camera数据相同
+{	
+	//只有自动模式才会执行自动控制代码
+	if(mode_state != 3)
+	{
+		return;
+	}
+	
+/* ********************* 姿态控制 ********************* */
+	
+	if(ctrl_command == 3)
+	{
+		attitude_hand();
+		position_roll(1);
+		speed_roll(1);
+		position_pitch(1);
+		speed_pitch(1);
+	}
+	else
+	{
+		position_roll(0);
+		speed_roll(0);
+		position_pitch(0);
+		speed_pitch(0);
+	}
+	
+	if(ctrl_command == 4)
+	{
+		attitude_hand();	//后面函数不处理的控制值用摇杆输入代替
+		position_pitch(1);
+		speed_pitch(1);
+	}
+	else
+	{
+//		position_pitch(0);
+//		speed_pitch(0);
+	}
+	
+	if(ctrl_command == 5)					//水平速度位置环
+	{
+		attitude_hand();	//后面函数不处理的控制值用摇杆输入代替
+		position_roll(1);
+		speed_roll(1);
+	}
+	else
+	{
+//		position_roll(0);
+//		speed_roll(0);
+	}
+	
+	//意外状况处理
+	if(ctrl_command > 5)
+	{
+		attitude_hand();
+	}
+}
+
 //========================================================================================
 //========================================================================================
 //	飞行自动控制函数
@@ -958,9 +823,9 @@ void yaw_pid(void)
 //	0：手动				1：气压计
 //	2：超声波+气压计		3：自动
 //
-//	ctrl_command：
-//	0：正常的手动飞行模式（超声波+气压计定高）		1：高度锁定
-//	2：高度锁定+姿态归零							3：降落模式												
+//	height_command：
+//	0：手动控高			1：定高
+//	2：降落
 //========================================================================================
 //========================================================================================
 
@@ -1049,91 +914,37 @@ void Fly_Ctrl(void)		//调用周期5ms
 	
 //	if(ctrl_command == 3)
 //	{
-//		//attitude_single_p(1);
+//		
 //	}
 //	else
 //	{
-//		//attitude_single_p(0);
+//		
 //	}
 	
 //	if(ctrl_command == 4)
 //	{
-//		//yaw_pid();
+//		
 //	}
-
+//	else
+//	{
+//		
+//	}
+	
 //	if(ctrl_command == 5)
 //	{
-//		attitude_hand();
+//		
 //	}
-	
-	//意外状况处理
-	if(ctrl_command > 5)
-	{
-		attitude_hand();
-	}
-	
-}
+//	else
+//	{
+//		
+//	}
 
-//Cam频率调用的飞行控制函数
-void Fly_Ctrl_Cam(void)		//调用周期与camera数据相同
-{	
-	//只有自动模式才会执行自动控制代码
-	if(mode_state != 3)
-	{
-		return;
-	}
-	
-/* ********************* 姿态控制 ********************* */
-	
-	if(ctrl_command == 3)
-	{
-		position_pid(1);
-	}
-	else
-	{
-		position_pid(0);
-	}
-	
-	if(ctrl_command == 4)
-	{
-		position_ctrl(1,0);
-		speed_ctrl(1);
-	}
-	else
-	{
-		position_ctrl(0,0);
-		speed_ctrl(0);
-	}
-	
-	if(ctrl_command == 5)
-	{
-		if(sonar.displacement >= 250)
-		{
-			//离地后使用pid
-			position_to_speed_pid(1);
-			speed_pid(1);
-		}
-		else
-		{
-			//近地面姿态锁定
-			land_attitude();
-			
-			//停用位置控制pid
-			position_to_speed_pid(0);
-			speed_pid(0);
-		}
-	}
-	else
-	{
-		position_to_speed_pid(0);
-		speed_pid(0);
-	}
-	
 	//意外状况处理
 	if(ctrl_command > 5)
 	{
 		attitude_hand();
 	}
+	
 }
 
 //========================================================================================
