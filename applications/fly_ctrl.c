@@ -108,6 +108,12 @@ u8	height_mode = 0,	//¸ß¶È¿ØÖÆÄ£Ê½		0£ºÊÖ¶¯¿Ø¸ß		1£ºËø¶¨µ±Ç°¸ß¶È		2£º¸ù¾İÖ¸Áî¸ß¶
 //·ÉĞĞÄ£Ê½ÇĞ»»¿ØÖÆº¯Êı
 void Fly_Mode_Ctrl(float T)
 {
+	//Ö»ÓĞ×Ô¶¯Ä£Ê½²Å»áÖ´ĞĞ×Ô¶¯¿ØÖÆ´úÂë
+	if(mode_state != 3)
+	{
+		return;
+	}
+	
 	switch(height_command)
 	{
 		case 0:
@@ -182,6 +188,12 @@ void Fly_Mode_Ctrl(float T)
 
 void Fly_Height_Ctrl(float T)	//¸ß¶È¿ØÖÆº¯Êı
 {
+	//Ö»ÓĞ×Ô¶¯Ä£Ê½²Å»áÖ´ĞĞ×Ô¶¯¿ØÖÆ´úÂë
+	if(mode_state != 3)
+	{
+		return;
+	}
+	
 	switch(height_mode)
 	{
 		case 0:
