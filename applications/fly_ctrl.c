@@ -236,7 +236,7 @@ void Fly_Ctrl(float T)		//调用周期5ms
 	
 	/* ********************* 综合控制 ********************* */
 	
-	if(roll_speed == 0 || pitch_speed == 0)
+	if(roll_speed == 0 && pitch_speed == 0)
 	{
 		attitude_hand();
 	}

@@ -508,11 +508,6 @@
               <FilePath>.\applications\fly_mode.c</FilePath>
             </File>
             <File>
-              <FileName>fly_ctrl.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>.\applications\fly_ctrl.c</FilePath>
-            </File>
-            <File>
               <FileName>camera_datatransfer.c</FileName>
               <FileType>1</FileType>
               <FilePath>.\applications\camera_datatransfer.c</FilePath>
@@ -551,6 +546,11 @@
               <FileName>Ano_OF.c</FileName>
               <FileType>1</FileType>
               <FilePath>.\applications\Ano_OF.c</FilePath>
+            </File>
+            <File>
+              <FileName>fly_ctrl.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\applications\fly_ctrl.c</FilePath>
             </File>
             <File>
               <FileName>height_function.c</FileName>
