@@ -3,6 +3,7 @@
 
 #include "stm32f4xx.h"
 
+
 //以下为全局变量，在其他文件中，引用本h文件，即可在其他文件中访问到以下变量
 
 extern uint8_t 	OF_QUA,OF_LIGHT;	//光流信息质量：QUA	//光照强度：LIGHT
@@ -19,9 +20,15 @@ extern int16_t	OF_ACC_X2,OF_ACC_Y2,OF_ACC_Z2;	//滤波后加速度数据
 extern float	OF_ATT_ROL,OF_ATT_PIT,OF_ATT_YAW;		//欧拉角格式的姿态数据
 extern float	OF_ATT_S1,OF_ATT_S2,OF_ATT_S3,OF_ATT_S4;//四元数格式的姿态数据
 
-
 //本函数是唯一一个需要外部调用的函数，因为光流模块是串口输出数据
 //所以本函数需要在串口接收中断中调用，每接收一字节数据，调用本函数一次
 void AnoOF_GetOneByte(uint8_t data);
+
+void flow_data_detect(void);
+
+extern float OF_DX2_DETECT,		//横滚速度		- <---  ---> +
+			OF_DY2_DETECT,		//俯仰速度		+ <前-- --后> -
+			OF_DX2FIX_DETECT,
+			OF_DY2FIX_DETECT;
 
 #endif

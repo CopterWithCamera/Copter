@@ -1,4 +1,5 @@
 #include "ano_of.h"
+#include "scheduler.h"
 
 uint8_t		OF_QUA,OF_LIGHT;
 int8_t		OF_DX,OF_DY;
@@ -82,6 +83,8 @@ void AnoOF_DataAnl(uint8_t *data_buf,uint8_t num)
 			OF_DX2FIX	= (int16_t)(*(data_buf+10)<<8)|*(data_buf+11) ;
 			OF_DY2FIX	= (int16_t)(*(data_buf+12)<<8)|*(data_buf+13) ;
 			OF_LIGHT  	= *(data_buf+14);
+			
+			loop.flow_data_ok = 1;	//指示光流速度数据已经更新
 		}
 	}
 	if(*(data_buf+2)==0X52)//高度信息
@@ -131,6 +134,48 @@ void AnoOF_DataAnl(uint8_t *data_buf,uint8_t num)
 			OF_ATT_S3 = ((int16_t)(*(data_buf+9)<<8)|*(data_buf+10)) * 0.0001 ;
 			OF_ATT_S4 = ((int16_t)(*(data_buf+11)<<8)|*(data_buf+12)) * 0.0001 ;
 		}
+	}
+}
+
+//自己编写的光流数据处理函数
+
+float	OF_DX2_DETECT,		//横滚速度		- <---  ---> +
+		OF_DY2_DETECT,		//俯仰速度		+ <前-- --后> -
+		OF_DX2FIX_DETECT,
+		OF_DY2FIX_DETECT;
+
+//光流数据置信函数，与融合后光流信息接收同频率调用
+void flow_data_detect(void)
+{
+	//本函数的编写基础为每一帧的光流速度数据都有自己相对应的quality数据
+	if( OF_QUA > 70 )	
+	{
+		//可信度很高，直接更新
+		OF_DX2_DETECT  = OF_DX2;
+		OF_DY2_DETECT  = OF_DY2;
+		OF_DX2FIX_DETECT = OF_DX2FIX;
+		OF_DY2FIX_DETECT = OF_DY2FIX;
+	}
+	else if( OF_QUA > 50 )
+	{
+		//较大程度采纳
+		OF_DX2_DETECT  = ((float)OF_DX2) * 0.7f + OF_DX2_DETECT * 0.3f;
+		OF_DY2_DETECT  = ((float)OF_DY2) * 0.7f + OF_DY2_DETECT * 0.3f;
+		OF_DX2FIX_DETECT = ((float)OF_DX2FIX) * 0.7f + OF_DX2FIX_DETECT * 0.3f;
+		OF_DY2FIX_DETECT = ((float)OF_DY2FIX) * 0.7f + OF_DY2FIX_DETECT * 0.3f;
+	}
+	else if( OF_QUA > 30)
+	{
+		//较小程度采纳一小部分
+		OF_DX2_DETECT  = ((float)OF_DX2) * 0.3f + OF_DX2_DETECT * 0.7f;
+		OF_DY2_DETECT  = ((float)OF_DY2) * 0.3f + OF_DY2_DETECT * 0.7f;
+		OF_DX2FIX_DETECT = ((float)OF_DX2FIX) * 0.3f + OF_DX2FIX_DETECT * 0.7f;
+		OF_DY2FIX_DETECT = ((float)OF_DY2FIX) * 0.3f + OF_DY2FIX_DETECT * 0.7f;
+	}
+	else
+	{
+		//可信度过低，不采纳数据
+		
 	}
 }
 
