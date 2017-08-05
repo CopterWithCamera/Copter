@@ -5,10 +5,23 @@
 #include "include.h"
 
 void attitude_hand(void);
-void position_pitch(float T,u8 en);
-void position_roll(float T,u8 en);
-void speed_pitch(u8 en);
-void speed_roll(u8 en);
+
+//位置控制
+void position_pitch_zero(void);
+void position_roll_zero(void);
+
+void position_pitch(float T);
+void position_pitch_clear(void);
+
+void position_roll(float T);
+void position_roll_clear(void);
+
+//速度控制
+void speed_pitch(void);
+void speed_pitch_clear(void);
+
+void speed_roll(void);
+void speed_roll_clear(void);
 
 extern float position_pitch_out;		//输出速度期望，单位cm/s，方向 + <前-- --后> -
 extern float position_roll_out;			//输出速度期望，单位cm/s，方向 + <---  ---> -

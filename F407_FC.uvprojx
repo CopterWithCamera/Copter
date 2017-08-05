@@ -552,6 +552,26 @@
               <FileType>1</FileType>
               <FilePath>.\applications\Ano_OF.c</FilePath>
             </File>
+            <File>
+              <FileName>position_function.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\applications\position_function.c</FilePath>
+            </File>
+            <File>
+              <FileName>height_function.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\applications\height_function.c</FilePath>
+            </File>
+            <File>
+              <FileName>position_function_flow.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\applications\position_function_flow.c</FilePath>
+            </File>
+            <File>
+              <FileName>position_function_flow.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\applications\position_function_flow.h</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>

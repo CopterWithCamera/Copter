@@ -5,7 +5,10 @@
 #include "include.h"
 
 void hand(void);
-void height_lock(u8 en);
+void height_lock(void);
+void height_lock_clear(void);
+void height_hold(void);
+void take_off(float T);
 void land(void);
 
 
