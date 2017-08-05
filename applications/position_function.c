@@ -38,8 +38,10 @@ void attitude_hand(void)
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
+float position_pitch_out = 0.0f;		//输出速度期望，单位cm/s，方向 + <前-- --后> -
+float position_roll_out = 0.0f;			//输出速度期望，单位cm/s，方向 + <---  ---> -
+
 //Pitch位置控制
-float position_pitch_out = 0.0f;		//输出速度期望，单位cm/s，方向 + <-- --> -
 void position_pitch(float T,u8 en)	//与摄像头采集数据同频调用
 {
 	float p_out,i_out,d_out,out;
@@ -83,6 +85,10 @@ void position_pitch(float T,u8 en)	//与摄像头采集数据同频调用
 					//前偏过大
 					p_out =  5;		//后飞
 				}
+				else
+				{
+					p_out = 0.0f;
+				}
 
 				i_out = 0.0f;
 				d_out = 0.0f;
@@ -125,7 +131,6 @@ void position_pitch(float T,u8 en)	//与摄像头采集数据同频调用
 }
 
 //Roll位置控制
-float position_roll_out = 0.0f;		//输出速度期望，单位cm/s，方向 + <-- --> -
 void position_roll(float T,u8 en)
 {
 	float p_out,i_out,d_out,out;
