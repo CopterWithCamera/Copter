@@ -4,7 +4,9 @@
 #include "stm32f4xx.h"
 #include "include.h"
 
-void attitude_hand(void);
+void attitude_roll(void);
+void attitude_pitch(void);
+void attitude_yaw(void);
 
 //Œª÷√øÿ÷∆
 void position_pitch_zero(void);

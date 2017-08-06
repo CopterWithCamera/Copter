@@ -103,10 +103,11 @@ u8	height_mode = 0,	//¸ß¶È¿ØÖÆÄ£Ê½		0£ºÊÖ¶¯¿Ø¸ß		1£ºËø¶¨µ±Ç°¸ß¶È		2£º¸ù¾İÖ¸Áî¸ß¶
 	roll_speed = 0,		//ËÙ¶Èºá¹ö¿ØÖÆÄ£Ê½	0£ºÊÖ¶¯¿ØÖÆ		1£ºÉãÏñÍ·Êı¾İ¶¨µã												4£º¹âÁ÷Êı¾İ¶¨µã
 	pitch_speed = 0,	//ËÙ¶È¸©Ñö¿ØÖÆÄ£Ê½	0£ºÊÖ¶¯¿ØÖÆ		1£ºÉãÏñÍ·Êı¾İ¶¨µã	2£ºÉãÏñÍ·Êı¾İÇ°½ø		3£ºÉãÏñÍ·Êı¾İºóÍË	4£º¹âÁ÷Êı¾İ¶¨µã		5£º¹âÁ÷Êı¾İÇ°½ø		6£º¹âÁ÷Êı¾İºóÍË
 	roll_position = 0,	//Î»ÖÃºá¹ö¿ØÖÆ		0£ºÊä³ö0			1£ºÊä³öÉãÏñÍ·¼ÆËãÆ«ÒÆ
-	pitch_position = 0;	//Î»ÖÃ¸©Ñö¿ØÖÆ		0£ºÊä³ö0			1£ºÊä³öÉãÏñÍ·¼ÆËãÆ«ÒÆ
+	pitch_position = 0,	//Î»ÖÃ¸©Ñö¿ØÖÆ		0£ºÊä³ö0			1£ºÊä³öÉãÏñÍ·¼ÆËãÆ«ÒÆ
+	yaw_mode = 0;		//º½Ïò½Ç¿ØÖÆ			0£ºÊÖ¶¯¿ØÖÆ
 
-//·ÉĞĞÄ£Ê½ÇĞ»»¿ØÖÆº¯Êı
-void Fly_Mode_Ctrl(float T)
+
+void Fly_Mode_Ctrl(float T)		//·ÉĞĞÄ£Ê½ÇĞ»»¿ØÖÆº¯Êı
 {
 	//Ö»ÓĞ×Ô¶¯Ä£Ê½²Å»áÖ´ĞĞ×Ô¶¯¿ØÖÆ´úÂë
 	if(mode_state != 3)
@@ -114,6 +115,7 @@ void Fly_Mode_Ctrl(float T)
 		return;
 	}
 	
+	//¸ß¶È¿ØÖÆÄ£Ê½ÇĞ»»
 	switch(height_command)
 	{
 		case 0:
@@ -133,6 +135,7 @@ void Fly_Mode_Ctrl(float T)
 		break;
 	}
 	
+	//×ËÌ¬¿ØÖÆÄ£Ê½ÇĞ»»
 	switch(ctrl_command)
 	{
 		case 0:
@@ -140,6 +143,7 @@ void Fly_Mode_Ctrl(float T)
 			roll_speed = 0;
 			pitch_position = 0;
 			pitch_speed = 0;
+			yaw_mode = 0;
 		break;
 		
 		case 1:
@@ -147,6 +151,7 @@ void Fly_Mode_Ctrl(float T)
 			pitch_speed = 0;
 			roll_position = 1;	//ºá¹ö×Ô¶¯
 			roll_speed = 1;
+			yaw_mode = 0;
 		break;
 		
 		case 2:
@@ -154,6 +159,7 @@ void Fly_Mode_Ctrl(float T)
 			pitch_speed = 1;
 			roll_position = 1;	//ºá¹ö×Ô¶¯
 			roll_speed = 1;
+			yaw_mode = 0;
 		break;
 		
 		case 3:
@@ -161,6 +167,7 @@ void Fly_Mode_Ctrl(float T)
 			pitch_speed = 0;
 			roll_position = 1;	//ºá¹ö¹âÁ÷×Ô¶¯
 			roll_speed = 4;
+			yaw_mode = 0;
 		break;
 		
 		case 4:
@@ -168,6 +175,7 @@ void Fly_Mode_Ctrl(float T)
 			pitch_speed = 4;
 			roll_position = 1;	//ºá¹ö¹âÁ÷×Ô¶¯
 			roll_speed = 4;
+			yaw_mode = 0;
 		break;
 		
 		case 5:
@@ -236,9 +244,19 @@ void Fly_Ctrl(float T)		//µ÷ÓÃÖÜÆÚ5ms
 	
 	/* ********************* ×ÛºÏ¿ØÖÆ ********************* */
 	
-	if(roll_speed == 0 && pitch_speed == 0)
+	if(roll_speed == 0)
 	{
-		attitude_hand();
+		attitude_roll();
+	}
+	
+	if(pitch_speed == 0)
+	{
+		attitude_pitch();
+	}
+	
+	if(yaw_mode == 0)
+	{
+		attitude_yaw();
 	}
 	
 	if( roll_position == 0 )

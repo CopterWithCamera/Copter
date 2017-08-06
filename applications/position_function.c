@@ -28,10 +28,18 @@
 //=====================================================================================================================================
 
 //手动控制姿态
-void attitude_hand(void)
+void attitude_roll(void)
 {
 	CH_ctrl[ROL] = my_deathzoom( ( CH_filter[ROL]) ,0,30 );	//0：横滚 ROL
+}
+
+void attitude_pitch(void)
+{
 	CH_ctrl[PIT] = my_deathzoom( ( CH_filter[PIT]) ,0,30 );	//1：俯仰 PIT
+}
+
+void attitude_yaw(void)
+{
 	CH_ctrl[YAW] = CH_filter[YAW];	//3：航向 YAW
 }
 
@@ -76,7 +84,7 @@ void position_pitch(float T)	//与摄像头采集数据同频调用
 	{
 		//偏移过大，使用乒乓控制
 		
-		if(	bias_error_counter_pitch * T > 1.0f )	//时间超过1s
+		if(	( bias_error_counter_pitch * T ) > 2.0f )	//时间超过1s
 		{
 			p_out = 0.0f;	//不再控制
 			i_out = 0.0f;
@@ -273,7 +281,7 @@ void speed_pitch()
 		{
 			p_out =  20.0f * pid_setup.groups.ctrl6.ki; //user_parameter.groups.param_B;	//后飞
 		}
-		else						
+		else
 		{
 			p_out = 0.0f;	//中间设置死区
 		}
