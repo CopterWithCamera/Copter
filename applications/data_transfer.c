@@ -599,7 +599,7 @@ void ANO_DT_Send_User2()
 	
 	data_to_send[_cnt++] = mode_state;			//飞行模式
 			
-	data_to_send[_cnt++] = ctrl_command;		//姿态指令编号
+	data_to_send[_cnt++] = my_fly_mode;			//当前飞信模式
 	
 	data_to_send[_cnt++] = fly_ready;			//解锁状态
 	
