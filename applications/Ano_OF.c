@@ -1,5 +1,6 @@
 #include "ano_of.h"
 #include "scheduler.h"
+#include "data_transfer.h"
 
 uint8_t		OF_QUA,OF_LIGHT;
 int8_t		OF_DX,OF_DY;
@@ -177,5 +178,15 @@ void flow_data_detect(void)
 		//可信度过低，不采纳数据
 		
 	}
+	
+	mydata.d1 = (s16)OF_DX2;	//height
+	mydata.d2 = (s16)OF_DX2_DETECT;
+	mydata.d3 = (s16)OF_DX2FIX;
+	mydata.d4 = (s16)OF_DX2FIX_DETECT;
+	mydata.d5 = (s16)OF_DY2;
+	mydata.d6 = (s16)OF_DY2_DETECT;
+	mydata.d7 = (s16)OF_DY2FIX;
+	mydata.d8 = (s16)OF_DY2FIX_DETECT;
+	
 }
 

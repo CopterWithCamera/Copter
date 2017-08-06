@@ -137,10 +137,9 @@ void position_pitch(float T)	//与摄像头采集数据同频调用
 	//输出整合
 	//PID输出 out： - <前-- --后> +
 	out = p_out + i_out + d_out;
-	out = LIMIT(out,-15.0f,15.0f);
+	//out = LIMIT(out,-15.0f,15.0f);
 	
-	//输出的值应该在-15到+15之间		+ <前-- --后> -
-	position_pitch_out = -out;
+	position_pitch_out = -out;	//	+ <前-- --后> -
 }
 
 void position_pitch_clear(void)
@@ -223,10 +222,9 @@ void position_roll(float T)
 	//输出整合
 	//PID输出 out： - <-- --> +
 	out = p_out + i_out + d_out;
-	out = LIMIT(out,-15.0f,15.0f);
+	//out = LIMIT(out,-15.0f,15.0f);
 	
-	//输出的值应该在-15到+15之间
-	position_roll_out = -out;
+	position_roll_out = -out;	//	+ <---  ---> -
 
 }
 
@@ -264,7 +262,6 @@ void speed_pitch()
 	//except_speed_pitch      + <-- --> -      单位cm/s
 	
 	except_speed = position_pitch_out;	//-( my_deathzoom( ( CH_filter[ROL] ) , 0, 30 ) / 5.0f );
-	
 	except_speed = LIMIT(except_speed,-15,15);			//限幅（速度调整要求平稳）
 	
 	if( bias_error_flag != 0 )
@@ -342,7 +339,6 @@ void speed_pitch_clear(void)
 {
 	speed_integration_pitch = 0.0;
 }
-
 
 //速度控制
 //接口：except_speed      + <-- --> -      单位cm/s
