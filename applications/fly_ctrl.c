@@ -273,7 +273,7 @@ void Fly_Mode_Ctrl(float T)		//飞行模式切换控制函数
 		
 		case 6:									//后退
 			pitch_position = 0;	//摄像头后退
-			pitch_speed = 2;
+			pitch_speed = 3;
 			roll_position = 1;	//横滚自动
 			roll_speed = 1;
 			yaw_mode = 0;

@@ -357,7 +357,7 @@ void speed_pitch_forward(void)
 	
 	//except_speed_pitch      + <-- --> -      单位cm/s
 	
-	except_speed = 15;	//-( my_deathzoom( ( CH_filter[ROL] ) , 0, 30 ) / 5.0f );
+	except_speed = 5;	//-( my_deathzoom( ( CH_filter[ROL] ) , 0, 30 ) / 5.0f );
 	except_speed = LIMIT(except_speed,-15,15);			//限幅（速度调整要求平稳）
 	
 	if( bias_error_flag != 0 )
@@ -453,7 +453,7 @@ void speed_pitch_backward(void)
 	
 	//except_speed_pitch      + <-- --> -      单位cm/s
 	
-	except_speed = -15;	//-( my_deathzoom( ( CH_filter[ROL] ) , 0, 30 ) / 5.0f );
+	except_speed = -5;	//-( my_deathzoom( ( CH_filter[ROL] ) , 0, 30 ) / 5.0f );
 	except_speed = LIMIT(except_speed,-15,15);			//限幅（速度调整要求平稳）
 	
 	if( bias_error_flag != 0 )
