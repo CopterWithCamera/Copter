@@ -138,12 +138,33 @@ void AnoOF_DataAnl(uint8_t *data_buf,uint8_t num)
 	}
 }
 
+
+//低通滤波器
+//dt：采样时间间隔（单位us）
+//fc：截止频率
+float flow_bias_lpf(float bias ,float dt_us ,float fc,float last_bias_lpf)
+{
+	float q,out,T;
+	
+	T = dt_us / 1000000.0f;
+	q = 6.28f * T * fc;
+	
+	if(q >0.95f)
+		q = 0.95f;
+	
+	out = q * bias + (1.0f-q) * last_bias_lpf;
+	
+	return out;
+}
+
 //自己编写的光流数据处理函数
 
 float	OF_DX2_DETECT,		//横滚速度		- <---  ---> +
 		OF_DY2_DETECT,		//俯仰速度		+ <前-- --后> -
 		OF_DX2FIX_DETECT,
-		OF_DY2FIX_DETECT;
+		OF_DY2FIX_DETECT,
+		OF_DX2FIX_DETECT_LPF,
+		OF_DY2FIX_DETECT_LPF;
 
 //光流数据置信函数，与融合后光流信息接收同频率调用
 void flow_data_detect(void)
@@ -179,11 +200,16 @@ void flow_data_detect(void)
 		
 	}
 	
-	mydata.d1 = (s16)OF_DX2;	//height
+	OF_DX2_DETECT = -OF_DX2_DETECT;
+	OF_DX2FIX_DETECT = -OF_DX2FIX_DETECT;
+	
+	OF_DX2FIX_DETECT_LPF = flow_bias_lpf(OF_DX2FIX_DETECT,20000,1,OF_DX2FIX_DETECT_LPF);
+	
+	mydata.d1 = (s16)OF_DX2FIX_DETECT_LPF;	//height
 	mydata.d2 = (s16)OF_DX2_DETECT;
 	mydata.d3 = (s16)OF_DX2FIX;
 	mydata.d4 = (s16)OF_DX2FIX_DETECT;
-	mydata.d5 = (s16)OF_DY2;
+	mydata.d5 = (s16)OF_DY2FIX_DETECT_LPF;
 	mydata.d6 = (s16)OF_DY2_DETECT;
 	mydata.d7 = (s16)OF_DY2FIX;
 	mydata.d8 = (s16)OF_DY2FIX_DETECT;

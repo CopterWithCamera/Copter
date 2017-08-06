@@ -333,12 +333,12 @@ void Fly_Ctrl_Flow(void)		//调用周期与camera数据相同
 		return;
 	}
 	
-	if(roll_speed == 2)	//光流定点
+	if(roll_speed == 4)	//光流定点
 	{
 		speed_flow_roll();
 	}
 	
-	if(pitch_speed == 2)	//光流定点
+	if(pitch_speed == 4)	//光流定点
 	{
 		speed_flow_pitch();
 	}

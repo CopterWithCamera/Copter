@@ -29,6 +29,8 @@ void flow_data_detect(void);
 extern float OF_DX2_DETECT,		//横滚速度		- <---  ---> +
 			OF_DY2_DETECT,		//俯仰速度		+ <前-- --后> -
 			OF_DX2FIX_DETECT,
-			OF_DY2FIX_DETECT;
+			OF_DY2FIX_DETECT,
+			OF_DX2FIX_DETECT_LPF,
+			OF_DY2FIX_DETECT_LPF;
 
 #endif

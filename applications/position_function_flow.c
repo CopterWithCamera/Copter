@@ -179,11 +179,11 @@ void speed_flow_roll()
 	{
 		//bias_detect值正常
 		
-		speed_error = except_speed - (-OF_DX2FIX_DETECT);	//计算error   speed_error值
+		speed_error = except_speed - OF_DX2FIX_DETECT;	//计算error   speed_error值
 															//error   正：期望向左速度大于当前向左速度，期望向左速度比较大，应该向左加速		负：期望向左速度小于当前向左速度，期望向左速度比较小，应该向右加速
 		
 		//p
-		p_out = - speed_error * user_parameter.groups.self_def_1.kp * 2.0f;
+		p_out = - speed_error * user_parameter.groups.self_def_1.kp;
 		
 		//i
 		speed_integration_roll += speed_error * user_parameter.groups.self_def_1.ki;
