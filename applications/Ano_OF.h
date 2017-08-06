@@ -24,12 +24,14 @@ extern float	OF_ATT_S1,OF_ATT_S2,OF_ATT_S3,OF_ATT_S4;//四元数格式的姿态数据
 //所以本函数需要在串口接收中断中调用，每接收一字节数据，调用本函数一次
 void AnoOF_GetOneByte(uint8_t data);
 
-void flow_data_detect(void);
+void flow_data_detect(float T);
 
-extern float OF_DX2_DETECT,		//横滚速度		- <---  ---> +
+extern float OF_DX2_DETECT,		//横滚速度		+ <---  ---> -
 			OF_DY2_DETECT,		//俯仰速度		+ <前-- --后> -
 			OF_DX2FIX_DETECT,
 			OF_DY2FIX_DETECT,
+			OF_DX2_DETECT_LPF,
+			OF_DY2_DETECT_LPF,
 			OF_DX2FIX_DETECT_LPF,
 			OF_DY2FIX_DETECT_LPF;
 

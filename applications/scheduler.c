@@ -235,9 +235,9 @@ void Duty_Camera()
 void Duty_Flow()
 {
 	float flow_loop_time;
-	flow_loop_time = Get_Cycle_T(5)/1000000.0f;	//以us为单位
+	flow_loop_time = Get_Cycle_T(5)/1000000.0f;	//以s为单位
 	
-	flow_data_detect();
+	flow_data_detect(flow_loop_time);
 	Fly_Ctrl_Flow();
 }
 
