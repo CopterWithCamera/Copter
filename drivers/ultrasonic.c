@@ -62,7 +62,8 @@ void Ultra_Duty()
 		ultra.height = OF_ALT2;
 		if(ultra.height < 180)	//光流数据最大能够测量2m（200cm），输入数据小于180cm保证安全
 		{
-			ultra.relative_height = OF_ALT2;	//融合姿态的当前高度，单位是cm
+			//ultra.relative_height = OF_ALT2;
+			ultra.relative_height = OF_ALT + 0.9;	//融合姿态的当前高度，单位是cm
 			ultra.measure_ok = 1;
 		}
 		else

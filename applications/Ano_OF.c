@@ -179,14 +179,14 @@ void flow_data_detect(void)
 		
 	}
 	
-	mydata.d1 = (s16)OF_DX2;	//height
-	mydata.d2 = (s16)OF_DX2_DETECT;
-	mydata.d3 = (s16)OF_DX2FIX;
-	mydata.d4 = (s16)OF_DX2FIX_DETECT;
-	mydata.d5 = (s16)OF_DY2;
-	mydata.d6 = (s16)OF_DY2_DETECT;
-	mydata.d7 = (s16)OF_DY2FIX;
-	mydata.d8 = (s16)OF_DY2FIX_DETECT;
+//	mydata.d1 = (s16)OF_DX2;	//height
+//	mydata.d2 = (s16)OF_DX2_DETECT;
+//	mydata.d3 = (s16)OF_DX2FIX;
+//	mydata.d4 = (s16)OF_DX2FIX_DETECT;
+//	mydata.d5 = (s16)OF_DY2;
+//	mydata.d6 = (s16)OF_DY2_DETECT;
+//	mydata.d7 = (s16)OF_DY2FIX;
+//	mydata.d8 = (s16)OF_DY2FIX_DETECT;
 	
 }
 
