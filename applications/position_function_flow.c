@@ -113,6 +113,7 @@ void speed_flow_pitch()
 	CH_ctrl[1] = out;	//根据经验值，CH_ctrl的输入值应该在50-100之间
 
 }
+
 void speed_flow_pitch_clear(void)
 {
 	speed_integration_pitch = 0.0;
@@ -179,11 +180,10 @@ void speed_flow_roll()
 		//bias_detect值正常
 		
 		speed_error = except_speed - (-OF_DX2FIX_DETECT);	//计算error   speed_error值
-															//error   负：期望向左速度小于当前向左速度，期望向左速度比较小，应该向右加速
-															//		  正：期望向左速度大于当前向左速度，期望向左速度比较大，应该向左加速
+															//error   正：期望向左速度大于当前向左速度，期望向左速度比较大，应该向左加速		负：期望向左速度小于当前向左速度，期望向左速度比较小，应该向右加速
 		
 		//p
-		p_out = - speed_error * user_parameter.groups.self_def_1.kp;
+		p_out = - speed_error * user_parameter.groups.self_def_1.kp * 2.0f;
 		
 		//i
 		speed_integration_roll += speed_error * user_parameter.groups.self_def_1.ki;
@@ -209,7 +209,7 @@ void speed_flow_roll()
 	}
 	
 	//输出整合
-	out = p_out + i_out + d_out;
+	out = p_out + i_out + d_out;			// - <-- --> +
 	out = LIMIT(out,-150.0f,150.0f);
 	
 	//float变量安全隔离

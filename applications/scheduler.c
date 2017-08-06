@@ -28,6 +28,8 @@
 #include "camera_data_calculate.h"
 #include "adc.h"
 #include "ano_of.h"
+#include "position_function.h"
+
 
 s16 loop_cnt;
 
@@ -171,7 +173,18 @@ void Duty_5ms()
 //	mydata.d18 = (s16)bias_pitch;		//pitch方向
 //	mydata.d19 = (s16)bias_real_pitch;
 //	mydata.d20 = (s16)bias_lpf_pitch;
+
+	mydata.d10 = (s16)position_roll_out;
+	mydata.d9 = (s16)position_pitch_out;
+	mydata.d11 = (s16)speed_d_bias_lpf;
+	mydata.d12 = (s16)speed_d_bias_lpf_pitch;
 	
+	mydata.d15 = (s16)bias;				//roll方向
+	mydata.d16 = (s16)bias_real;
+	mydata.d17 = (s16)bias_lpf;			
+	mydata.d18 = (s16)bias_pitch;		//pitch方向
+	mydata.d19 = (s16)bias_real_pitch;
+	mydata.d20 = (s16)bias_lpf_pitch;
 }
 
 //10ms线程

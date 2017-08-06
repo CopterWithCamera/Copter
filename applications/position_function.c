@@ -401,9 +401,8 @@ void speed_roll()
 		{
 			//bias_detect值正常
 			
-			speed_error = except_speed - speed_d_bias_lpf;	//计算error   speed_error值
-															//error   负：期望向左速度小于当前向左速度，期望向左速度比较小，应该向右加速
-															//		  正：期望向左速度大于当前向左速度，期望向左速度比较大，应该向左加速
+			speed_error = except_speed - speed_d_bias_lpf;	//计算期望速度差   speed_error值   - <-- --> +
+															//error   正：期望向左速度大于当前向左速度，期望向左速度比较大，应该向左加速		负：期望向左速度小于当前向左速度，期望向左速度比较小，应该向右加速
 			
 			//p
 			p_out = - speed_error * user_parameter.groups.self_def_1.kp;
