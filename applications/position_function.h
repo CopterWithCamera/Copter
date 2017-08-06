@@ -20,6 +20,10 @@ void position_roll_clear(void);
 
 //ËÙ¶È¿ØÖÆ
 void speed_pitch(void);
+void speed_pitch_forward(void);
+void speed_pitch_backward(void);
+void speed_pitch_forward_break(float T);
+void speed_pitch_backward_break(float T);
 void speed_pitch_clear(void);
 
 void speed_roll(void);

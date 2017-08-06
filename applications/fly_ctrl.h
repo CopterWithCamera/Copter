@@ -12,6 +12,7 @@ extern float my_except_height;
 
 //上位机监控变量（上位机监控状态，但不用于其他函数的控制）
 extern u8 ctrl_command;			//当前飞行指令
+extern u8 my_fly_mode;			//当前飞行模式
 extern u8 height_command;			//当前飞行指令
 
 //定时调用线程

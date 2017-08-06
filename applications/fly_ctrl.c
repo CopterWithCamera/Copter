@@ -106,9 +106,11 @@ u8	height_mode = 0,	//¸ß¶È¿ØÖÆÄ£Ê½		0£ºÊÖ¶¯¿Ø¸ß		1£ºËø¶¨µ±Ç°¸ß¶È		2£º¸ù¾İÖ¸Áî¸ß¶
 	pitch_position = 0,	//Î»ÖÃ¸©Ñö¿ØÖÆ		0£ºÊä³ö0			1£ºÊä³öÉãÏñÍ·¼ÆËãÆ«ÒÆ
 	yaw_mode = 0;		//º½Ïò½Ç¿ØÖÆ			0£ºÊÖ¶¯¿ØÖÆ
 
-
+u8 my_fly_mode = 0, my_fly_mode_old = 0;	//·ÉĞĞÄ£Ê½
 void Fly_Mode_Ctrl(float T)		//·ÉĞĞÄ£Ê½ÇĞ»»¿ØÖÆº¯Êı
 {
+	static float break_counter = 0;	//É²³µÑÓÊ±¶¨Ê±Æ÷
+	
 	//Ö»ÓĞ×Ô¶¯Ä£Ê½²Å»áÖ´ĞĞ×Ô¶¯¿ØÖÆ´úÂë
 	if(mode_state != 3)
 	{
@@ -135,18 +137,101 @@ void Fly_Mode_Ctrl(float T)		//·ÉĞĞÄ£Ê½ÇĞ»»¿ØÖÆº¯Êı
 		break;
 	}
 	
-	//×ËÌ¬¿ØÖÆÄ£Ê½ÇĞ»»
-	switch(ctrl_command)
+	//*****************************************************************************
+	//ÕâÀïÒª¸ù¾İ²»Í¬µÄÖ¸Áî¶Ô my_fly_mode ½øĞĞÇĞ»»
+	
+	if(ctrl_command != 0)	//ÓĞĞÂÖ¸Áî½øÈëÊ±ctrl_command²»Îª0
 	{
-		case 0:
-			roll_position = 0;	//ÊÖ·É
+		if(ctrl_command == 1)
+		{
+			my_fly_mode = 0;		//ÊÖ·É
+		}
+		
+		if(ctrl_command == 2)
+		{
+			my_fly_mode = 1;		//ºá¹ö×Ô¶¯£¨²âÊÔÓÃ£©
+		}
+		
+		if(ctrl_command == 3)
+		{
+			my_fly_mode = 3;		//ºá¹ö¹âÁ÷×Ô¶¯£¨²âÊÔÓÃ£©
+		}
+		
+		if(ctrl_command == 4)
+		{
+			my_fly_mode = 5;		//ÉãÏñÍ·Ç°½ø
+		}
+		
+		if(ctrl_command == 5)
+		{
+			if(my_fly_mode_old == 5)	//Èç¹ûÉÏÒ»¸ö×´Ì¬ÊÇÇ°½ø
+			{
+				ctrl_command = 7;		//Ç°½øÖĞÉ²³µ
+				break_counter = 0;
+			}
+			else if(my_fly_mode_old == 6)	//Èç¹ûÉÏÒ»¸ö×´Ì¬ÊÇºóÍË
+			{
+				ctrl_command = 8;		//ºóÍËÖĞÉ²³µ
+				break_counter = 0;
+			}
+			else
+			{
+				my_fly_mode = 2;		//ÉãÏñÍ·ĞüÍ£
+			}
+		}
+		
+		if(ctrl_command == 6)
+		{
+			my_fly_mode = 6;		//ÉãÏñÍ·ºóÍË
+		}
+		
+		if(ctrl_command == 7)	//Ç°½øÖĞÉ²³µ
+		{
+			my_fly_mode = 7;
+			
+			//µ¹¼ÆÊ±
+			break_counter++;
+			if((break_counter*T)>0.5f)	//µ¹¼ÆÊ±0.5s
+			{
+				break_counter = 0;
+				ctrl_command = 0;
+				my_fly_mode = 2;
+			}
+		}
+		
+		if(ctrl_command == 8)	//ºóÍËÖĞÉ²³µ
+		{
+			my_fly_mode = 8;
+
+			//µ¹¼ÆÊ±
+			break_counter++;
+			if((break_counter*T)>0.5f)	//µ¹¼ÆÊ±0.5s
+			{
+				break_counter = 0;
+				ctrl_command = 0;
+				my_fly_mode = 2;
+			}
+		}
+		
+		//ÇåÁã
+		if(ctrl_command<=6)
+		{
+			ctrl_command = 0;	//ÍâÀ´Ö¸ÁîÔÚ´ËÇåÁã
+		}
+	}
+	
+	//×ËÌ¬¿ØÖÆÄ£Ê½ÇĞ»»
+	switch(my_fly_mode)
+	{
+		case 0:									//ÊÖ·É
+			roll_position = 0;
 			roll_speed = 0;
 			pitch_position = 0;
 			pitch_speed = 0;
 			yaw_mode = 0;
 		break;
 		
-		case 1:
+		case 1:									//ºá¹ö×Ô¶¯£¨²âÊÔ£©
 			pitch_position = 0;	//¸©ÑöÊÖ·É
 			pitch_speed = 0;
 			roll_position = 1;	//ºá¹ö×Ô¶¯
@@ -154,7 +239,7 @@ void Fly_Mode_Ctrl(float T)		//·ÉĞĞÄ£Ê½ÇĞ»»¿ØÖÆº¯Êı
 			yaw_mode = 0;
 		break;
 		
-		case 2:
+		case 2:									//ÉãÏñÍ·¶¨µã
 			pitch_position = 1;	//¸©Ñö×Ô¶¯
 			pitch_speed = 1;
 			roll_position = 1;	//ºá¹ö×Ô¶¯
@@ -162,7 +247,7 @@ void Fly_Mode_Ctrl(float T)		//·ÉĞĞÄ£Ê½ÇĞ»»¿ØÖÆº¯Êı
 			yaw_mode = 0;
 		break;
 		
-		case 3:
+		case 3:									//ºá¹ö¹âÁ÷×Ô¶¯£¨²âÊÔ£©
 			pitch_position = 0;	//¸©ÑöÊÖ¶¯
 			pitch_speed = 0;
 			roll_position = 1;	//ºá¹ö¹âÁ÷×Ô¶¯
@@ -170,7 +255,7 @@ void Fly_Mode_Ctrl(float T)		//·ÉĞĞÄ£Ê½ÇĞ»»¿ØÖÆº¯Êı
 			yaw_mode = 0;
 		break;
 		
-		case 4:
+		case 4:									//¹âÁ÷ ¶¨µã
 			pitch_position = 1;	//¸©Ñö¹âÁ÷×Ô¶¯
 			pitch_speed = 4;
 			roll_position = 1;	//ºá¹ö¹âÁ÷×Ô¶¯
@@ -178,12 +263,36 @@ void Fly_Mode_Ctrl(float T)		//·ÉĞĞÄ£Ê½ÇĞ»»¿ØÖÆº¯Êı
 			yaw_mode = 0;
 		break;
 		
-		case 5:
-			
+		case 5:									//Ç°½ø
+			pitch_position = 0;	//ÉãÏñÍ·Ç°½ø
+			pitch_speed = 2;
+			roll_position = 1;	//ºá¹ö×Ô¶¯
+			roll_speed = 1;
+			yaw_mode = 0;
 		break;
 		
-		case 6:
+		case 6:									//ºóÍË
+			pitch_position = 0;	//ÉãÏñÍ·ºóÍË
+			pitch_speed = 2;
+			roll_position = 1;	//ºá¹ö×Ô¶¯
+			roll_speed = 1;
+			yaw_mode = 0;
+		break;
 			
+		case 7:									//Ç°½øÖĞÉ²³µ
+			pitch_position = 0;	
+			pitch_speed = 7;	//Ç°½øÖĞÉ²³µ
+			roll_position = 1;	//ºá¹ö×Ô¶¯
+			roll_speed = 1;
+			yaw_mode = 0;
+		break;
+		
+		case 8:									//ºóÍËÖĞÉ²³µ
+			pitch_position = 0;	
+			pitch_speed = 7;	//ºóÍËÖĞÉ²³µ
+			roll_position = 1;	//ºá¹ö×Ô¶¯
+			roll_speed = 1;
+			yaw_mode = 0;
 		break;
 		
 		default:
@@ -191,7 +300,7 @@ void Fly_Mode_Ctrl(float T)		//·ÉĞĞÄ£Ê½ÇĞ»»¿ØÖÆº¯Êı
 		break;
 	}
 	
-	
+	my_fly_mode_old = my_fly_mode;
 }
 
 void Fly_Height_Ctrl(float T)	//¸ß¶È¿ØÖÆº¯Êı
@@ -254,6 +363,16 @@ void Fly_Ctrl(float T)		//µ÷ÓÃÖÜÆÚ5ms
 		attitude_pitch();
 	}
 	
+	if(pitch_speed == 7)	//Ç°½øÖĞµÄÉ²³µ
+	{
+		speed_pitch_forward_break(T);
+	}
+	
+	if(pitch_speed == 7)	//ºóÍËÖĞµÄÉ²³µ
+	{
+		speed_pitch_backward_break(T);
+	}
+	
 	if(yaw_mode == 0)
 	{
 		attitude_yaw();
@@ -300,6 +419,16 @@ void Fly_Ctrl_Cam(float T)		//µ÷ÓÃÖÜÆÚÓëcameraÊı¾İÏàÍ¬
 	if( pitch_speed == 1 )	//ÉãÏñÍ·¶¨µã
 	{
 		speed_pitch();
+	}
+	
+	if( pitch_speed == 2 )	//ÉãÏñÍ·Ç°½ø
+	{
+		speed_pitch_forward();
+	}
+	
+	if( pitch_speed == 3 )	//ÉãÏñÍ·ºóÍË
+	{
+		speed_pitch_backward();
 	}
 	
 	//º¯ÊıÇåÁã
@@ -367,31 +496,47 @@ u8 height_command;
 u8 All_Out_Switch = 0;
 void Ctrl_Mode(float *ch_in)
 {
+	
+	//====================================================================
+	//±¾º¯Êı·¢³öctrl_command£¬·ÉĞĞ¿ØÖÆº¯Êı½ÓÊÕµ½ºóÇåÁã
+	
+	u8 aux2_in = 0;
+	static u8 aux2_in_old = 0;	//ÉÏÒ»´ÎµÄÖ¸Áî
+	
 	//¸ù¾İAUX2Í¨µÀ£¨µÚ6Í¨µÀ£©µÄÊıÖµÊäÈë×Ô¶¯¿ØÖÆÖ¸Áî
 	if(*(ch_in+AUX2) < -350)			//-499 -- -350
 	{
-		ctrl_command = 0;
+		aux2_in = 0;
 	}
 	else if(*(ch_in+AUX2) < -150)		//-350 -- -150
 	{
-		ctrl_command = 1;
+		aux2_in = 1;
 	}
 	else if(*(ch_in+AUX2) < 0)			//-150 -- 0
 	{
-		ctrl_command = 2;
+		aux2_in = 2;
 	}
 	else if(*(ch_in+AUX2) < 150)		//0 -- 150
 	{
-		ctrl_command = 3;
+		aux2_in = 3;
 	}
 	else if(*(ch_in+AUX2) < 350)		//150 -- 350				
 	{
-		ctrl_command = 4;
+		aux2_in = 4;
 	}
 	else								//350 -- 499
 	{
-		ctrl_command = 5;
+		aux2_in = 5;
 	}
+	
+	if(aux2_in != aux2_in_old)	//ÊäÈëÖ¸Áî·¢Éú±ä»¯
+	{
+		ctrl_command = aux2_in+1;	//ÊäÈëÖ¸ÁîºÅÎª1-6£¬0ÎªÖ¸ÁîÒÑ¾­¶ÁÈ¡Íê±ÏºóµÄµÈ´ıÖµ
+	}
+	
+	aux2_in_old = aux2_in;	//¼ÇÂ¼ÀúÊ·±äÁ¿
+	
+	//====================================================================
 	
 	//¸ù¾İAUX3Í¨µÀ¿ØÖÆ¸ß¶È
 	if(*(ch_in+AUX3) < -150)	
@@ -436,121 +581,3 @@ void Ctrl_Mode(float *ch_in)
 }
 
 //****************************************************************************************
-
-//========================================================================================
-//========================================================================================
-//	·ÉĞĞ×Ô¶¯¿ØÖÆº¯Êı
-//
-//	¸ù¾İctrl_commandµ÷ÓÃ²»Í¬µÄ×Ô¶¯¿ØÖÆº¯Êı
-//
-//	mode_state£º
-//	0£ºÊÖ¶¯				1£ºÆøÑ¹¼Æ
-//	2£º³¬Éù²¨+ÆøÑ¹¼Æ		3£º×Ô¶¯
-//
-//	height_command£º
-//	0£ºÊÖ¶¯¿Ø¸ß			1£º¶¨¸ß
-//	2£º½µÂä
-//========================================================================================
-//========================================================================================
-
-//void Fly_Ctrl(void)		//µ÷ÓÃÖÜÆÚ5ms
-//{
-//	//Ö»ÓĞ×Ô¶¯Ä£Ê½²Å»áÖ´ĞĞ×Ô¶¯¿ØÖÆ´úÂë
-//	if(mode_state != 3)
-//	{
-//		return;
-//	}
-
-////===========================================================
-////==================== ·ÉĞĞ¿ØÖÆÂß¼­ ==========================
-////===========================================================
-//	
-//	/*
-//	
-//	·ÉĞĞ¿ØÖÆµÄÖ÷ÒªÈÎÎñÓĞÁ½¸ö£º
-//	
-//	1.×ËÌ¬¿ØÖÆ£¬´¦Àíºá¹ö¡¢¸©Ñö¡¢º½ÏòÈıÖá
-//		CH_ctrl[0] = CH_filter[0];	//0£ººá¹ö
-//		CH_ctrl[1] = CH_filter[1];	//1£º¸©Ñö
-//		CH_ctrl[3] = CH_filter[3];	//3£ºº½Ïò
-//	
-//	2.¸ß¶È¿ØÖÆ
-//		my_height_mode = 0		ÓÍÃÅÊäÈëÄ£Ê½
-//		Ê¹ÓÃ CH_filter[THR] ÊäÈëÓÍÃÅÖµ£¬È¡Öµ·¶Î§ -500 -- +500
-//	
-//		my_height_mode = 1		ÆÚÍû¸ß¶ÈÄ£Ê½
-//		Ê¹ÓÃ my_except_height ±äÁ¿¿ØÖÆ¸ß¶È£¬µ¥Î»Îªmm	
-//	
-//	*/
-//	
-///* ********************* ¸ß¶È¿ØÖÆ ********************* */
-//	
-//	if(height_command == 0)
-//	{
-//		hand();
-//	}
-//	
-//	if(height_command == 1)
-//	{
-//		height_lock(1);	//Ëø¶¨¸ß¶È
-//	}
-//	else
-//	{
-//		height_lock(0);	//Çå³ı±êÖ¾Î»
-//	}
-//	
-//	if(height_command == 2)
-//	{
-//		land();	//½µÂäÄ£Ê½
-//	}
-//	
-//	//ÒâÍâ×´¿ö´¦Àí
-//	if(height_command > 2)	//²»Ó¦¸Ã³öÏÖµÄÇé¿ö
-//	{
-//		my_height_mode = 0;
-//		CH_ctrl[2] = CH_filter[2];	//2£ºÓÍÃÅ THR
-//	}
-//	
-///* ********************* ×ËÌ¬¿ØÖÆ ********************* */
-//	
-//	if(ctrl_command == 0)
-//	{
-//		attitude_hand();
-//	}
-//	
-//	if(ctrl_command == 1)
-//	{
-//		attitude_hand();
-//	}
-//	
-//	if(ctrl_command == 2)
-//	{
-//		attitude_hand();
-//	}
-
-//	//ÒâÍâ×´¿ö´¦Àí
-//	if(ctrl_command > 5)
-//	{
-//		attitude_hand();
-//	}
-//	
-//}
-
-//	if(height_command == 0)
-//	{
-//		hand();
-//	}
-//	
-//	if(height_command == 1)
-//	{
-//		height_lock(1);	//Ëø¶¨¸ß¶È
-//	}
-//	else
-//	{
-//		height_lock(0);	//Çå³ı±êÖ¾Î»
-//	}
-//	
-//	if(height_command == 2)
-//	{
-//		land();	//½µÂäÄ£Ê½
-//	}
