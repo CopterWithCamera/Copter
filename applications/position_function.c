@@ -530,13 +530,13 @@ void speed_pitch_backward(void)
 //前进过程中刹车
 void speed_pitch_forward_break(float T)
 {
-	CH_ctrl[PIT] = 30;	//刹车动作（向后倾斜）
+	CH_ctrl[PIT] = 50;	//刹车动作（向后倾斜）
 }
 
 //后退过程中刹车
 void speed_pitch_backward_break(float T)
 {
-	CH_ctrl[PIT] = -30;	//刹车动作（向前倾斜）
+	CH_ctrl[PIT] = -50;	//刹车动作（向前倾斜）
 }
 
 //清理积分变量

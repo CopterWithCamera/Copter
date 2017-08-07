@@ -157,11 +157,15 @@ void Fly_Mode_Ctrl(float T)		//飞行模式切换控制函数
 			my_fly_mode = 3;		//横滚光流自动（测试用）
 		}
 		
+		
+		
+		//摄像头前进
 		if(ctrl_command == 4)
 		{
-			my_fly_mode = 5;		//摄像头前进
+			my_fly_mode = 5;
 		}
 		
+		//摄像头悬停
 		if(ctrl_command == 5)
 		{
 			if(my_fly_mode_old == 5)	//如果上一个状态是前进
@@ -176,13 +180,14 @@ void Fly_Mode_Ctrl(float T)		//飞行模式切换控制函数
 			}
 			else
 			{
-				my_fly_mode = 2;		//摄像头悬停
+				my_fly_mode = 2;
 			}
 		}
 		
+		//摄像头后退
 		if(ctrl_command == 6)
 		{
-			my_fly_mode = 6;		//摄像头后退
+			my_fly_mode = 6;
 		}
 		
 		if(ctrl_command == 7)	//前进中刹车
@@ -191,7 +196,7 @@ void Fly_Mode_Ctrl(float T)		//飞行模式切换控制函数
 			
 			//倒计时
 			break_counter++;
-			if((break_counter*T)>0.5f)	//倒计时0.5s
+			if((break_counter*T)>1.0f)	//倒计时1s
 			{
 				break_counter = 0;
 				ctrl_command = 0;
@@ -205,7 +210,7 @@ void Fly_Mode_Ctrl(float T)		//飞行模式切换控制函数
 
 			//倒计时
 			break_counter++;
-			if((break_counter*T)>0.5f)	//倒计时0.5s
+			if((break_counter*T)>1.0f)	//倒计时1s
 			{
 				break_counter = 0;
 				ctrl_command = 0;
@@ -243,7 +248,7 @@ void Fly_Mode_Ctrl(float T)		//飞行模式切换控制函数
 			pitch_position = 1;	//俯仰自动
 			pitch_speed = 1;
 			roll_position = 1;	//横滚自动
-			roll_speed = 1;
+			roll_speed = 1;		//临时把roll速度数据改用光流提供
 			yaw_mode = 0;
 		break;
 		
@@ -288,8 +293,8 @@ void Fly_Mode_Ctrl(float T)		//飞行模式切换控制函数
 		break;
 		
 		case 8:									//后退中刹车
-			pitch_position = 0;	
-			pitch_speed = 7;	//后退中刹车
+			pitch_position = 0;
+			pitch_speed = 8;	//后退中刹车
 			roll_position = 1;	//横滚自动
 			roll_speed = 1;
 			yaw_mode = 0;
@@ -368,7 +373,7 @@ void Fly_Ctrl(float T)		//调用周期5ms
 		speed_pitch_forward_break(T);
 	}
 	
-	if(pitch_speed == 7)	//后退中的刹车
+	if(pitch_speed == 8)	//后退中的刹车
 	{
 		speed_pitch_backward_break(T);
 	}
