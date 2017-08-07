@@ -9,6 +9,9 @@
 #include "ctrl.h"
 #include "mymath.h"
 #include "ano_of.h"
+#include "position_function.h"
+#include "position_function_flow.h"
+#include "height_function.h"
 
 float CH_ctrl[CH_NUM];	//具体输入给ctrl的遥控器值
 float my_except_height = 0;//期望高度
@@ -28,7 +31,7 @@ void set_except_height(u8 height)	//地面站传入高度数据，单位cm，取值范围0cm-255c
 	my_except_height = height * 10;
 }
 
-void set_attitude_calibration(u8 cmd)
+void set_attitude_calibration(u8 cmd)	//姿态仪调整指令
 {
 	switch(cmd)
 	{
@@ -71,7 +74,7 @@ void set_attitude_calibration(u8 cmd)
 	}
 }
 
-void set_all_out_switch(u8 cmd)
+void set_all_out_switch(u8 cmd)		//电机输出控制指令
 {
 	switch(cmd)	//第一个数据（u8）
 	{
@@ -89,674 +92,309 @@ void set_all_out_switch(u8 cmd)
 	}
 }
 
-//========================================================================================
-//========================================================================================
-//										高度控制
-//========================================================================================
-//========================================================================================
+/************************************************************************************
+						多频率联合自动控制函数
 
-//手飞模式
-void hand(void)
+	mode_state：	0：手动		1：气压计	2：超声波+气压计		3：自动
+
+*************************************************************************************/
+
+u8	height_mode = 0,	//高度控制模式		0：手动控高		1：锁定当前高度		2：根据指令高度控高		3：起飞				4：降落
+	roll_speed = 0,		//速度横滚控制模式	0：手动控制		1：摄像头数据定点												4：光流数据定点
+	pitch_speed = 0,	//速度俯仰控制模式	0：手动控制		1：摄像头数据定点	2：摄像头数据前进		3：摄像头数据后退	4：光流数据定点		5：光流数据前进		6：光流数据后退
+	roll_position = 0,	//位置横滚控制		0：输出0			1：输出摄像头计算偏移
+	pitch_position = 0,	//位置俯仰控制		0：输出0			1：输出摄像头计算偏移
+	yaw_mode = 0;		//航向角控制			0：手动控制
+
+u8 my_fly_mode = 0, my_fly_mode_old = 0;	//飞行模式
+void Fly_Mode_Ctrl(float T)		//飞行模式切换控制函数
 {
-	//=================== filter ===================================
-	//  全局输出，CH_filter[],0横滚，1俯仰，2油门，3航向 范围：+-500	
-	//=================== filter ===================================
-
-	//摇杆控高
-	my_height_mode = 0;
-	CH_ctrl[THR] = CH_filter[THR];	//2：油门 THR
+	static float break_counter = 0;	//刹车延时定时器
 	
-	if(NS==0) //丢失信号
+	//只有自动模式才会执行自动控制代码
+	if(mode_state != 3)
 	{
-		CH_ctrl[THR] = LIMIT(CH_ctrl[THR],-499,0);	//保持当前油门值，但不能超过半油门，500这个数在定高代码里代表悬停
-												//也就是说定高模式丢信号时只能悬停或下降（依照丢信号前状态）
+		return;
 	}
 	
-	//依旧由油门控制Thr_Low位
-	//thr取值范围0-1000，改为CH_filter后取值范围+-500
-	if( CH_ctrl[THR] < -400 )	//油门低判断（用于 ALL_Out 里的最低转速保护 和 ctrl2 里的Yaw轴起飞前处理）
+	//高度控制模式切换
+	switch(height_command)
 	{
-		Thr_Low = 1;
-	}
-	else
-	{
-		Thr_Low = 0;
-	}
-}
-
-//锁定当前高度（进入模式时锁定当前高度，并接受上位机位置控制）
-void height_lock(u8 en)	//en -- 模式启用标志位，用于判断此模式是否被使用
-{
-	static u8 height_lock_flag = 0;
-	
-	if(en)
-	{
-		//高度控制模式被启用
-		my_height_mode = 1;
+		case 0:
+			height_mode = 0;
+		break;
 		
-		Thr_Low = 0;	//油门低标志置0，防止螺旋桨意外停转
+		case 1:
+			height_mode = 1;
+		break;
 		
-		if(height_lock_flag == 0)
+		case 2:
+			height_mode = 4;
+		break;
+		
+		default:
+			height_mode = 0;
+		break;
+	}
+	
+	//*****************************************************************************
+	//这里要根据不同的指令对 my_fly_mode 进行切换
+	
+	if(ctrl_command != 0)	//有新指令进入时ctrl_command不为0
+	{
+		if(ctrl_command == 1)
 		{
-			height_lock_flag = 1;
-			
-			//设置期望高度
-			
-			#if (HEIGHT_SOURCE == 1)
-				my_except_height = sonar_fusion.fusion_displacement.out;	//读取当前高度
-			#elif (HEIGHT_SOURCE == 2)
-				my_except_height = sonar.displacement;						//读取当前高度
-			#endif
-			
-			if( my_except_height < 150)		//容错处理，防止期望高度过低
-				my_except_height = 150;
-		}
-	}
-	else
-	{
-		height_lock_flag = 0;
-	}
-}
-
-//降落
-void land(void)	//这个高度相当于降落了（起落架大约比15cm短一点点）
-{
-	Thr_Low = 1;	//油门低标志为1，允许螺旋桨停转
-	
-	//期望高度控制高度
-	my_height_mode = 1;
-
-	//设置期望高度
-	my_except_height = 100;		//下降到100mm = 10cm
-	
-	if(sonar.displacement < 140)	//小于14cm
-	{
-		fly_ready = 0;	//锁定
-	}
-}
-
-//下降到15cm
-void falling_to_15cm(void)	//这个高度相当于降落了（起落架大约比15cm短一点点）
-{
-	Thr_Low = 1;	//油门低标志为1，允许螺旋桨停转
-	
-	//期望高度控制高度
-	my_height_mode = 1;
-
-	//设置期望高度
-	my_except_height = 150;		//下降到150mm = 15cm
-}
-
-//上升到50cm
-void rising_to_50cm(void)
-{
-	Thr_Low = 0;	//油门低标志置0，防止螺旋桨意外停转
-	
-	//期望高度控制高度
-	my_height_mode = 1;
-
-	//设置期望高度
-	my_except_height = 500;		//上升到50cm
-}
-
-//=====================================================================================================================================
-//=====================================================================================================================================
-//
-//									                     姿态（位置）控制函数
-//
-//					可以使用的参数：	float bias、float bias_detect、float bias_real、float bias_lpf	左正右负（数值为正则偏左，数值为负则偏右）
-//									float angle、
-//									float speed
-//
-//					控制输出：		CH_ctrl[0]	横滚输出							左负右正（负数向左有加速度，正数向右有加速度）
-//
-//=====================================================================================================================================
-//=====================================================================================================================================
-
-//横滚角乒乓控制
-void attitude_pingpong(void)
-{
-	/*
-	
-		参数表：
-		user_parameter.groups.self_def_1	横滚方向PID		对应地面站PID13
-	
-	*/
-	
-	//横滚自动控制
-	if(bias_real > 14)	//偏左
-	{
-		CH_ctrl[0] =  40 * user_parameter.groups.self_def_1.kp;	//横滚方向kp	向右调整（为正）
-	}
-	else if(bias_real < -14)
-	{
-		CH_ctrl[0] = -50 * user_parameter.groups.self_def_1.ki;	//向左调整（为负）
-	}
-	else
-	{
-		CH_ctrl[0] = 0;
-	}
-	
-	//俯仰和航向手动控制
-	CH_ctrl[1] = my_deathzoom( ( CH_filter[PIT]) ,0,30 );	//1：俯仰 PIT
-	CH_ctrl[3] = CH_filter[3];								//3：航向 YAW
-}
-
-///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-//单位置控制
-void single_position_pid(u8 en)
-{
-	float p_out,i_out,d_out,out;
-	static float roll_integration = 0;
-	s32 out_tmp;
-	
-	if(en)
-	{
-		
-		/*
-			bias		原始值					+ <---  ---> -
-			bias_detect 原始值的统计滤波结果		+ <---  ---> -
-			bias_real	校正值					+ <---  ---> -
-			bias_lpf	校正值过低通滤波器		+ <---  ---> -
-		
-			CH_ctrl[0]	横滚输出					- <---  ---> +		左负右正（负数向左有加速度，正数向右有加速度）
-		*/
-		
-		if( bias_error_flag != 0 )
-		{
-			//偏移过大，使用乒乓控制，系数对应 param_A param_B
-			
-			if( bias_detect < -50.0f )
-			{
-				//右偏过大
-				p_out = -40.0f * user_parameter.groups.param_A;	//左飞
-			}
-			else if( bias_detect > 50.0f )
-			{
-				//左偏过大
-				p_out =  40.0f * user_parameter.groups.param_B;	//右飞
-			}
-
-			i_out = 0.0f;
-			d_out = 0.0f;
-			
-		}
-		else
-		{
-			//正常值
-			
-			//不用计算error，因为期望为0
-			
-			//p
-			p_out = bias_lpf * user_parameter.groups.param_D;
-			
-			//i
-			roll_integration += bias_lpf * user_parameter.groups.param_E;
-			roll_integration = LIMIT(roll_integration,-40.0f,40.0f);
-			i_out = roll_integration;
-			
-			//d
-			d_out = speed_d_bias_lpf * user_parameter.groups.param_F;		//speed_d_bias_lpf 左正右负
-			d_out = LIMIT(d_out,-70.0f,70.0f);	//限制输出幅度为+-70，允许d引起刹车动作
+			my_fly_mode = 0;		//手飞
 		}
 		
-		//输出整合
-		out = p_out + i_out + d_out;
-		out = LIMIT(out,-150.0f,150.0f);
-		
-		//float变量安全隔离
-		out_tmp = (s32)(out*100.0f);	//放大100倍，保留小数点后2位精度
-		out_tmp = LIMIT(out_tmp,-15000,15000);	//限幅
-		out = ((float)out_tmp) / 100.0f;	//缩小100倍，回归float
-		
-		//横滚输出
-		CH_ctrl[0] = out;
-
-		//俯仰和航向手动控制
-		CH_ctrl[1] = my_deathzoom( ( CH_filter[PIT]) ,0,30 );	//1：俯仰 PIT
-		CH_ctrl[3] = CH_filter[3];								//3：航向 YAW
-	}
-	else
-	{
-		roll_integration = 0;
-	}
-}
-
-///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-void yaw_pid(void)
-{
-	float yaw_error,yaw_out;
-	
-	/*
-		angle：			偏左 - ，偏右 +
-		CH_ctrl[YAW]：	左转 - ，右转 +
-	*/
-	
-	//计算偏差
-	yaw_error = 0.0f - angle;	
-	
-	//纠正输出
-	yaw_out = yaw_error * user_parameter.groups.param_C;
-	
-	CH_ctrl[YAW] = yaw_out;		//3：航向 YAW
-	
-	//=======================================
-	
-	CH_ctrl[ROL] = my_deathzoom( ( CH_filter[ROL]) ,0,30 );	//0：横滚 ROL
-	CH_ctrl[PIT] = my_deathzoom( ( CH_filter[PIT]) ,0,30 );	//1：俯仰 PIT
-	
-}
-
-///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-//手动控制姿态
-void attitude_hand(void)
-{
-	CH_ctrl[ROL] = my_deathzoom( ( CH_filter[ROL]) ,0,30 );	//0：横滚 ROL
-	CH_ctrl[PIT] = my_deathzoom( ( CH_filter[PIT]) ,0,30 );	//1：俯仰 PIT
-	CH_ctrl[YAW] = CH_filter[YAW];	//3：航向 YAW
-}
-
-///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-//近地面姿态锁定
-void land_attitude(void)
-{
-	CH_ctrl[ROL] = 0;	//0：横滚 ROL
-	CH_ctrl[PIT] = 0;	//1：俯仰 PIT
-	CH_ctrl[YAW] = 0;	//3：航向 YAW
-}
-
-///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-//Pitch位置控制
-float position_pitch_out = 0.0f;		//输出速度期望，单位cm/s，方向 + <-- --> -
-void position_pitch(u8 en)
-{
-	float p_out,i_out,d_out,out;
-	static float position_integration = 0;
-	
-	if(en)
-	{
-		
-		/*
-			bias_pitch				原始值					+ <前---  ---后> -
-			bias_detect_pitch 		原始值的统计滤波结果		+ <前---  ---后> -
-			bias_error_flag_pitch	偏移值无效指示			0：偏移值正常	1：偏移值异常
-			bias_real_pitch			校正值					+ <前---  ---后> -
-			bias_lpf_pitch			校正值过低通滤波器		+ <前---  ---后> -
-		
-			CH_ctrl[1]				俯仰输出					- <---  ---> +		前负后正（负数向前有加速度，正数向后有加速度）
-		*/
-		
-		if( bias_error_flag_pitch != 0 )
+		if(ctrl_command == 2)
 		{
-			//偏移过大，使用乒乓控制
-			
-			if( bias_detect_pitch < -30.0f )
-			{
-				//后偏过大
-				p_out = -5;		//前飞
-			}
-			else if( bias_detect_pitch > 30.0f )
-			{
-				//前偏过大
-				p_out =  5;		//后飞
-			}
-
-			i_out = 0.0f;
-			d_out = 0.0f;
-		}
-		else
-		{
-			//正常值
-			
-			//不用计算error，因为期望为0
-			
-			//p
-			p_out = bias_lpf_pitch * pid_setup.groups.ctrl5.kp; //user_parameter.groups.self_def_2.kp;
-			
-			//i
-			position_integration += bias_lpf_pitch * pid_setup.groups.ctrl5.ki; //user_parameter.groups.self_def_2.ki;
-			position_integration = LIMIT(position_integration,-10.0f,10.0f);
-			i_out = position_integration;
-			
-			//d
-			d_out = speed_d_bias_lpf_pitch * pid_setup.groups.ctrl5.kd; //user_parameter.groups.self_def_2.kd;		//speed_d_bias_lpf 左正右负
-			d_out = LIMIT(d_out,-10.0f,10.0f);	//限制输出幅度为+-70，允许d引起刹车动作
+			my_fly_mode = 1;		//横滚自动（测试用）
 		}
 		
-		//输出整合
-		//PID输出 out： - <前-- --后> +
-		out = p_out + i_out + d_out;
-		out = LIMIT(out,-15.0f,15.0f);
-		
-		//输出的值应该在-15到+15之间		+ <前-- --后> -
-		position_pitch_out = -out;
-
-	}
-	else
-	{
-		position_integration = 0;
-	}
-}
-
-//速度控制
-//接口：except_speed      + <-- --> -      单位cm/s
-void speed_pitch(u8 en)
-{
-	float except_speed = 0.0f;
-	float p_out,i_out,d_out,out;
-	float speed_error = 0.0f;
-	static float speed_integration = 0.0f;	//积分变量
-	static float speed_error_old = 0.0f;	//old变量
-	static u8 d_stop_flag = 0;		//停止d运算的标志位，表示speed_error_old数值无效
-	s32 out_tmp;
-	
-	/*
-		speed_d_bias_pitch			速度值			+ <前---  ---后> -
-		speed_d_bias_lpf_pitch		lpf值			+ <前---  ---后> -
-	
-		CH_filter[1]				遥控器俯仰输入	- <前---  ---后> +
-	*/
-	
-	if(en)
-	{
-		//模式使能
-		
-		//except_speed_pitch      + <-- --> -      单位cm/s
-		
-		except_speed = position_pitch_out;	//-( my_deathzoom( ( CH_filter[ROL] ) , 0, 30 ) / 5.0f );
-		
-		except_speed = LIMIT(except_speed,-15,15);			//限幅（速度调整要求平稳）
-		
-		if( bias_error_flag != 0 )
+		if(ctrl_command == 3)
 		{
-			// bias_detect（水平偏差）值异常处理
-			
-			//偏移过大，使用乒乓控制，系数对应 param_A param_B
-			
-			if( except_speed > 1.0f )	//速度期望向前
-			{
-				p_out = -20.0f * pid_setup.groups.ctrl6.kp; //user_parameter.groups.param_A;	//前飞
-			}
-			else if(except_speed < -1.0f)	//速度期望向后
-			{
-				p_out =  20.0f * pid_setup.groups.ctrl6.ki; //user_parameter.groups.param_B;	//后飞
-			}
-			else						
-			{
-				p_out = 0.0f;	//中间设置死区
-			}
-
-			i_out = 0.0f;
-			d_out = 0.0f;
-			
-			speed_error_old = 0;	// speed_error_old 清零（在一定程度上减小对d的影响）
-			d_stop_flag = 1;	//表示speed_error_old无效，无法进行d运算
+			my_fly_mode = 3;		//横滚光流自动（测试用）
 		}
-		else
+		
+		
+		
+		//摄像头前进
+		if(ctrl_command == 4)
 		{
-			//bias_detect值正常
-			
-			speed_error = except_speed - speed_d_bias_lpf_pitch;	//计算error   speed_error值
-																	//error   负：期望向左速度小于当前向左速度，期望向左速度比较小，应该向右加速
-																	//		  正：期望向左速度大于当前向左速度，期望向左速度比较大，应该向左加速
-			
-			//p
-			p_out = - speed_error * pid_setup.groups.ctrl4.kp; //user_parameter.groups.self_def_1.kp;
-			
-			//i
-			speed_integration += speed_error * pid_setup.groups.ctrl4.ki; //user_parameter.groups.self_def_1.ki;
-			speed_integration = LIMIT(speed_integration,-40.0f,40.0f);
-			i_out = - speed_integration;
-			
-			//d
-			//error    +   （应该向左加速）<-- --> （应该向右加速）   -
-			//error - error_old   正：更需要向左加速
-			//					  负：没那么需要向左加速了
-			if(d_stop_flag)
+			my_fly_mode = 5;
+		}
+		
+		//摄像头悬停
+		if(ctrl_command == 5)
+		{
+			if(my_fly_mode_old == 5)	//如果上一个状态是前进
 			{
-				d_out = -(speed_error - speed_error_old) * pid_setup.groups.ctrl4.kd; //user_parameter.groups.self_def_1.kd;
-				d_out = LIMIT(d_out,-70.0f,70.0f);	//限制输出幅度为+-70，允许d引起刹车动作
+				ctrl_command = 7;		//前进中刹车
+				break_counter = 0;
+			}
+			else if(my_fly_mode_old == 6)	//如果上一个状态是后退
+			{
+				ctrl_command = 8;		//后退中刹车
+				break_counter = 0;
 			}
 			else
 			{
-				d_out = 0.0f;
+				my_fly_mode = 2;
 			}
-			
-			speed_error_old = speed_error;
-			d_stop_flag = 0;
 		}
 		
-		//输出整合
-		out = p_out + i_out + d_out;
-		out = LIMIT(out,-150.0f,150.0f);
+		//摄像头后退
+		if(ctrl_command == 6)
+		{
+			my_fly_mode = 6;
+		}
 		
-		//float变量安全隔离
-		out_tmp = (s32)(out*100.0f);	//放大100倍，保留小数点后2位精度
-		out_tmp = LIMIT(out_tmp,-15000,15000);	//限幅
-		out = ((float)out_tmp) / 100.0f;	//缩小100倍，回归float
+		if(ctrl_command == 7)	//前进中刹车
+		{
+			my_fly_mode = 7;
+			
+			//倒计时
+			break_counter++;
+			if((break_counter*T)>1.0f)	//倒计时1s
+			{
+				break_counter = 0;
+				ctrl_command = 0;
+				my_fly_mode = 2;
+			}
+		}
+		
+		if(ctrl_command == 8)	//后退中刹车
+		{
+			my_fly_mode = 8;
 
-		CH_ctrl[1] = out;	//根据经验值，CH_ctrl的输入值应该在50-100之间
-
-		//俯仰和航向手动控制
-//		CH_ctrl[0] = my_deathzoom( ( CH_filter[0]) ,0,30 );		//0：俯仰
-//		CH_ctrl[3] = CH_filter[3];								//3：航向 YAW
+			//倒计时
+			break_counter++;
+			if((break_counter*T)>1.0f)	//倒计时1s
+			{
+				break_counter = 0;
+				ctrl_command = 0;
+				my_fly_mode = 2;
+			}
+		}
+		
+		//清零
+		if(ctrl_command<=6)
+		{
+			ctrl_command = 0;	//外来指令在此清零
+		}
 	}
-	else
+	
+	//姿态控制模式切换
+	switch(my_fly_mode)
 	{
-		//非此模式执行清零
-		speed_integration = 0.0;
+		case 0:									//手飞
+			roll_position = 0;
+			roll_speed = 0;
+			pitch_position = 0;
+			pitch_speed = 0;
+			yaw_mode = 0;
+		break;
+		
+		case 1:									//横滚自动（测试）
+			pitch_position = 0;	//俯仰手飞
+			pitch_speed = 0;
+			roll_position = 1;	//横滚自动
+			roll_speed = 1;
+			yaw_mode = 0;
+		break;
+		
+		case 2:									//摄像头定点
+			pitch_position = 1;	//俯仰自动
+			pitch_speed = 1;
+			roll_position = 1;	//横滚自动
+			roll_speed = 1;		//临时把roll速度数据改用光流提供
+			yaw_mode = 0;
+		break;
+		
+		case 3:									//横滚光流自动（测试）
+			pitch_position = 0;	//俯仰手动
+			pitch_speed = 0;
+			roll_position = 1;	//横滚光流自动
+			roll_speed = 4;
+			yaw_mode = 0;
+		break;
+		
+		case 4:									//光流 定点
+			pitch_position = 1;	//俯仰光流自动
+			pitch_speed = 4;
+			roll_position = 1;	//横滚光流自动
+			roll_speed = 4;
+			yaw_mode = 0;
+		break;
+		
+		case 5:									//前进
+			pitch_position = 0;	//摄像头前进
+			pitch_speed = 2;
+			roll_position = 1;	//横滚自动
+			roll_speed = 1;
+			yaw_mode = 0;
+		break;
+		
+		case 6:									//后退
+			pitch_position = 0;	//摄像头后退
+			pitch_speed = 3;
+			roll_position = 1;	//横滚自动
+			roll_speed = 1;
+			yaw_mode = 0;
+		break;
+			
+		case 7:									//前进中刹车
+			pitch_position = 0;	
+			pitch_speed = 7;	//前进中刹车
+			roll_position = 1;	//横滚自动
+			roll_speed = 1;
+			yaw_mode = 0;
+		break;
+		
+		case 8:									//后退中刹车
+			pitch_position = 0;
+			pitch_speed = 8;	//后退中刹车
+			roll_position = 1;	//横滚自动
+			roll_speed = 1;
+			yaw_mode = 0;
+		break;
+		
+		default:
+			
+		break;
 	}
+	
+	my_fly_mode_old = my_fly_mode;
 }
 
-///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-//Roll位置控制
-float position_roll_out = 0.0f;		//输出速度期望，单位cm/s，方向 + <-- --> -
-void position_roll(u8 en)
+void Fly_Height_Ctrl(float T)	//高度控制函数
 {
-	float p_out,i_out,d_out,out;
-	static float position_integration = 0;
+	//只有自动模式才会执行自动控制代码
+	if(mode_state != 3)
+	{
+		return;
+	}
 	
-	if(en)
+	switch(height_mode)
 	{
+		case 0:
+			hand();			//手动
+		break;
 		
-		/*
-			bias		原始值					+ <---  ---> -
-			bias_detect 原始值的统计滤波结果		+ <---  ---> -
-			bias_real	校正值					+ <---  ---> -
-			bias_lpf	校正值过低通滤波器		+ <---  ---> -
+		case 1:
+			height_lock();	//锁定当前高度
+		break;
 		
-			CH_ctrl[0]	横滚输出					- <---  ---> +		左负右正（负数向左有加速度，正数向右有加速度）
-		*/
+		case 2:
+			height_hold();	//根据高度期望控高
+		break;
 		
-		if( bias_error_flag != 0 )
-		{
-			//偏移过大，使用乒乓控制
-			
-			if( bias_detect < -50.0f )
-			{
-				//右偏过大
-				p_out = -5;		//左飞
-			}
-			else if( bias_detect > 50.0f )
-			{
-				//左偏过大
-				p_out =  5;		//右飞
-			}
-
-			i_out = 0.0f;
-			d_out = 0.0f;
-		}
-		else
-		{
-			//正常值
-			
-			//不用计算error，因为期望为0
-			
-			//p
-			p_out = bias_lpf * user_parameter.groups.self_def_2.kp;
-			
-			//i
-			position_integration += bias_lpf * user_parameter.groups.self_def_2.ki;
-			position_integration = LIMIT(position_integration,-10.0f,10.0f);
-			i_out = position_integration;
-			
-			//d
-			d_out = speed_d_bias_lpf * user_parameter.groups.self_def_2.kd;		//speed_d_bias_lpf 左正右负
-			d_out = LIMIT(d_out,-10.0f,10.0f);	//限制输出幅度为+-70，允许d引起刹车动作
-		}
+		case 3:
+			take_off(T);	//起飞
+		break;
 		
-		//输出整合
-		//PID输出 out： - <-- --> +
-		out = p_out + i_out + d_out;
-		out = LIMIT(out,-15.0f,15.0f);
+		case 4:
+			land();			//降落
+		break;
 		
-		//输出的值应该在-15到+15之间
-		position_roll_out = -out;
-
+		default:
+			hand();
+		break;
 	}
-	else
-	{
-		position_integration = 0;
-	}
+	
+	//函数清零
+	if(height_mode != 1)
+		height_lock_clear();
 }
 
-//速度控制
-//接口：except_speed      + <-- --> -      单位cm/s
-void speed_roll(u8 en)
+void Fly_Ctrl(float T)		//调用周期5ms
 {
-	float except_speed = 0.0f;
-	float p_out,i_out,d_out,out;
-	float speed_error = 0.0f;
-	static float speed_integration = 0.0f;	//积分变量
-	static float speed_error_old = 0.0f;	//old变量
-	static u8 d_stop_flag = 0;		//停止d运算的标志位，表示speed_error_old数值无效
-	s32 out_tmp;
-	
-	/*
-		CH_filter[0]			遥控器横滚输入	- <---  ---> +
-	
-		speed_d_bias			速度值			+ <---  ---> -
-		speed_d_bias_lpf		lpf值			+ <---  ---> -
-	
-		CH_ctrl[0]	横滚输出						- <---  ---> +		左负右正（负数向左有加速度，正数向右有加速度）
-	*/
-	
-	if(en)
+	//只有自动模式才会执行自动控制代码
+	if(mode_state != 3)
 	{
-		//模式使能
-		
-		//except_speed      + <-- --> -      单位cm/s
-		
-		except_speed = position_roll_out;	//-( my_deathzoom( ( CH_filter[ROL] ) , 0, 30 ) / 5.0f );
-		
-		except_speed = LIMIT(except_speed,-15,15);			//限幅（速度调整要求平稳）
-		
-		if( bias_error_flag != 0 )
-		{
-			// bias_detect（水平偏差）值异常处理
-			
-			// 根据期望速度进行处理，不适用速度差（因为速度反馈无效）
-			
-			//使用乒乓控制，系数对应 param_A param_B
-			
-			if( except_speed > 1.0f )	//速度期望向左
-			{
-				p_out = -40.0f * user_parameter.groups.param_A;	//左飞
-			}
-			else if(except_speed < -1.0f)	//速度期望向右
-			{
-				p_out =  40.0f * user_parameter.groups.param_B;	//右飞
-			}
-			else						
-			{
-				p_out = 0.0f;	//中间设置死区
-			}
-
-			i_out = 0.0f;
-			d_out = 0.0f;
-			
-			speed_error_old = 0;	// speed_error_old 清零（在一定程度上减小对d的影响）
-			d_stop_flag = 1;	//表示speed_error_old无效，无法进行d运算
-		}
-		else
-		{
-			//bias_detect值正常
-			
-			speed_error = except_speed - speed_d_bias_lpf;	//计算error   speed_error值
-															//error   负：期望向左速度小于当前向左速度，期望向左速度比较小，应该向右加速
-															//		  正：期望向左速度大于当前向左速度，期望向左速度比较大，应该向左加速
-			
-			//p
-			p_out = - speed_error * user_parameter.groups.self_def_1.kp;
-			
-			//i
-			speed_integration += speed_error * user_parameter.groups.self_def_1.ki;
-			speed_integration = LIMIT(speed_integration,-40.0f,40.0f);
-			i_out = - speed_integration;
-			
-			//d
-			//error    +   （应该向左加速）<-- --> （应该向右加速）   -
-			//error - error_old   正：更需要向左加速
-			//					  负：没那么需要向左加速了
-			if(d_stop_flag)
-			{
-				d_out = -(speed_error - speed_error_old) * user_parameter.groups.self_def_1.kd;
-				d_out = LIMIT(d_out,-70.0f,70.0f);	//限制输出幅度为+-70，允许d引起刹车动作
-			}
-			else
-			{
-				d_out = 0.0f;
-			}
-			
-			speed_error_old = speed_error;
-			d_stop_flag = 0;
-		}
-		
-		//输出整合
-		out = p_out + i_out + d_out;
-		out = LIMIT(out,-150.0f,150.0f);
-		
-		//float变量安全隔离
-		out_tmp = (s32)(out*100.0f);	//放大100倍，保留小数点后2位精度
-		out_tmp = LIMIT(out_tmp,-15000,15000);	//限幅
-		out = ((float)out_tmp) / 100.0f;	//缩小100倍，回归float
-
-		CH_ctrl[0] = out;	//根据经验值，CH_ctrl的输入值应该在50-100之间
-
-		//俯仰和航向手动控制
-//		CH_ctrl[1] = my_deathzoom( ( CH_filter[PIT]) ,0,30 );	//1：俯仰 PIT
-//		CH_ctrl[3] = CH_filter[3];								//3：航向 YAW
+		return;
 	}
-	else
+	
+	/* ********************* 综合控制 ********************* */
+	
+	if(roll_speed == 0)
 	{
-		//非此模式执行清零
-		speed_integration = 0.0;
+		attitude_roll();
+	}
+	
+	if(pitch_speed == 0)
+	{
+		attitude_pitch();
+	}
+	
+	if(pitch_speed == 7)	//前进中的刹车
+	{
+		speed_pitch_forward_break(T);
+	}
+	
+	if(pitch_speed == 8)	//后退中的刹车
+	{
+		speed_pitch_backward_break(T);
+	}
+	
+	if(yaw_mode == 0)
+	{
+		attitude_yaw();
+	}
+	
+	if( roll_position == 0 )
+	{
+		position_roll_zero();
+	}
+	
+	if( pitch_position == 0 )
+	{
+		position_pitch_zero();
 	}
 }
 
-//========================================================================================
-//========================================================================================
-//	Cam频率调用的飞行控制函数
-//
-//	根据ctrl_command调用不同的自动控制函数
-//
-//	mode_state：
-//	0：手动				1：气压计
-//	2：超声波+气压计		3：自动
-//
-//	height_command：
-//	0：手动控高			1：定高
-//	2：降落											
-//========================================================================================
-//========================================================================================
-
-void Fly_Ctrl_Cam(void)		//调用周期与camera数据相同
+void Fly_Ctrl_Cam(float T)		//调用周期与camera数据相同
 {	
 	//只有自动模式才会执行自动控制代码
 	if(mode_state != 3)
@@ -764,188 +402,94 @@ void Fly_Ctrl_Cam(void)		//调用周期与camera数据相同
 		return;
 	}
 	
-/* ********************* 姿态控制 ********************* */
+	//位置控制
 	
-	if(ctrl_command == 3)
+	if( roll_position == 1 )	//摄像头位置输出
 	{
-		attitude_hand();
-		position_roll(1);
-		speed_roll(1);
-		position_pitch(1);
-		speed_pitch(1);
-	}
-	else
-	{
-		position_roll(0);
-		speed_roll(0);
-		position_pitch(0);
-		speed_pitch(0);
+		position_roll(T);
 	}
 	
-	if(ctrl_command == 4)
+	if( pitch_position == 1 )	//摄像头位置输出
 	{
-		attitude_hand();	//后面函数不处理的控制值用摇杆输入代替
-		position_pitch(1);
-		speed_pitch(1);
-	}
-	else
-	{
-//		position_pitch(0);
-//		speed_pitch(0);
+		position_pitch(T);
 	}
 	
-	if(ctrl_command == 5)					//水平速度位置环
+	//速度控制
+	
+	if( roll_speed == 1 )	//摄像头定点
 	{
-		attitude_hand();	//后面函数不处理的控制值用摇杆输入代替
-		position_roll(1);
-		speed_roll(1);
-	}
-	else
-	{
-//		position_roll(0);
-//		speed_roll(0);
+		speed_roll();
 	}
 	
-	//意外状况处理
-	if(ctrl_command > 5)
+	if( pitch_speed == 1 )	//摄像头定点
 	{
-		attitude_hand();
+		speed_pitch();
+	}
+	
+	if( pitch_speed == 2 )	//摄像头前进
+	{
+		speed_pitch_forward();
+	}
+	
+	if( pitch_speed == 3 )	//摄像头后退
+	{
+		speed_pitch_backward();
+	}
+	
+	//函数清零
+	
+	if( roll_position == 0 )
+	{
+		position_roll_clear();
+	}
+	
+	if( pitch_position == 0 )
+	{
+		position_pitch_clear();
+	}
+	
+	if( roll_speed == 0 )
+	{
+		speed_roll_clear();
+	}
+	
+	if( pitch_speed == 0 )
+	{
+		speed_pitch_clear();
 	}
 }
 
-//========================================================================================
-//========================================================================================
-//	飞行自动控制函数
-//
-//	根据ctrl_command调用不同的自动控制函数
-//
-//	mode_state：
-//	0：手动				1：气压计
-//	2：超声波+气压计		3：自动
-//
-//	height_command：
-//	0：手动控高			1：定高
-//	2：降落
-//========================================================================================
-//========================================================================================
-
-void Fly_Ctrl(void)		//调用周期5ms
-{
+void Fly_Ctrl_Flow(void)		//调用周期与camera数据相同
+{	
 	//只有自动模式才会执行自动控制代码
 	if(mode_state != 3)
 	{
 		return;
 	}
-
-//===========================================================
-//==================== 飞行控制逻辑 ==========================
-//===========================================================
 	
-	/*
-	
-	飞行控制的主要任务有两个：
-	
-	1.姿态控制，处理横滚、俯仰、航向三轴
-		CH_ctrl[0] = CH_filter[0];	//0：横滚
-		CH_ctrl[1] = CH_filter[1];	//1：俯仰
-		CH_ctrl[3] = CH_filter[3];	//3：航向
-	
-	2.高度控制
-		my_height_mode = 0		油门输入模式
-		使用 CH_filter[THR] 输入油门值，取值范围 -500 -- +500
-	
-		my_height_mode = 1		期望高度模式
-		使用 my_except_height 变量控制高度，单位为mm	
-	
-	*/
-	
-/* ********************* 高度控制 ********************* */
-	
-	if(height_command == 0)
+	if(roll_speed == 4)	//光流定点
 	{
-		hand();
-	}
-	else
-	{
-		
+		speed_flow_roll();
 	}
 	
-	if(height_command == 1)
+	if(pitch_speed == 4)	//光流定点
 	{
-		height_lock(1);	//锁定高度
-	}
-	else
-	{
-		height_lock(0);	//清除标志位
+		speed_flow_pitch();
 	}
 	
-	if(height_command == 2)
+	//函数清零
+	
+	if(roll_speed == 0)	//光流定点
 	{
-		land();	//降落模式
-	}
-	else
-	{
-		
+		speed_flow_roll_clear();
 	}
 	
-	//意外状况处理
-	if(height_command > 2)	//不应该出现的情况
+	if(pitch_speed == 0)	//光流定点
 	{
-		my_height_mode = 0;
-		CH_ctrl[2] = CH_filter[2];	//2：油门 THR
+		speed_flow_pitch_clear();
 	}
-	
-/* ********************* 姿态控制 ********************* */
-	
-	if(ctrl_command == 0)
-	{
-		attitude_hand();
-	}
-	
-	if(ctrl_command == 1)
-	{
-		attitude_hand();
-	}
-	
-	if(ctrl_command == 2)
-	{
-		attitude_hand();
-	}
-	
-//	if(ctrl_command == 3)
-//	{
-//		
-//	}
-//	else
-//	{
-//		
-//	}
-	
-//	if(ctrl_command == 4)
-//	{
-//		
-//	}
-//	else
-//	{
-//		
-//	}
-	
-//	if(ctrl_command == 5)
-//	{
-//		
-//	}
-//	else
-//	{
-//		
-//	}
-
-	//意外状况处理
-	if(ctrl_command > 5)
-	{
-		attitude_hand();
-	}
-	
 }
+
 
 //========================================================================================
 //========================================================================================
@@ -957,31 +501,47 @@ u8 height_command;
 u8 All_Out_Switch = 0;
 void Ctrl_Mode(float *ch_in)
 {
+	
+	//====================================================================
+	//本函数发出ctrl_command，飞行控制函数接收到后清零
+	
+	u8 aux2_in = 0;
+	static u8 aux2_in_old = 0;	//上一次的指令
+	
 	//根据AUX2通道（第6通道）的数值输入自动控制指令
 	if(*(ch_in+AUX2) < -350)			//-499 -- -350
 	{
-		ctrl_command = 0;
+		aux2_in = 0;
 	}
 	else if(*(ch_in+AUX2) < -150)		//-350 -- -150
 	{
-		ctrl_command = 1;
+		aux2_in = 1;
 	}
 	else if(*(ch_in+AUX2) < 0)			//-150 -- 0
 	{
-		ctrl_command = 2;
+		aux2_in = 2;
 	}
 	else if(*(ch_in+AUX2) < 150)		//0 -- 150
 	{
-		ctrl_command = 3;
+		aux2_in = 3;
 	}
 	else if(*(ch_in+AUX2) < 350)		//150 -- 350				
 	{
-		ctrl_command = 4;
+		aux2_in = 4;
 	}
 	else								//350 -- 499
 	{
-		ctrl_command = 5;
+		aux2_in = 5;
 	}
+	
+	if(aux2_in != aux2_in_old)	//输入指令发生变化
+	{
+		ctrl_command = aux2_in+1;	//输入指令号为1-6，0为指令已经读取完毕后的等待值
+	}
+	
+	aux2_in_old = aux2_in;	//记录历史变量
+	
+	//====================================================================
 	
 	//根据AUX3通道控制高度
 	if(*(ch_in+AUX3) < -150)	
@@ -1025,3 +585,4 @@ void Ctrl_Mode(float *ch_in)
 	}
 }
 
+//****************************************************************************************

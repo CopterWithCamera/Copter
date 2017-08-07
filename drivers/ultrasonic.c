@@ -59,10 +59,11 @@ void Ultra_Duty()
 		Uart5_Send(temp ,1);
 	#elif defined(USE_ANO_OF)
 		//光流模式下直接读取光流数据
-		ultra.height = OF_ALT2;
+		ultra.height = OF_ALT;
 		if(ultra.height < 180)	//光流数据最大能够测量2m（200cm），输入数据小于180cm保证安全
 		{
-			ultra.relative_height = OF_ALT2;	//融合姿态的当前高度，单位是cm
+			//ultra.relative_height = OF_ALT2;
+			ultra.relative_height = OF_ALT;	//融合姿态的当前高度，单位是cm
 			ultra.measure_ok = 1;
 		}
 		else

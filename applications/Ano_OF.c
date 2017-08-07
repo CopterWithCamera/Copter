@@ -1,4 +1,6 @@
 #include "ano_of.h"
+#include "scheduler.h"
+#include "data_transfer.h"
 
 uint8_t		OF_QUA,OF_LIGHT;
 int8_t		OF_DX,OF_DY;
@@ -82,6 +84,8 @@ void AnoOF_DataAnl(uint8_t *data_buf,uint8_t num)
 			OF_DX2FIX	= (int16_t)(*(data_buf+10)<<8)|*(data_buf+11) ;
 			OF_DY2FIX	= (int16_t)(*(data_buf+12)<<8)|*(data_buf+13) ;
 			OF_LIGHT  	= *(data_buf+14);
+			
+			loop.flow_data_ok = 1;	//指示光流速度数据已经更新
 		}
 	}
 	if(*(data_buf+2)==0X52)//高度信息
@@ -132,5 +136,88 @@ void AnoOF_DataAnl(uint8_t *data_buf,uint8_t num)
 			OF_ATT_S4 = ((int16_t)(*(data_buf+11)<<8)|*(data_buf+12)) * 0.0001 ;
 		}
 	}
+}
+
+
+//低通滤波器
+//dt：采样时间间隔（单位us）
+//fc：截止频率
+float flow_bias_lpf(float bias ,float dt_s ,float fc,float last_bias_lpf)
+{
+	float q,out,T;
+	
+	T = dt_s;
+	q = 6.28f * T * fc;
+	
+	if(q >0.95f)
+		q = 0.95f;
+	
+	out = q * bias + (1.0f-q) * last_bias_lpf;
+	
+	return out;
+}
+
+//自己编写的光流数据处理函数
+
+float	OF_DX2_DETECT,		//横滚速度		+ <---  ---> -
+		OF_DY2_DETECT,		//俯仰速度		+ <前-- --后> -
+		OF_DX2FIX_DETECT,
+		OF_DY2FIX_DETECT,
+		OF_DX2_DETECT_LPF,
+		OF_DY2_DETECT_LPF,
+		OF_DX2FIX_DETECT_LPF,
+		OF_DY2FIX_DETECT_LPF;
+
+//光流数据置信函数，与融合后光流信息接收同频率调用
+void flow_data_detect(float T)
+{
+	//本函数的编写基础为每一帧的光流速度数据都有自己相对应的quality数据
+	if( OF_QUA > 70 )	
+	{
+		//可信度很高，直接更新
+		OF_DX2_DETECT  = OF_DX2;
+		OF_DY2_DETECT  = OF_DY2;
+		OF_DX2FIX_DETECT = OF_DX2FIX;
+		OF_DY2FIX_DETECT = OF_DY2FIX;
+	}
+	else if( OF_QUA > 50 )
+	{
+		//较大程度采纳
+		OF_DX2_DETECT  = ((float)OF_DX2) * 0.7f + OF_DX2_DETECT * 0.3f;
+		OF_DY2_DETECT  = ((float)OF_DY2) * 0.7f + OF_DY2_DETECT * 0.3f;
+		OF_DX2FIX_DETECT = ((float)OF_DX2FIX) * 0.7f + OF_DX2FIX_DETECT * 0.3f;
+		OF_DY2FIX_DETECT = ((float)OF_DY2FIX) * 0.7f + OF_DY2FIX_DETECT * 0.3f;
+	}
+	else if( OF_QUA > 30)
+	{
+		//较小程度采纳一小部分
+		OF_DX2_DETECT  = ((float)OF_DX2) * 0.3f + OF_DX2_DETECT * 0.7f;
+		OF_DY2_DETECT  = ((float)OF_DY2) * 0.3f + OF_DY2_DETECT * 0.7f;
+		OF_DX2FIX_DETECT = ((float)OF_DX2FIX) * 0.3f + OF_DX2FIX_DETECT * 0.7f;
+		OF_DY2FIX_DETECT = ((float)OF_DY2FIX) * 0.3f + OF_DY2FIX_DETECT * 0.7f;
+	}
+	else
+	{
+		//可信度过低，不采纳数据
+		
+	}
+	
+	//调整正方向    + <-- --> -
+	OF_DX2_DETECT = -OF_DX2_DETECT;
+	OF_DX2FIX_DETECT = -OF_DX2FIX_DETECT;
+	
+	//过低通滤波器
+	OF_DX2_DETECT_LPF = flow_bias_lpf(OF_DX2_DETECT,T,0.8f,OF_DX2_DETECT_LPF);
+	OF_DY2_DETECT_LPF = flow_bias_lpf(OF_DY2_DETECT,T,0.8f,OF_DY2_DETECT_LPF);
+	OF_DX2FIX_DETECT_LPF = flow_bias_lpf(OF_DX2FIX_DETECT,T,0.8f,OF_DX2FIX_DETECT_LPF);
+	OF_DY2FIX_DETECT_LPF = flow_bias_lpf(OF_DY2FIX_DETECT,T,0.8f,OF_DY2FIX_DETECT_LPF);
+	
+	mydata.d1 = (s16)OF_DX2FIX;
+	mydata.d2 = (s16)OF_DX2FIX_DETECT;
+	mydata.d3 = (s16)OF_DX2FIX_DETECT_LPF;
+	mydata.d4 = (s16)OF_DY2FIX;
+	mydata.d5 = (s16)OF_DY2FIX_DETECT;
+	mydata.d6 = (s16)OF_DY2FIX_DETECT_LPF;
+	
 }
 

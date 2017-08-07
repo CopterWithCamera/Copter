@@ -100,7 +100,7 @@ float Height_Pid(float T,float en,u8 mode,float height_error,float except_speed_
 	{
 		if(thr_take_off<10)			//未计算起飞油门（官方注释）    //如果油门没有基准值,则手动设定油门基准值
 		{
-				thr_take_off = 400;	//设置基准油门
+			thr_take_off = 400;	//设置基准油门
 		}
 	}
 	
