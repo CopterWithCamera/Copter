@@ -7,11 +7,11 @@ u8 mode_state;
 void mode_check(float *ch_in)
 {
 	/*
-	mode_state:
-	0：手动
-	1：气压计
-	2：超声波+气压计
-	3：自动
+		mode_state:
+		0：手动				白
+		1：气压计			紫
+		2：超声波+气压计		蓝
+		3：自动				黄	绿
 	*/
 	
 	//根据AUX1通道（第5通道）的数值切换飞行模式

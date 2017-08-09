@@ -99,23 +99,34 @@ void LED_1ms_DRV( ) //0~20
 
 	u8 i;
 	
-	for(i=0;i<4;i++)
+	for(i=0;i<4;i++)	//总共4个灯，编号0 1 2 3
 	{
 			
-		if( led_cnt[i] < LED_Brightness[i] )
+		if( led_cnt[i] < LED_Brightness[i] )	
 		{
+			
+			/*	enum  //led编号
+				{
+					X=0,	//0
+					B,		//1
+					R,		//2
+					G,		//3
+					LED_NUM,//4
+
+				};*/
+			
 			switch(i)
 			{
-				case 0:	
+				case 0:			//X
 					LED1_ON;
 				break;
-				case 1:	
+				case 1:			//B
 					LED2_ON;
 				break;
-				case 2:	
+				case 2:			//G
 					LED3_ON;
 				break;
-				case 3:	
+				case 3:			//R
 					LED4_ON;
 				break;
 			}
@@ -240,14 +251,12 @@ u8 led_flash(float dT,u8 i,u8 lb,u16 group_n,u16 on_ms,u16 off_ms,u16 group_dT_m
 
 void led_cnt_restar() //灯光驱动计数器复位
 {
-
-			for(u8 i =0;i<LED_NUM;i++)
-			{
-				LED_Brightness[i] = 0;
-				ms_cnt[i] = 0;
-				group_n_cnt[i] = 0;
-			}
-
+	for(u8 i =0;i<LED_NUM;i++)
+	{
+		LED_Brightness[i] = 0;
+		ms_cnt[i] = 0;
+		group_n_cnt[i] = 0;
+	}
 }
 
 LED_state light;
@@ -273,60 +282,59 @@ void LED_Duty() //50ms一次
 {
 	led_cnt_res_check();
 
-	if(parameter_read_error)
+	
+	if(Mag_CALIBRATED) 								//传感器校准指示优先
 	{
-		light.RGB_Info = 8;
+		light.RGB_Info = 19;	//青色快闪
 	}
-	else if(Mag_CALIBRATED) //传感器校准指示优先
+	if(parameter_read_error)						//参数读取错误
 	{
-		light.RGB_Info = 19;
+		light.RGB_Info = 22;	//红色呼吸
 	}
-	else if(mode_state == 0) //手动油门
+	else if(mode_state == 0)						//手动油门
 	{
 		if(!fly_ready)//没解锁
 		{
-			light.RGB_Info = 9;
+			light.RGB_Info = 20;	//白呼吸
 		}
 		else
 		{
-			light.RGB_Info = 22; 
+			light.RGB_Info = 21; 	//白
 		}
 	}
-	else if(mode_state ==1) //气压定高
-	{
-		if(!fly_ready)//没解锁
-		{
-			light.RGB_Info = 10;
-		} 
-		else     //解锁
-		{
-			light.RGB_Info = 23;
-		}
-	}
-	else if(mode_state ==2)//超声波
+	else if(mode_state ==1) 						//气压定高
 	{
 		if(!fly_ready)
 		{
-			light.RGB_Info = 26;
+			light.RGB_Info = 32;	//紫呼吸
+		} 
+		else
+		{
+			light.RGB_Info = 33;	//紫色
+		}
+	}
+	else if(mode_state ==2)							//超声波
+	{
+		if(!fly_ready)
+		{
+			light.RGB_Info = 26;	//蓝呼吸
 		}
 		else
 		{
-			light.RGB_Info = 27;
+			light.RGB_Info = 27;	//蓝色
 		}
 	}
-	else if(mode_state ==3)//自动模式
+	else if(mode_state ==3)							//自动模式
 	{
-		if(!fly_ready)	//没解锁
+		if(!fly_ready)				
 		{
-			light.RGB_Info = 24;
+			light.RGB_Info = 28;	//黄呼吸
 		} 
-		else     		//解锁
+		else     					
 		{
-			light.RGB_Info = 25;
+			light.RGB_Info = 29;	//黄色
 		}
 	}
-	
-	
 	
 	static u8 step;
 	switch(light.RGB_Info)
@@ -337,24 +345,10 @@ void LED_Duty() //50ms一次
 		case 1:
 			
 		break;
-		case 8:
-			LED_Brightness[X] = 0;
-			LED_Brightness[R] = 20;		
-			LED_Brightness[G] = 0;	
-			LED_Brightness[B] = 0;
-		break;
-		case 9:
-			LED_Brightness[X] = 0;
-			led_breath(0.05f,R,1000);
-			led_breath(0.05f,G,1000);
-			led_breath(0.05f,B,1000);
-		break;
-		case 10:
-			LED_Brightness[X] = 0;
-			LED_Brightness[R] = 0;		
-			led_breath(0.05f,G,1000);
-			LED_Brightness[B] = 0;
-		break;
+
+		
+		//*********************************************************************
+		//各种闪烁！！！！
 		case 11:
 			LED_Brightness[X] = 0;
 			if(step)
@@ -459,56 +453,128 @@ void LED_Duty() //50ms一次
 			LED_Brightness[G] = 0;//	led_flash(0.05f,G,2,100,100,100);
 			LED_Brightness[B] = 0;//led_flash(0.05f,B,2,100,100,100);		
 		break;
-		case 19:
-			LED_Brightness[X] = 0;
+		case 19://
+			LED_Brightness[X] = 0;												//传感器校准提示
 			LED_Brightness[R] = 0;//led_flash(0.05f,R,1,100,100,0);
 			led_flash(0.05f,G,16,1,100,100,0);
 			led_flash(0.05f,B,16,1,100,100,0);					
 		break;
 		
-		case 22:
+		//******************************************************************************************************
+		
+		case 20:
+			LED_Brightness[X] = 0;			//白呼吸
+			led_breath(0.05f,R,1000);
+			led_breath(0.05f,G,1000);
+			led_breath(0.05f,B,1000);
+		break;
+
+									
+		case 21:							//白色
 			LED_Brightness[X] = 0;
 			LED_Brightness[R] = 20;
 			LED_Brightness[G] = 20;
 			LED_Brightness[B] = 20;
 		break;
 		
-		case 23:
+		//***********************************************************
+		
+		case 22:	
+			LED_Brightness[X] = 0;
+			led_breath(0.05f,R,1000);		//红呼吸
+			LED_Brightness[G] = 0;
+			LED_Brightness[B] = 0;
+		
+		case 23:							//红色
+			LED_Brightness[X] = 0;
+			LED_Brightness[R] = 20;
+			LED_Brightness[G] = 0;	
+			LED_Brightness[B] = 0;
+		break;
+		
+		//***********************************************************
+		
+		case 24:
+			LED_Brightness[X] = 0;
+			LED_Brightness[R] = 0;
+			led_breath(0.05f,G,1000);		//绿呼吸
+			LED_Brightness[B] = 0;
+		break;
+				
+		case 25:							//绿色
 			LED_Brightness[X] = 0;
 			LED_Brightness[R] = 0;
 			LED_Brightness[G] = 20;
 			LED_Brightness[B] = 0;
-		
 		break;
 		
-		case 24:
+		//***********************************************************
+		
+		case 26:
+			LED_Brightness[X] = 0;
+			LED_Brightness[R] = 0;
+			LED_Brightness[G] = 0;
+			led_breath(0.05f,B,1000);		//蓝呼吸
+		break;
+		
+		case 27:							//蓝色
+			LED_Brightness[X] = 0;
+			LED_Brightness[R] = 0;
+			LED_Brightness[G] = 0;
+			LED_Brightness[B] = 20;
+		break;
+		
+		//***********************************************************
+		
+		case 28:							//黄呼吸
 			LED_Brightness[X] = 0;
 			led_breath(0.05f,R,1000);
 			led_breath(0.05f,G,1000);
 			LED_Brightness[B] = 0;//led_breath(0.05f,B,1000);
 		
-		break;		
-		case 25:
+		break;
+		
+		case 29:							//黄
 			LED_Brightness[X] = 0;
 			LED_Brightness[R] = 20;
 			LED_Brightness[G] = 20;
 			LED_Brightness[B] = 0;
 		
 		break;
-		case 26:
+		
+		//***********************************************************
+		
+		case 30:							//青呼吸
+			LED_Brightness[X] = 0;
+			LED_Brightness[R] = 0;
+			led_breath(0.05f,G,1000);
+			led_breath(0.05f,B,1000);
+		break;
+		
+		case 31:							//青
+			LED_Brightness[X] = 0;
+			LED_Brightness[R] = 0;
+			LED_Brightness[G] = 20;
+			LED_Brightness[B] = 20;
+		break;
+		
+		//***********************************************************
+		
+		case 32:							//紫呼吸
 			LED_Brightness[X] = 0;
 			led_breath(0.05f,R,1000);
 			LED_Brightness[G] = 0;//led_breath(0.05f,G,1000);
 			led_breath(0.05f,B,1000);
-		
 		break;
-		case 27:
+		
+		case 33:							//紫
 			LED_Brightness[X] = 0;
 			LED_Brightness[R] = 20;
 			LED_Brightness[G] = 0;
 			LED_Brightness[B] = 20;
+		break;
 		
-		break;		
+		
 		default:break;
 	}
 

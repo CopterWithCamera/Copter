@@ -84,11 +84,11 @@ LED_Info == 待定
 */
 enum  //led编号
 {
-	X=0,
-	B,
-	R,
-	G,
-	LED_NUM,
+	X=0,	//0
+	B,		//1
+	R,		//2
+	G,		//3
+	LED_NUM,//4
 
 };
 
