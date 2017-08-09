@@ -11,6 +11,7 @@
 #include "mymath.h"
 #include "ano_of.h"
 #include "position_function.h"
+#include "track_mode.h"
 
 
 //========================================================================================
@@ -129,8 +130,6 @@ void take_off(float dT)	//dT单位是s
 		}
 		else
 		{
-			//CH_ctrl[THR] = CH_filter[THR];	//直接输出手飞油门（测试用，保证安全）
-			//height_mode = 0;					//切换为手飞油门模式
 			height_mode = 1;					//切换为锁定当前高度
 		}
 	}

@@ -11,6 +11,4 @@ void height_hold(void);
 void take_off(float T);
 void land(void);
 
-
-
 #endif

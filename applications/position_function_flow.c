@@ -50,11 +50,11 @@ void speed_flow_pitch()
 		
 		if( except_speed > 1.0f )	//速度期望向前
 		{
-			p_out = -20.0f * pid_setup.groups.ctrl6.kp; //user_parameter.groups.param_A;	//前飞
+			p_out = -20.0f * pid_setup.groups.ctrl6.kp;	//前飞
 		}
 		else if(except_speed < -1.0f)	//速度期望向后
 		{
-			p_out =  20.0f * pid_setup.groups.ctrl6.ki; //user_parameter.groups.param_B;	//后飞
+			p_out =  20.0f * pid_setup.groups.ctrl6.ki; //后飞
 		}
 		else						
 		{
@@ -76,10 +76,10 @@ void speed_flow_pitch()
 																//		  正：期望向左速度大于当前向左速度，期望向左速度比较大，应该向左加速
 		
 		//p
-		p_out = - speed_error * pid_setup.groups.ctrl4.kp; //user_parameter.groups.self_def_1.kp;
+		p_out = - speed_error * user_parameter.groups.param_D; //user_parameter.groups.self_def_1.kp;
 		
 		//i
-		speed_integration_pitch += speed_error * pid_setup.groups.ctrl4.ki; //user_parameter.groups.self_def_1.ki;
+		speed_integration_pitch += speed_error * user_parameter.groups.param_E; //user_parameter.groups.self_def_1.ki;
 		speed_integration_pitch = LIMIT(speed_integration_pitch,-40.0f,40.0f);
 		i_out = - speed_integration_pitch;
 		
@@ -89,7 +89,7 @@ void speed_flow_pitch()
 		//					  负：没那么需要向左加速了
 		if(d_stop_flag)
 		{
-			d_out = -(speed_error - speed_error_old) * pid_setup.groups.ctrl4.kd; //user_parameter.groups.self_def_1.kd;
+			d_out = -(speed_error - speed_error_old) * user_parameter.groups.param_F; //user_parameter.groups.self_def_1.kd;
 			d_out = LIMIT(d_out,-70.0f,70.0f);	//限制输出幅度为+-70，允许d引起刹车动作
 		}
 		else
@@ -183,10 +183,10 @@ void speed_flow_roll()
 															//error   正：期望向左速度大于当前向左速度，期望向左速度比较大，应该向左加速		负：期望向左速度小于当前向左速度，期望向左速度比较小，应该向右加速
 		
 		//p
-		p_out = - speed_error * user_parameter.groups.self_def_1.kp;
+		p_out = - speed_error * user_parameter.groups.param_G;
 		
 		//i
-		speed_integration_roll += speed_error * user_parameter.groups.self_def_1.ki;
+		speed_integration_roll += speed_error * user_parameter.groups.param_H;
 		speed_integration_roll = LIMIT(speed_integration_roll,-40.0f,40.0f);
 		i_out = - speed_integration_roll;
 		
@@ -196,7 +196,7 @@ void speed_flow_roll()
 		//					  负：没那么需要向左加速了
 		if(d_stop_flag)
 		{
-			d_out = -(speed_error - speed_error_old) * user_parameter.groups.self_def_1.kd;
+			d_out = -(speed_error - speed_error_old) * user_parameter.groups.param_I;
 			d_out = LIMIT(d_out,-70.0f,70.0f);	//限制输出幅度为+-70，允许d引起刹车动作
 		}
 		else

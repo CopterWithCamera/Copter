@@ -29,7 +29,7 @@
 #include "adc.h"
 #include "ano_of.h"
 #include "position_function.h"
-
+#include "track_mode.h"
 
 s16 loop_cnt;
 
@@ -123,9 +123,14 @@ void Duty_5ms()
 	outer_loop_time = Get_Cycle_T(2)/1000000.0f;		//获取外环准确的执行周期，Get_Cycle_T(2)返回值的单位是us，除以1000000后单位是s
 	
 	/* ****************** 自动控制功能实现函数 ****************** */
+	
+	//控制上层
 	Fly_Mode_Ctrl(outer_loop_time);					//飞行模式控制
+	Height_Mode_Ctrl(outer_loop_time);
+	
+	//控制中层
 	Fly_Height_Ctrl(outer_loop_time);				//高度控制函数
-	Fly_Ctrl(outer_loop_time);						//运算自动控制模式下飞行时的最外环控制值
+	Fly_Ctrl(outer_loop_time);						//位置控制函数
 	
 	/* ********************** 姿态外环 ********************* */
  	CTRL_2( outer_loop_time ); 					//外环角度控制。输入：执行周期，期望角度（摇杆量），姿态角度；输出：期望角速度。<函数未封装>

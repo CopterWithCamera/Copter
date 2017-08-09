@@ -12,6 +12,8 @@
 #include "position_function.h"
 #include "position_function_flow.h"
 #include "height_function.h"
+#include "track_mode.h"
+
 
 float CH_ctrl[CH_NUM];	//具体输入给ctrl的遥控器值
 float my_except_height = 0;//期望高度
@@ -92,221 +94,29 @@ void set_all_out_switch(u8 cmd)		//电机输出控制指令
 	}
 }
 
+//***************************************************************************************************************
+
 /************************************************************************************
-						多频率联合自动控制函数
+								多频率联合自动控制函数
 
 	mode_state：	0：手动		1：气压计	2：超声波+气压计		3：自动
 
 *************************************************************************************/
 
-u8	height_mode = 0,	//高度控制模式		0：手动控高		1：锁定当前高度		2：根据指令高度控高		3：起飞				4：降落
-	roll_speed = 0,		//速度横滚控制模式	0：手动控制		1：摄像头数据定点												4：光流数据定点
-	pitch_speed = 0,	//速度俯仰控制模式	0：手动控制		1：摄像头数据定点	2：摄像头数据前进		3：摄像头数据后退	4：光流数据定点		5：光流数据前进		6：光流数据后退
+//对控制中层接口
+
+//高度
+u8	height_mode = 0;	//高度控制模式		0：手动控高		1：锁定当前高度		2：根据指令高度控高		3：起飞		4：降落
+
+//姿态
+u8	roll_speed = 0,		//速度横滚控制模式	0：手动控制		1：摄像头数据定点	2：光流数据定点
+	pitch_speed = 0,	//速度俯仰控制模式	0：手动控制		1：摄像头数据定点	2：光流数据定点
 	roll_position = 0,	//位置横滚控制		0：输出0			1：输出摄像头计算偏移
-	pitch_position = 0,	//位置俯仰控制		0：输出0			1：输出摄像头计算偏移
-	yaw_mode = 0;		//航向角控制			0：手动控制
+	pitch_position = 0;	//位置俯仰控制		0：输出0			1：输出摄像头计算偏移
+	
+//航向
+u8	yaw_mode = 0;		//航向角控制			0：手动控制
 
-u8 my_fly_mode = 0, my_fly_mode_old = 0;	//飞行模式
-void Fly_Mode_Ctrl(float T)		//飞行模式切换控制函数
-{
-	static float break_counter = 0;	//刹车延时定时器
-	
-	//只有自动模式才会执行自动控制代码
-	if(mode_state != 3)
-	{
-		return;
-	}
-	
-	//高度控制模式切换
-	switch(height_command)
-	{
-		case 0:
-			height_mode = 0;
-		break;
-		
-		case 1:
-			height_mode = 1;
-		break;
-		
-		case 2:
-			height_mode = 4;
-		break;
-		
-		default:
-			height_mode = 0;
-		break;
-	}
-	
-	//*****************************************************************************
-	//这里要根据不同的指令对 my_fly_mode 进行切换
-	
-	if(ctrl_command != 0)	//有新指令进入时ctrl_command不为0
-	{
-		if(ctrl_command == 1)
-		{
-			my_fly_mode = 0;		//手飞
-		}
-		
-		if(ctrl_command == 2)
-		{
-			my_fly_mode = 1;		//横滚自动（测试用）
-		}
-		
-		if(ctrl_command == 3)
-		{
-			my_fly_mode = 3;		//横滚光流自动（测试用）
-		}
-		
-		
-		
-		//摄像头前进
-		if(ctrl_command == 4)
-		{
-			my_fly_mode = 5;
-		}
-		
-		//摄像头悬停
-		if(ctrl_command == 5)
-		{
-			if(my_fly_mode_old == 5)	//如果上一个状态是前进
-			{
-				ctrl_command = 7;		//前进中刹车
-				break_counter = 0;
-			}
-			else if(my_fly_mode_old == 6)	//如果上一个状态是后退
-			{
-				ctrl_command = 8;		//后退中刹车
-				break_counter = 0;
-			}
-			else
-			{
-				my_fly_mode = 2;
-			}
-		}
-		
-		//摄像头后退
-		if(ctrl_command == 6)
-		{
-			my_fly_mode = 6;
-		}
-		
-		if(ctrl_command == 7)	//前进中刹车
-		{
-			my_fly_mode = 7;
-			
-			//倒计时
-			break_counter++;
-			if((break_counter*T)>1.0f)	//倒计时1s
-			{
-				break_counter = 0;
-				ctrl_command = 0;
-				my_fly_mode = 2;
-			}
-		}
-		
-		if(ctrl_command == 8)	//后退中刹车
-		{
-			my_fly_mode = 8;
-
-			//倒计时
-			break_counter++;
-			if((break_counter*T)>1.0f)	//倒计时1s
-			{
-				break_counter = 0;
-				ctrl_command = 0;
-				my_fly_mode = 2;
-			}
-		}
-		
-		//清零
-		if(ctrl_command<=6)
-		{
-			ctrl_command = 0;	//外来指令在此清零
-		}
-	}
-	
-	//姿态控制模式切换
-	switch(my_fly_mode)
-	{
-		case 0:									//手飞
-			roll_position = 0;
-			roll_speed = 0;
-			pitch_position = 0;
-			pitch_speed = 0;
-			yaw_mode = 0;
-		break;
-		
-		case 1:									//横滚自动（测试）
-			pitch_position = 0;	//俯仰手飞
-			pitch_speed = 0;
-			roll_position = 1;	//横滚自动
-			roll_speed = 1;
-			yaw_mode = 0;
-		break;
-		
-		case 2:									//摄像头定点
-			pitch_position = 1;	//俯仰自动
-			pitch_speed = 1;
-			roll_position = 1;	//横滚自动
-			roll_speed = 1;		//临时把roll速度数据改用光流提供
-			yaw_mode = 0;
-		break;
-		
-		case 3:									//横滚光流自动（测试）
-			pitch_position = 0;	//俯仰手动
-			pitch_speed = 0;
-			roll_position = 1;	//横滚光流自动
-			roll_speed = 4;
-			yaw_mode = 0;
-		break;
-		
-		case 4:									//光流 定点
-			pitch_position = 1;	//俯仰光流自动
-			pitch_speed = 4;
-			roll_position = 1;	//横滚光流自动
-			roll_speed = 4;
-			yaw_mode = 0;
-		break;
-		
-		case 5:									//前进
-			pitch_position = 0;	//摄像头前进
-			pitch_speed = 2;
-			roll_position = 1;	//横滚自动
-			roll_speed = 1;
-			yaw_mode = 0;
-		break;
-		
-		case 6:									//后退
-			pitch_position = 0;	//摄像头后退
-			pitch_speed = 3;
-			roll_position = 1;	//横滚自动
-			roll_speed = 1;
-			yaw_mode = 0;
-		break;
-			
-		case 7:									//前进中刹车
-			pitch_position = 0;	
-			pitch_speed = 7;	//前进中刹车
-			roll_position = 1;	//横滚自动
-			roll_speed = 1;
-			yaw_mode = 0;
-		break;
-		
-		case 8:									//后退中刹车
-			pitch_position = 0;
-			pitch_speed = 8;	//后退中刹车
-			roll_position = 1;	//横滚自动
-			roll_speed = 1;
-			yaw_mode = 0;
-		break;
-		
-		default:
-			
-		break;
-	}
-	
-	my_fly_mode_old = my_fly_mode;
-}
 
 void Fly_Height_Ctrl(float T)	//高度控制函数
 {
@@ -346,6 +156,8 @@ void Fly_Height_Ctrl(float T)	//高度控制函数
 	//函数清零
 	if(height_mode != 1)
 		height_lock_clear();
+	
+
 }
 
 void Fly_Ctrl(float T)		//调用周期5ms
@@ -368,29 +180,9 @@ void Fly_Ctrl(float T)		//调用周期5ms
 		attitude_pitch();
 	}
 	
-	if(pitch_speed == 7)	//前进中的刹车
-	{
-		speed_pitch_forward_break(T);
-	}
-	
-	if(pitch_speed == 8)	//后退中的刹车
-	{
-		speed_pitch_backward_break(T);
-	}
-	
 	if(yaw_mode == 0)
 	{
 		attitude_yaw();
-	}
-	
-	if( roll_position == 0 )
-	{
-		position_roll_zero();
-	}
-	
-	if( pitch_position == 0 )
-	{
-		position_pitch_zero();
 	}
 }
 
@@ -425,38 +217,6 @@ void Fly_Ctrl_Cam(float T)		//调用周期与camera数据相同
 	{
 		speed_pitch();
 	}
-	
-	if( pitch_speed == 2 )	//摄像头前进
-	{
-		speed_pitch_forward();
-	}
-	
-	if( pitch_speed == 3 )	//摄像头后退
-	{
-		speed_pitch_backward();
-	}
-	
-	//函数清零
-	
-	if( roll_position == 0 )
-	{
-		position_roll_clear();
-	}
-	
-	if( pitch_position == 0 )
-	{
-		position_pitch_clear();
-	}
-	
-	if( roll_speed == 0 )
-	{
-		speed_roll_clear();
-	}
-	
-	if( pitch_speed == 0 )
-	{
-		speed_pitch_clear();
-	}
 }
 
 void Fly_Ctrl_Flow(void)		//调用周期与camera数据相同
@@ -477,17 +237,6 @@ void Fly_Ctrl_Flow(void)		//调用周期与camera数据相同
 		speed_flow_pitch();
 	}
 	
-	//函数清零
-	
-	if(roll_speed == 0)	//光流定点
-	{
-		speed_flow_roll_clear();
-	}
-	
-	if(pitch_speed == 0)	//光流定点
-	{
-		speed_flow_pitch_clear();
-	}
 }
 
 
@@ -544,17 +293,26 @@ void Ctrl_Mode(float *ch_in)
 	//====================================================================
 	
 	//根据AUX3通道控制高度
+	
+	u8 aux3_in = 0;
+	static u8 aux3_in_old = 0;	//上一次的指令
+	
 	if(*(ch_in+AUX3) < -150)	
 	{
-		height_command = 0;
+		aux3_in = 0;
 	}
 	else if(*(ch_in+AUX3) < 150)
 	{
-		height_command = 1;
+		aux3_in = 1;
 	}
 	else
 	{
-		height_command = 2;
+		aux3_in = 2;
+	}
+	
+	if(aux3_in != aux3_in_old)	//输入指令发生变化
+	{
+		height_command = aux3_in+1;	//输入指令号为1-6，0为指令已经读取完毕后的等待值
 	}
 	
 	//电机输出使能

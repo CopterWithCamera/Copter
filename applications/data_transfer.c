@@ -25,6 +25,7 @@
 #include "adc.h"
 #include "camera_datatransfer.h"
 #include "camera_data_calculate.h"
+#include "track_mode.h"
 
 /////////////////////////////////////////////////////////////////////////////////////
 //数据拆分宏定义，在发送大于1字节的数据类型时，比如int16、float等，需要把数据拆分成单独字节进行发送
@@ -599,7 +600,7 @@ void ANO_DT_Send_User2()
 	
 	data_to_send[_cnt++] = mode_state;			//飞行模式
 			
-	data_to_send[_cnt++] = my_fly_mode;			//当前飞信模式
+	data_to_send[_cnt++] = copter_fly_mode;		//当前飞信模式
 	
 	data_to_send[_cnt++] = fly_ready;			//解锁状态
 	
