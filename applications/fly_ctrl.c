@@ -108,16 +108,6 @@ void set_all_out_switch(u8 cmd)		//电机输出控制指令
 //高度
 u8	height_mode = 0;	//高度控制模式		0：手动控高		1：锁定当前高度		2：根据指令高度控高		3：起飞		4：降落
 
-//姿态
-u8	roll_speed = 0,		//速度横滚控制模式	0：手动控制		1：摄像头数据定点	2：光流数据定点
-	pitch_speed = 0,	//速度俯仰控制模式	0：手动控制		1：摄像头数据定点	2：光流数据定点
-	roll_position = 0,	//位置横滚控制		0：输出0			1：输出摄像头计算偏移
-	pitch_position = 0;	//位置俯仰控制		0：输出0			1：输出摄像头计算偏移
-	
-//航向
-u8	yaw_mode = 0;		//航向角控制			0：手动控制
-
-
 void Fly_Height_Ctrl(float T)	//高度控制函数
 {
 	//只有自动模式才会执行自动控制代码
@@ -156,9 +146,18 @@ void Fly_Height_Ctrl(float T)	//高度控制函数
 	//函数清零
 	if(height_mode != 1)
 		height_lock_clear();
-	
-
 }
+
+//==============================================================================
+
+//姿态
+u8	roll_speed = 0,		//速度横滚控制模式	0：手动控制		1：摄像头数据定点	2：光流数据定点
+	pitch_speed = 0,	//速度俯仰控制模式	0：手动控制		1：摄像头数据定点	2：光流数据定点
+	roll_position = 0,	//位置横滚控制		0：输出0			1：输出摄像头计算偏移
+	pitch_position = 0;	//位置俯仰控制		0：输出0			1：输出摄像头计算偏移
+	
+//航向
+u8	yaw_mode = 0;		//航向角控制			0：手动控制
 
 void Fly_Ctrl(float T)		//调用周期5ms
 {
@@ -187,7 +186,7 @@ void Fly_Ctrl(float T)		//调用周期5ms
 }
 
 void Fly_Ctrl_Cam(float T)		//调用周期与camera数据相同
-{	
+{
 	//只有自动模式才会执行自动控制代码
 	if(mode_state != 3)
 	{
@@ -227,12 +226,12 @@ void Fly_Ctrl_Flow(void)		//调用周期与camera数据相同
 		return;
 	}
 	
-	if(roll_speed == 4)	//光流定点
+	if(roll_speed == 2)	//光流定点
 	{
 		speed_flow_roll();
 	}
 	
-	if(pitch_speed == 4)	//光流定点
+	if(pitch_speed == 2)	//光流定点
 	{
 		speed_flow_pitch();
 	}
@@ -314,6 +313,8 @@ void Ctrl_Mode(float *ch_in)
 	{
 		height_command = aux3_in+1;	//输入指令号为1-6，0为指令已经读取完毕后的等待值
 	}
+	
+	aux3_in_old = aux3_in;
 	
 	//电机输出使能
 	//All_Out_Switch = 0时急停，All_Out_Switch = 1时正常运行

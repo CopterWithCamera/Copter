@@ -30,39 +30,7 @@
 	yaw_mode;		//航向角控制			0：手动控制
 */
 
-u8 copter_fly_mode = 0;			//飞行模式		0：黑圆定点		1：前进找车		2：移动物体跟随		3：降落		10.手动
-
-//悬停
-void Copter_Hover(float T)
-{
-	roll_speed = 2;
-	pitch_speed = 2;
-	
-	roll_position = 1;
-	pitch_position = 1;
-}
-
-//搜索
-void Copter_Search(float T)
-{
-	
-}
-
-//跟随
-void Copter_Track(float T)
-{
-	roll_speed = 2;
-	pitch_speed = 2;
-	
-	roll_position = 1;
-	pitch_position = 1;
-}
-
-//后退一些用于降落
-void Copter_Back_To_Land(float T)
-{
-	
-}
+u8 copter_fly_mode = 0;			//飞行模式		0：手动		1：黑圆定点		2：前进找车		3：移动物体跟随		4：降落
 
 //手动
 void Copter_Attitude_Hand(float T)
@@ -72,8 +40,62 @@ void Copter_Attitude_Hand(float T)
 	
 	roll_position = 0;
 	pitch_position = 0;
+	
+	yaw_mode = 0;
 }
 
+//悬停
+void Copter_Hover(float T)
+{
+	roll_speed = 2;		//光流速度
+	pitch_speed = 2;
+	
+	roll_position = 1;
+	pitch_position = 1;
+	
+	yaw_mode = 0;
+}
+
+//前进找车
+void Copter_Search(float T)
+{
+	//左右方向用 光流速度 + 摄像头位置
+	roll_speed = 2;		//水平光流速度
+	roll_position = 1;	//位置
+	
+	//前后方向用光流控速前进
+//	pitch_speed = ;
+	pitch_position = 0;	//位置期望关闭
+	
+	yaw_mode = 0;
+}
+
+//移动物体跟随
+void Copter_Track(float T)
+{
+	//完全使用摄像头数据
+	
+//	roll_speed = ;
+//	pitch_speed = ;
+	
+//	roll_position = ;
+//	pitch_position = ;
+	
+	yaw_mode = 0;
+}
+
+//后退一些用于降落
+void Copter_Back_To_Land(float T)
+{
+	//速度数据使用光流
+	roll_speed = 2;		//光流速度
+	pitch_speed = 2;
+	
+//	roll_position = ;
+//	pitch_position = ;
+	
+	yaw_mode = 0;
+}
 
 //====================================================================================================
 
@@ -93,32 +115,32 @@ void Fly_Mode_Ctrl(float T)		//飞行模式切换控制函数
 	{
 		if(ctrl_command == 1)
 		{
-			Copter_Attitude_Hand(T);	//手动
+			copter_fly_mode = 0;		//手动
 		}
 		
 		if(ctrl_command == 2)
 		{
-			Copter_Attitude_Hand(T);	//手动
+			copter_fly_mode = 0;		//手动
 		}
 		
 		if(ctrl_command == 3)
 		{
-			Copter_Hover(T);			//悬停
+			copter_fly_mode = 1;		//悬停
 		}
 		
 		if(ctrl_command == 4)
 		{
-			Copter_Attitude_Hand(T);	//手动
+			copter_fly_mode = 2;		//前进
 		}
 
 		if(ctrl_command == 5)
 		{
-			Copter_Attitude_Hand(T);	//手动
+			copter_fly_mode = 3;		//跟踪
 		}
 		
 		if(ctrl_command == 6)
 		{
-			Copter_Attitude_Hand(T);	//手动
+			copter_fly_mode = 4;		//后退降落
 		}
 		
 		//清零
@@ -132,23 +154,23 @@ void Fly_Mode_Ctrl(float T)		//飞行模式切换控制函数
 	switch(copter_fly_mode)
 	{	
 		case 0:
-			Copter_Hover(T);
+			Copter_Attitude_Hand(T);
 		break;
 		
 		case 1:
+			Copter_Hover(T);
+		break;
+			
+		case 2:
 			Copter_Search(T);
 		break;
 		
-		case 2:
+		case 3:
 			Copter_Track(T);
 		break;
 		
-		case 3:
+		case 4:
 			Copter_Back_To_Land(T);
-		break;
-		
-		case 10:
-			Copter_Attitude_Hand(T);
 		break;
 		
 		default:
@@ -171,26 +193,26 @@ void Fly_Mode_Ctrl(float T)		//飞行模式切换控制函数
 */
 
 
-u8 copter_height_mode = 0;		//高度模式		0：定高			1：起飞			2：降落				10.手动
+u8 copter_height_mode = 0;		//高度模式		0：手动		1：定高		2：起飞		3：降落				
 
-void Copter_Height_Lock(float T)	//0
+void Copter_Height_Hand(float T)	//0
+{
+	height_mode = 0;
+}
+
+void Copter_Height_Lock(float T)	//1
 {
 	height_mode = 1;
 }
 
-void Copter_Take_Off(float T)		//1
+void Copter_Take_Off(float T)		//2
 {
 	height_mode = 3;
 }
 
-void Copter_Land(float T)			//2
+void Copter_Land(float T)			//3
 {
 	height_mode = 4;
-}
-
-void Copter_Height_Hand(float T)	//10
-{
-	height_mode = 0;
 }
 
 //================================================================================================================
@@ -211,17 +233,17 @@ void Height_Mode_Ctrl(float T)		//高度模式切换控制函数
 	{
 		if(height_command == 1)
 		{
-			copter_height_mode = 10;	//手动
+			copter_height_mode = 0;		//手动
 		}
 		
 		if(height_command == 2)
 		{
-			copter_height_mode = 0;		//定高
+			copter_height_mode = 1;		//定高
 		}
 		
 		if(height_command == 3)
 		{
-			copter_height_mode = 2;		//降落
+			copter_height_mode = 3;		//降落
 		}
 		
 		//清零
@@ -234,20 +256,20 @@ void Height_Mode_Ctrl(float T)		//高度模式切换控制函数
 	//姿态控制模式切换
 	switch(copter_height_mode)
 	{	
-		case 0:		//定高
+		case 0:		//手动
+			Copter_Height_Hand(T);
+		break;
+		
+		case 1:		//定高
 			Copter_Height_Lock(T);
 		break;
 		
-		case 1:		//起飞
+		case 2:		//起飞
 			Copter_Take_Off(T);
 		break;
 		
-		case 2:		//降落
+		case 3:		//降落
 			Copter_Land(T);
-		break;
-		
-		case 10:	//手动
-			Copter_Height_Hand(T);
 		break;
 		
 		default:	//手动
