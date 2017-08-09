@@ -130,6 +130,13 @@ void position_pitch(float T)	//与摄像头采集数据同频调用
 		//i
 		position_integration_pitch += bias_lpf_pitch * pid_setup.groups.ctrl5.ki; //user_parameter.groups.self_def_2.ki;
 		position_integration_pitch = LIMIT(position_integration_pitch,-10.0f,10.0f);
+		
+//		//接近中心位置I清零
+//		if(ABS(bias_lpf_pitch) < 10)
+//		{
+//			position_integration_pitch = 0.0f;
+//		}
+		
 		i_out = position_integration_pitch;
 		
 		//d

@@ -608,7 +608,7 @@ void ANO_DT_Send_User2()
 	
 	data_to_send[_cnt++] = ultra.measure_ok;	//输出控制标志（自己加上的，应急停止功能）
 	
-	data_to_send[_cnt++] = height_command;		//高度控制指令编号
+	data_to_send[_cnt++] = height_mode;			//高度控制指令编号
 	
 	data_to_send[_cnt++] = (u8)receive_fps;
 	
