@@ -193,7 +193,7 @@ void Fly_Mode_Ctrl(float T)		//飞行模式切换控制函数
 */
 
 
-u8 copter_height_mode = 0;		//高度模式		0：手动		1：定高		2：起飞		3：降落				
+u8 copter_height_mode = 0;		//高度模式		0：手动		1：定高		2：起飞		3：降落		
 
 void Copter_Height_Hand(float T)	//0
 {
@@ -244,6 +244,11 @@ void Height_Mode_Ctrl(float T)		//高度模式切换控制函数
 		if(height_command == 3)
 		{
 			copter_height_mode = 3;		//降落
+		}
+		
+		if(height_command == 4)
+		{
+			copter_height_mode = 2;		//起飞
 		}
 		
 		//清零
