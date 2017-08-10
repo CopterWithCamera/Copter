@@ -1078,6 +1078,18 @@ void ANO_DT_Data_Receive_Anl(u8 *data_buf,u8 num)
 		set_except_height(tmp);
 	}
 	
+	if(*(data_buf+2)==0X43)			//控制模式
+	{
+		tmp = *(data_buf+4);
+		set_fly_mode(tmp);
+	}
+	
+	if(*(data_buf+2)==0X44)			//高度模式
+	{
+		tmp = *(data_buf+4);
+		set_height_mode(tmp);
+	}
+	
 }
 
 

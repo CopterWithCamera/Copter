@@ -27,6 +27,8 @@ void Ctrl_Mode(float *ch_in);	//在fly_mode里调用
 void set_except_height(u8 height);	//接收高度数据
 void set_attitude_calibration(u8);
 void set_all_out_switch(u8 cmd);
+void set_height_mode(u8 cmd);
+void set_fly_mode(u8 cmd);
 
 extern u8 height_mode,	//高度控制模式		0：手动控高		1：锁定当前高度		2：根据指令高度控高		3：起飞		4：降落
 		roll_speed,		//速度横滚控制模式	0：手动控制		1：摄像头数据定点	2：光流数据定点
