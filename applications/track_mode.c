@@ -248,11 +248,14 @@ void Height_Mode_Ctrl(float T)		//高度模式切换控制函数
 		
 		if(height_command == 4)
 		{
-			copter_height_mode = 2;		//起飞
+			if(fly_ready)	//只有解锁后才能进入起飞模式
+			{
+				copter_height_mode = 2;		//起飞
+			}
 		}
 		
 		//清零
-		if(height_command <= 3)
+		if(height_command <= 4)
 		{
 			height_command = 0;	//外来指令在此清零
 		}
