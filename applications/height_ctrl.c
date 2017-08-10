@@ -421,7 +421,7 @@ float Height_Ctrl(float T,u8 mode,float thr,float height,u8 ready,float en)	//高
 		
 		#endif
 		
-		set_height_e = set_height_e * 2.0;	//给一个p
+		set_height_e = set_height_e * 2.0f;	//给一个p
 	}
 	
 	if(mode == 0)	//油门值控制

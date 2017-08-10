@@ -100,6 +100,7 @@ u8 auto_take_off;	//自动起飞标志位
 void take_off(float dT)	//dT单位是s
 {
 	static float thr_auto = 0.0f;
+	static float time_counter = 0;
 	
 	my_height_mode = 0;		//摇杆控制高度
 	
@@ -131,8 +132,24 @@ void take_off(float dT)	//dT单位是s
 		}
 		else
 		{
-			height_command = 2;		//给出定高指令
+			auto_take_off = 4;
+			time_counter = 1.0;
 		}
+	}
+	else if(auto_take_off == 4)
+	{
+		thr_auto = 20;
+		
+		time_counter -= dT;
+		
+		if(time_counter<0)
+		{
+			auto_take_off = 5;
+		}
+	}
+	else
+	{
+		height_command = 2;		//给出定高指令
 	}
 	
 	thr_auto = LIMIT(thr_auto,0,300);	//0代表悬停，300是限制最高值
