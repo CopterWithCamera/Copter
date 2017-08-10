@@ -41,7 +41,7 @@ void speed_flow_pitch()
 	except_speed = position_pitch_out;	//-( my_deathzoom( ( CH_filter[ROL] ) , 0, 30 ) / 5.0f );
 	except_speed = LIMIT(except_speed,-30,30);			//限幅（速度调整要求平稳）
 	
-	if( OF_QUA < 50 )		//数据可信度低
+	if( OF_QUA < 20 )		//数据可信度低
 	{
 		// bias_detect（水平偏差）值异常处理
 		
@@ -81,6 +81,12 @@ void speed_flow_pitch()
 		//i
 		speed_integration_pitch += speed_error * user_parameter.groups.param_E; //user_parameter.groups.self_def_1.ki;
 		speed_integration_pitch = LIMIT(speed_integration_pitch,-40.0f,40.0f);
+		
+		if(ABS(speed_error) < 4)
+		{
+			speed_integration_pitch = 0;
+		}
+		
 		i_out = - speed_integration_pitch;
 		
 		//d
@@ -148,7 +154,7 @@ void speed_flow_roll()
 	except_speed = position_roll_out;	//-( my_deathzoom( ( CH_filter[ROL] ) , 0, 30 ) / 5.0f );
 	except_speed = LIMIT(except_speed,-30,30);			//限幅（速度调整要求平稳）
 	
-	if( OF_QUA < 50 )
+	if( OF_QUA < 20 )
 	{
 		// bias_detect（水平偏差）值异常处理
 		
@@ -188,6 +194,12 @@ void speed_flow_roll()
 		//i
 		speed_integration_roll += speed_error * user_parameter.groups.param_H;
 		speed_integration_roll = LIMIT(speed_integration_roll,-40.0f,40.0f);
+		
+		if(ABS(speed_error) < 4)
+		{
+			speed_integration_roll = 0;
+		}
+		
 		i_out = - speed_integration_roll;
 		
 		//d
