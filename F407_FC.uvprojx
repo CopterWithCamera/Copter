@@ -503,6 +503,16 @@
               <FilePath>.\applications\height_ctrl.c</FilePath>
             </File>
             <File>
+              <FileName>fly_ctrl.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\applications\fly_ctrl.c</FilePath>
+            </File>
+            <File>
+              <FileName>track_mode.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\applications\track_mode.c</FilePath>
+            </File>
+            <File>
               <FileName>fly_mode.c</FileName>
               <FileType>1</FileType>
               <FilePath>.\applications\fly_mode.c</FilePath>
@@ -548,9 +558,9 @@
               <FilePath>.\applications\Ano_OF.c</FilePath>
             </File>
             <File>
-              <FileName>fly_ctrl.c</FileName>
+              <FileName>track_function.c</FileName>
               <FileType>1</FileType>
-              <FilePath>.\applications\fly_ctrl.c</FilePath>
+              <FilePath>.\applications\track_function.c</FilePath>
             </File>
             <File>
               <FileName>height_function.c</FileName>
@@ -566,11 +576,6 @@
               <FileName>position_function_flow.c</FileName>
               <FileType>1</FileType>
               <FilePath>.\applications\position_function_flow.c</FilePath>
-            </File>
-            <File>
-              <FileName>track_mode.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>.\applications\track_mode.c</FilePath>
             </File>
           </Files>
         </Group>
