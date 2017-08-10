@@ -82,10 +82,10 @@ void speed_flow_pitch()
 		speed_integration_pitch += speed_error * user_parameter.groups.param_E; //user_parameter.groups.self_def_1.ki;
 		speed_integration_pitch = LIMIT(speed_integration_pitch,-40.0f,40.0f);
 		
-		if(ABS(speed_error) < 4)
-		{
-			speed_integration_pitch = 0;
-		}
+//		if(ABS(speed_error) < 4)
+//		{
+//			speed_integration_pitch = 0;
+//		}
 		
 		i_out = - speed_integration_pitch;
 		
@@ -195,10 +195,10 @@ void speed_flow_roll()
 		speed_integration_roll += speed_error * user_parameter.groups.param_H;
 		speed_integration_roll = LIMIT(speed_integration_roll,-40.0f,40.0f);
 		
-		if(ABS(speed_error) < 4)
-		{
-			speed_integration_roll = 0;
-		}
+//		if(ABS(speed_error) < 4)
+//		{
+//			speed_integration_roll = 0;
+//		}
 		
 		i_out = - speed_integration_roll;
 		

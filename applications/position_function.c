@@ -115,6 +115,8 @@ void position_pitch(float T)	//与摄像头采集数据同频调用
 			i_out = 0.0f;
 			d_out = 0.0f;
 		}
+		
+		
 	}
 	else
 	{
@@ -131,11 +133,11 @@ void position_pitch(float T)	//与摄像头采集数据同频调用
 		position_integration_pitch += bias_lpf_pitch * pid_setup.groups.ctrl5.ki; //user_parameter.groups.self_def_2.ki;
 		position_integration_pitch = LIMIT(position_integration_pitch,-10.0f,10.0f);
 		
-//		//接近中心位置I清零
-//		if(ABS(bias_lpf_pitch) < 10)
-//		{
-//			position_integration_pitch = 0.0f;
-//		}
+		//接近中心位置I清零
+		if(ABS(bias_lpf_pitch) < 10)
+		{
+			position_integration_pitch = 0.0f;
+		}
 		
 		i_out = position_integration_pitch;
 		
@@ -222,6 +224,13 @@ void position_roll(float T)
 		//i
 		position_integration_roll += bias_lpf * user_parameter.groups.self_def_2.ki;
 		position_integration_roll = LIMIT(position_integration_roll,-10.0f,10.0f);
+		
+		//接近中心位置I清零
+		if(ABS(bias_lpf) < 10)
+		{
+			position_integration_roll = 0.0f;
+		}
+		
 		i_out = position_integration_roll;
 		
 		//d
