@@ -95,6 +95,7 @@ void height_hold(void)	//
 }
 
 //3.本函数输出自动起飞期间的油门值，输出值取值范围（-499 -- +499）
+//此模式按时间运行，有延时功能
 u8 auto_take_off;	//自动起飞标志位
 void take_off(float dT)	//dT单位是s
 {
@@ -119,18 +120,18 @@ void take_off(float dT)	//dT单位是s
 	
 	if(auto_take_off == 2)	//看来这个变量的意思是要把油门一下子拉到200（范围是-500 -- +500），这个数是70%的油门
 	{
-		thr_auto = 200;		//设定起飞油门
+		thr_auto = 300;		//设定起飞油门
 		auto_take_off = 3;	//开始控制油门
 	}
 	else if(auto_take_off == 3)	//然后根据时间一点点的让油门下降（这个函数调用频率是2ms，0.002*200 = 0.4，500*0.4=200），1s之后这个油门清零
 	{
 		if(thr_auto > 0.0f)
 		{
-			thr_auto -= 200 *dT;	//油门缓慢缩小，在2ms调用周期下1s中后此变量归零
+			thr_auto -= 200 *dT;	//油门缓慢缩小，在2ms调用周期下1.5s中后此变量归零
 		}
 		else
 		{
-			height_mode = 1;					//切换为锁定当前高度
+			height_command = 2;		//给出定高指令
 		}
 	}
 	
