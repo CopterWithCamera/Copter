@@ -128,7 +128,7 @@ void take_off(float dT)	//dT单位是s
 	{
 		if(thr_auto > 0.0f)
 		{
-			thr_auto -= 200 *dT;	//油门缓慢缩小，在2ms调用周期下1.5s中后此变量归零
+			thr_auto -= 180 *dT;	//油门缓慢缩小，在2ms调用周期下1.7s中后此变量归零
 		}
 		else
 		{
@@ -138,7 +138,7 @@ void take_off(float dT)	//dT单位是s
 	}
 	else if(auto_take_off == 4)
 	{
-		thr_auto = 20;
+		thr_auto = 30;
 		
 		time_counter -= dT;
 		
