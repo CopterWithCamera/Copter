@@ -71,7 +71,7 @@ float bias_correct(float roll, float pitch, float hight, float bias)   ///hight 
 	x1 = hight * sin(roll*3.141f/180.0f);
 	
 	//系数
-	coe_bias = (0.0021f*hight*hight+0.2444f*hight+8.9576f) / 40.0f;
+	coe_bias = hight / 2.0f / 40.0f;
 	
 	real_bias = coe_bias * bias - x1;
 	
@@ -87,7 +87,7 @@ float bias_pitch_correct(float roll, float pitch, float hight, float bias)   ///
 	x1 = hight * sin(pitch*3.141f/180.0f);
 	
 	//系数
-	coe_bias = (0.0021f*hight*hight+0.2444f*hight+8.9576f) / 40.0f;
+	coe_bias = hight / 2.0f / 40.0f;
 	
 	real_bias = coe_bias * bias - x1;
 	
