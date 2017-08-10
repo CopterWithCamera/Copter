@@ -415,21 +415,29 @@ float Height_Ctrl(float T,u8 mode,float thr,float height,u8 ready,float en)	//高
 		#endif
 	}
 	
-	//高度控制
-	if( set_height_e > 100)			//期望高度大于当前高度，需要上升
-	{
-		//期望速度模式
-		my_thr_out = Height_Pid(T,en,1,0,300,detection_takeoff_flag,detection_modechange_flag);	//设置上升速度
-	}
-	else if(set_height_e < -100)	//期望高度小于当前高度，需要下降
-	{
-		//期望速度模式
-		my_thr_out = Height_Pid(T,en,1,0,-240,detection_takeoff_flag,detection_modechange_flag);	//设置下降速度
-	}
-	else							//小范围内调整
+	if(mode == 0)	//油门值控制
 	{
 		//期望高度模式
-		my_thr_out = Height_Pid(T,en,0,set_height_e,0,detection_takeoff_flag,detection_modechange_flag);	//设置期望高度
+		my_thr_out = Height_Pid(T,en,0,set_height_e,0,detection_takeoff_flag,detection_modechange_flag);		//设置期望高度差
+	}
+	else
+	{
+		//高度控制
+		if( set_height_e > 100)			//期望高度大于当前高度，需要上升
+		{
+			//期望速度模式
+			my_thr_out = Height_Pid(T,en,1,0,300,detection_takeoff_flag,detection_modechange_flag);	//设置上升速度
+		}
+		else if(set_height_e < -100)	//期望高度小于当前高度，需要下降
+		{
+			//期望速度模式
+			my_thr_out = Height_Pid(T,en,1,0,-240,detection_takeoff_flag,detection_modechange_flag);	//设置下降速度
+		}
+		else							//小范围内调整
+		{
+			//期望高度模式
+			my_thr_out = Height_Pid(T,en,0,set_height_e,0,detection_takeoff_flag,detection_modechange_flag);	//设置期望高度差
+		}
 	}
 	
 	return (my_thr_out);	//经过定高运算的油门值
