@@ -59,12 +59,12 @@ void Copter_Hover(float T)
 //前进找车
 void Copter_Search(float T)
 {
-	//左右方向用 光流速度 + 摄像头位置
-	roll_speed = 2;		//水平光流速度
-	roll_position = 1;	//位置
+	//速度控制用前进状态特殊速度控制
+	pitch_speed = 3;
+	roll_speed = 3;		//水平光流速度
 	
-	//前后方向用光流控速前进
-//	pitch_speed = ;
+	//只开启水平位置期望
+	roll_position = 1;	//位置
 	pitch_position = 0;	//位置期望关闭
 	
 	yaw_mode = 0;

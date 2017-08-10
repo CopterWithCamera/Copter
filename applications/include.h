@@ -10,6 +10,7 @@
 #include "usart.h"
 #include "usbd_user_hid.h"
 #include "data_transfer.h"
+#include "track_function.h"
 
 //================系统===================
 

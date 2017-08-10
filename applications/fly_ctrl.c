@@ -235,6 +235,17 @@ void Fly_Ctrl_Cam(float T)		//调用周期与camera数据相同
 	{
 		speed_pitch();
 	}
+	
+	if( roll_speed == 3 )	//摄像头前进
+	{
+		forward_roll();
+	}
+	
+	if( pitch_speed == 3 )	//摄像头前进
+	{
+		forward_pitch();
+	}
+	
 }
 
 void Fly_Ctrl_Flow(void)		//调用周期与camera数据相同

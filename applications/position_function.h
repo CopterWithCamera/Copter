@@ -28,4 +28,7 @@ void speed_roll_clear(void);
 extern float position_pitch_out;		//输出速度期望，单位cm/s，方向 + <前-- --后> -
 extern float position_roll_out;			//输出速度期望，单位cm/s，方向 + <---  ---> -
 
+extern float speed_integration_roll;
+extern float speed_integration_pitch;
+
 #endif
