@@ -366,38 +366,45 @@ float Height_Ctrl(float T,u8 mode,float thr,float height,u8 ready,float en)	//高
 		//======================================================================================
 		//遥控器输入值控制升降
 		
-		//生成期望速度
-		if(thr_set>0)	//上升
+		if(thr_take_off_f)
 		{
-			set_speed_t = thr_set/450 * MAX_VERTICAL_SPEED_UP;	//set_speed_t 表示期望上升速度占最大上升速度的比值
+			//生成期望速度
+			if(thr_set>0)	//上升
+			{
+				set_speed_t = thr_set/450 * MAX_VERTICAL_SPEED_UP;	//set_speed_t 表示期望上升速度占最大上升速度的比值
+			}
+			else			//悬停或下降
+			{
+				set_speed_t = thr_set/450 * MAX_VERTICAL_SPEED_DW;
+			}
+		
+			//速度期望限幅滤波
+			set_speed_t = LIMIT(set_speed_t,-MAX_VERTICAL_SPEED_DW,MAX_VERTICAL_SPEED_UP);	//速度期望限幅
+			LPF_1_(10.0f,T,my_pow_2_curve(set_speed_t,0.25f,MAX_VERTICAL_SPEED_DW),set_speed);	//LPF_1_是低通滤波器，截至频率是10Hz，输出值是set_speed，my_pow_2_curve把输入数据转换为2阶的曲线，在0附近平缓，在数值较大的部分卸率大
+			set_speed = LIMIT(set_speed,-MAX_VERTICAL_SPEED_DW,MAX_VERTICAL_SPEED_UP);	//限幅，单位mm/s
+
+			//set_speed 为最终输出的期望速度
+			
+			//生成期望高度差
+			
+			//高度差 = ∑速度差*T （单位 mm/s）
+			//h(n) = h(n-1) + △h  ， △h =（期望速度 - 当前速度） * △t
+			//用起飞状态给目标高度差积分控制变量赋值，只有在ex_i_en = 1时才会开始积分计算目标高度差
+			static u8 ex_i_en;		//期望高度差控制变量（只有起飞后才会开始计数期望高度差）
+			ex_i_en = thr_take_off_f;
+			
+			set_height_em += (set_speed -        hc_value.m_speed)      * T;	//没有经过加速度修正和带通滤波的速度值算出的速度差 * △T
+			set_height_em = LIMIT(set_height_em,-5000 *ex_i_en,5000 *ex_i_en);	//ex_i_en = 1 表示已经到达起飞油门，否则为0
+			
+			set_height_e += (set_speed  - 1.05f *hc_value.fusion_speed) * T;	//经过加速度修正和带通滤波的速度值算出的速度差 * △T
+			set_height_e  = LIMIT(set_height_e ,-5000 *ex_i_en,5000 *ex_i_en);
+			
+			LPF_1_(0.0005f,T,set_height_em,set_height_e);	//频率 时间 输入 输出	//两个速度差按比例融合，第一个参数越大，set_height_em的占比越大	
 		}
-		else			//悬停或下降
+		else
 		{
-			set_speed_t = thr_set/450 * MAX_VERTICAL_SPEED_DW;
+			set_height_e = 0;
 		}
-
-		//速度期望限幅滤波
-		set_speed_t = LIMIT(set_speed_t,-MAX_VERTICAL_SPEED_DW,MAX_VERTICAL_SPEED_UP);	//速度期望限幅
-		LPF_1_(10.0f,T,my_pow_2_curve(set_speed_t,0.25f,MAX_VERTICAL_SPEED_DW),set_speed);	//LPF_1_是低通滤波器，截至频率是10Hz，输出值是set_speed，my_pow_2_curve把输入数据转换为2阶的曲线，在0附近平缓，在数值较大的部分卸率大
-		set_speed = LIMIT(set_speed,-MAX_VERTICAL_SPEED_DW,MAX_VERTICAL_SPEED_UP);	//限幅，单位mm/s
-
-		//set_speed 为最终输出的期望速度
-		
-		//生成期望高度差
-		
-		//高度差 = ∑速度差*T （单位 mm/s）
-		//h(n) = h(n-1) + △h  ， △h =（期望速度 - 当前速度） * △t
-		//用起飞状态给目标高度差积分控制变量赋值，只有在ex_i_en = 1时才会开始积分计算目标高度差
-		static u8 ex_i_en;		//期望高度差控制变量（只有起飞后才会开始计数期望高度差）
-		ex_i_en = thr_take_off_f;
-		
-		set_height_em += (set_speed -        hc_value.m_speed)      * T;	//没有经过加速度修正和带通滤波的速度值算出的速度差 * △T
-		set_height_em = LIMIT(set_height_em,-5000 *ex_i_en,5000 *ex_i_en);	//ex_i_en = 1 表示已经到达起飞油门，否则为0
-		
-		set_height_e += (set_speed  - 1.05f *hc_value.fusion_speed) * T;	//经过加速度修正和带通滤波的速度值算出的速度差 * △T
-		set_height_e  = LIMIT(set_height_e ,-5000 *ex_i_en,5000 *ex_i_en);
-		
-		LPF_1_(0.0005f,T,set_height_em,set_height_e);	//频率 时间 输入 输出	//两个速度差按比例融合，第一个参数越大，set_height_em的占比越大	
 		
 		//set_height_e 为期望高度差，单位 mm
 	}
@@ -413,6 +420,8 @@ float Height_Ctrl(float T,u8 mode,float thr,float height,u8 ready,float en)	//高
 			set_height_e = height - sonar.displacement;						//高度差 = 目标高度 - 当前高度
 		
 		#endif
+		
+		set_height_e = set_height_e * 2.0;	//给一个p
 	}
 	
 	if(mode == 0)	//油门值控制
