@@ -97,6 +97,21 @@ void position_pitch(float T)	//与摄像头采集数据同频调用
 		{
 			bias_error_counter_pitch++;	//继续记录超出控制时间
 			
+//			if( bias_detect_pitch < -30.0f )
+//			{
+//				//后偏过大
+//				p_out = -5;		//前飞
+//			}
+//			else if( bias_detect_pitch > 30.0f )
+//			{
+//				//前偏过大
+//				p_out =  5;		//后飞
+//			}
+//			else
+//			{
+//				p_out = 0.0f;
+//			}
+			
 			p_out = bias_lpf_pitch / 2.0f * pid_setup.groups.ctrl5.kp;
 
 			i_out = 0.0f;
@@ -177,6 +192,22 @@ void position_roll(float T)
 		else
 		{
 			bias_error_counter++;
+			
+//			if( bias_detect < -50.0f )	//根据偏移方向给出指令
+//			{
+//				//右偏过大
+//				p_out = -5;		//左飞
+//			}
+//			else if( bias_detect > 50.0f )
+//			{
+//				//左偏过大
+//				p_out =  5;		//右飞
+//			}
+//			else
+//			{
+//				//容错
+//				p_out = 0.0f;
+//			}
 			
 			p_out = bias_lpf / 2.0f * user_parameter.groups.self_def_2.kp;
 
