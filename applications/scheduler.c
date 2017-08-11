@@ -30,6 +30,7 @@
 #include "ano_of.h"
 #include "position_function.h"
 #include "track_mode.h"
+#include "renesas_datatransfer.h"
 
 s16 loop_cnt;
 
@@ -230,6 +231,8 @@ void Duty_50ms()
 		get_fps_funtion_counter = 0;
 		get_fps();
 	}
+	
+	renesas_data_send();	//向瑞萨发送数据
 	
 }
 

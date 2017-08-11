@@ -4,6 +4,9 @@
 #include "height_function.h"
 #include "track_mode.h"
 #include "rc.h"
+#include "camera_datatransfer.h"
+#include "track_mode.h"
+#include "anotc_baro_ctrl.h"
 
 u8 tmpbuff[20] = {0};
 
@@ -145,5 +148,31 @@ void renesas_data_receive_handle(u8 data)
 			mode = 0;
 		break;
 	}
+}
+
+//===============================================================================
+
+u8 RenesasSendBuff[20] = {0};
+
+void renesas_send_state(void)
+{
+	RenesasSendBuff[0] = 0xBB;
+	RenesasSendBuff[1] = 0xEE;
+	
+	RenesasSendBuff[2] = 0x01;
+	
+	RenesasSendBuff[3] = fly_ready;
+	RenesasSendBuff[4] = tracking_state;
+	RenesasSendBuff[5] = All_Out_Switch;	//0：急停   1：输出
+	RenesasSendBuff[6] = copter_fly_mode;
+	RenesasSendBuff[7] = copter_height_mode;
+	RenesasSendBuff[8] = (u8)(sonar_fusion.fusion_displacement.out/10.0f);
+	
+	Usart1_Send(RenesasSendBuff,9);	//发送到串口1
+}
+
+void renesas_data_send(void)
+{
+	renesas_send_state();
 }
 

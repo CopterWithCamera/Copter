@@ -3,7 +3,8 @@
 
 #include "stm32f4xx.h"
 
-void renesas_data_receive_handle(u8 data);
+void renesas_data_receive_handle(u8 data);		//接收瑞萨发送的数据
+void renesas_data_send(void);					//对瑞萨发送数据
 
 #endif
 
