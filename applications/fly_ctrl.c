@@ -246,6 +246,16 @@ void Fly_Ctrl_Cam(float T)		//调用周期与camera数据相同
 		forward_pitch();
 	}
 	
+	if( roll_speed == 4 )	//摄像头后退
+	{
+		backward_roll();
+	}
+	
+	if( pitch_speed == 4 )	//摄像头后退
+	{
+		backward_pitch();
+	}
+	
 }
 
 void Fly_Ctrl_Flow(void)		//调用周期与camera数据相同

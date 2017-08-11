@@ -89,12 +89,13 @@ void Copter_Track(float T)
 //后退一些用于降落
 void Copter_Back_To_Land(float T)
 {
-	//速度数据使用光流
-	roll_speed = 2;		//光流速度
-	pitch_speed = 2;
+	//速度控制用后退状态特殊速度控制
+	roll_speed = 4;
+	pitch_speed = 4;
 	
-//	roll_position = ;
-//	pitch_position = ;
+	//只开启水平位置期望
+	roll_position = 1;
+	pitch_position = 0;
 	
 	yaw_mode = 0;
 }

@@ -7,6 +7,9 @@
 void forward_pitch(void);
 void forward_roll(void);
 
+void backward_pitch(void);
+void backward_roll(void);
+
 
 #endif
 
