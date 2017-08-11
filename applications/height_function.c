@@ -160,7 +160,7 @@ void take_off(float dT)	//dT单位是s
 		
 		if(auto_take_off == 2)	//看来这个变量的意思是要把油门一下子拉到200（范围是-500 -- +500），这个数是70%的油门
 		{
-			thr_auto = 350;		//设定起飞油门
+			thr_auto = 300;		//设定起飞油门
 			auto_take_off = 3;	//开始控制油门
 		}
 		else if(auto_take_off == 3)	//然后根据时间一点点的让油门下降（这个函数调用频率是2ms，0.002*200 = 0.4，500*0.4=200），1s之后这个油门清零
@@ -191,7 +191,7 @@ void take_off(float dT)	//dT单位是s
 			height_command = 2;		//给出定高指令
 		}
 		
-		thr_auto = LIMIT(thr_auto,0,300);	//0代表悬停，300是限制最高值
+		thr_auto = LIMIT(thr_auto,0,400);	//0代表悬停，300是限制最高值
 	
 	#endif
 
