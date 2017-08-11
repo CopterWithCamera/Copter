@@ -75,11 +75,13 @@ void Copter_Track(float T)
 {
 	//完全使用摄像头数据
 	
-//	roll_speed = ;
-//	pitch_speed = ;
+	//暂时使用悬停算法代替
 	
-//	roll_position = ;
-//	pitch_position = ;
+	roll_speed = 1;		//摄像头数据
+	pitch_speed = 1;
+	
+	roll_position = 1;
+	pitch_position = 1;
 	
 	yaw_mode = 0;
 }
