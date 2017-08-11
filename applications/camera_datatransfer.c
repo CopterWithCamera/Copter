@@ -128,6 +128,10 @@ float fps = 0;
 float processing_fps = 0;
 float receive_T = 0;
 
+//跟踪状态
+float tracking_state = 0;
+
+//自动锁存的姿态信息
 float Roll_Image = 0;		//结果对应的角度
 float Pitch_Image = 0;
 float Yaw_Image = 0;
@@ -145,7 +149,7 @@ void Get_Camera_Status(void)
 {
 	fps = *((float*)(&(Tmp_Buffer[0])));
 	processing_fps = *((float*)(&(Tmp_Buffer[4])));
-	//tmp = *((float*)(&(Tmp_Buffer[8])));
+	tracking_state = *((float*)(&(Tmp_Buffer[8])));
 }
 
 //接收图像采集时间信息

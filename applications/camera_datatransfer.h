@@ -20,6 +20,9 @@ extern float fps;
 extern float processing_fps;
 extern float receive_T;
 
+//跟踪状态
+extern float tracking_state;
+
 extern float Roll_Image;		//结果对应的角度
 extern float Pitch_Image;
 extern float Yaw_Image;
