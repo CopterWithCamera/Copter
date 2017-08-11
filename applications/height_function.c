@@ -138,7 +138,7 @@ void take_off(float dT)	//dT单位是s
 	}
 	else if(auto_take_off == 4)		//1s整，然后锁定当前高度
 	{
-		thr_auto = 60;
+		thr_auto = 50;	//thr的死区在+-40，40以上才有效
 		
 		time_counter -= dT;
 		
@@ -155,6 +155,8 @@ void take_off(float dT)	//dT单位是s
 	thr_auto = LIMIT(thr_auto,0,300);	//0代表悬停，300是限制最高值
 
 	CH_ctrl[THR] = thr_auto;	//输出值传给油门
+	
+	mydata.d14 = (u16)thr_auto;
 }
 
 //4.降落
