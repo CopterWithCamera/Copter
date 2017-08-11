@@ -58,6 +58,7 @@ void Ultra_Duty()
 		u8 temp[3];
 		temp[0] = 0x55;
 		Uart5_Send(temp ,1);
+		
 	#elif defined(USE_ANO_OF)
 		//光流模式下直接读取光流数据
 		if(OF_ALT2 > 8)
@@ -79,6 +80,7 @@ void Ultra_Duty()
 		ultra_start_f = 0;
 		ultra.h_delta = ultra.relative_height - ultra_distance_old;
 		ultra_distance_old = ultra.relative_height;
+
 	#endif
 
 	ultra_start_f = 1;

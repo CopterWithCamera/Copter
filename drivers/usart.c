@@ -358,10 +358,6 @@ void Uart5_IRQ(void)
 		
 			Ultra_Get(com_data);	//把接收到的8位数据传入超声波传感器处理函数Ultra_Get()
 		
-		#elif defined(USE_ANO_OF)
-		
-			AnoOF_GetOneByte(com_data);
-		
 		#endif
 		
 		
@@ -485,6 +481,7 @@ void Uart4_IRQ(void)
 		
 		//这里添加数据处理函数
 		
+		AnoOF_GetOneByte(com_data);	//光流传感器数据处理程序
 	}
 
 	//发送（进入移位）中断

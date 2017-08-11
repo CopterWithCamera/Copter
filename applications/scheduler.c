@@ -44,8 +44,8 @@ void Loop_check()  //TIME INTTERRUPT
 	loop.cnt_20ms++;
 	loop.cnt_50ms++;
 	loop.cnt_camera_data_ms++;
-	#if defined(USE_ANO_OF)
-		loop.cnt_flow_data_ms++;	//只有使用光流数据时才允许光流超时定时器运行
+	#if defined(ANO_OF_FUNCTION)
+		loop.cnt_flow_data_ms++;	//只有允许光流线程运行时才能开启定时器累加
 	#endif
 
 	if( loop.check_flag == 1)

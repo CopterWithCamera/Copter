@@ -47,14 +47,10 @@ u8 All_Init()
 	Para_Init();							//参数初始化
 	
 	Delay_ms(100);						//延时
-	
-	#if defined(USE_ANO_OF)	//使用光流	//初始化光流串口（跟超声波公用一个口）
-		Uart5_Init(500000);	
-	#else					//使用超声波	//超声波初始化（串口5初始化）
-		Ultrasonic_Init();
-	#endif
-	
-	Uart4_Init(115200);		//串口4
+		
+	Ultrasonic_Init();				//使用超声波	//超声波初始化（串口5初始化）
+
+	Uart4_Init(500000);				//串口4，连接光流传感器
 	
 	ak8975_ok = !(ANO_AK8975_Run());
 	

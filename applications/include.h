@@ -25,6 +25,8 @@
 #define ANO_DT_USE_USART2 		//开启串口2数传功能
 #define ANO_DT_USE_USB_HID		//开启飞控USBHID连接上位机功能
 
+#define ANO_OF_FUNCTION			//光流线程使能
+
 //=============中断优先级=================
 
 #define NVIC_GROUP 				NVIC_PriorityGroup_3	//中断分组选择
