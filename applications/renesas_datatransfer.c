@@ -104,16 +104,16 @@ void renesas_data_receive_handle(u8 data)
 		break;
 			
 		case 2:
-			if(mode == 0x01)			//设置命令
+			if(data == 0x01)			//设置命令
 			{
 				mode = 11;
 			}
-			else if(mode == 0x02)		//高度命令（2字节）
+			else if(data == 0x02)		//高度命令（2字节）
 			{
 				mode = 12;
 				counter = 0;
 			}
-			else if(mode == 0x03)		//飞行命令
+			else if(data == 0x03)		//飞行命令
 			{
 				mode = 13;
 			}

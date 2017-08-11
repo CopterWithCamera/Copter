@@ -14,8 +14,8 @@
 
 //==============机型匹配=================
 
-//#define __COPTER_NO1
-#define __COPTER_NO2
+#define __COPTER_NO1
+//#define __COPTER_NO2
 
 //================系统===================
 
