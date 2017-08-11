@@ -261,6 +261,15 @@ float Height_Pid(float T,float en,u8 mode,float height_error,float except_speed_
 	thr_out = LIMIT(thr_out,0,1000);
 
 	//（输出整合部分结束，输出结果为thr_out）
+	
+	mydata.d6 = (s16)set_height_e;
+	mydata.d7 = (s16)exp_speed;
+	mydata.d8 = (s16)exp_acc;
+	mydata.d9 = (s16)thr_pid_out;
+	mydata.d10 = (s16)thr_take_off;
+	mydata.d11 = (s16)h_height_val.err_i;
+	mydata.d12 = (s16)h_speed_val.err_i;
+	mydata.d13 = (s16)h_acc_val.err_i;
 
 	return thr_out;
 }
@@ -333,6 +342,8 @@ float Height_Ctrl(float T,u8 mode,float thr,float height,u8 ready,float en)	//高
 		float thr_set;	//本函数处理后的油门
 		thr_set = my_deathzoom_2(my_deathzoom((thr - 500),0,40),0,10);	//±50为死区，零点为±40的位置
 
+		mydata.d5 = (s16)thr_set;				//roll方向
+		
 		//======================================================================================
 		//状态检测
 		
@@ -448,6 +459,8 @@ float Height_Ctrl(float T,u8 mode,float thr,float height,u8 ready,float en)	//高
 			my_thr_out = Height_Pid(T,en,0,set_height_e,0,detection_takeoff_flag,detection_modechange_flag);	//设置期望高度差
 		}
 	}
+	
+	
 	
 	return (my_thr_out);	//经过定高运算的油门值
 
