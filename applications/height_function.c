@@ -180,7 +180,7 @@ void take_off(float dT)	//dT单位是s
 		}
 		else if(auto_take_off == 4)		//1s整，然后锁定当前高度
 		{
-			thr_auto = 100;	//thr的死区在+-40，40以上才有效
+			thr_auto = 80;	//thr的死区在+-40，40以上才有效
 			
 			time_counter -= dT;
 			
