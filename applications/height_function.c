@@ -152,6 +152,9 @@ void take_off(float dT)	//dT单位是s
 		else
 		{
 			height_command = 2;		//给出定高指令
+			
+//			my_except_height = 850;	//给850mm的期望高度
+//			height_command = 5;		//指令控高
 		}
 		
 		thr_auto = LIMIT(thr_auto,0,300);	//0代表悬停，300是限制最高值
@@ -189,6 +192,9 @@ void take_off(float dT)	//dT单位是s
 		else
 		{
 			height_command = 2;		//给出定高指令
+			
+//			my_except_height = 850;	//给850mm的期望高度
+//			height_command = 5;		//指令控高
 		}
 		
 		thr_auto = LIMIT(thr_auto,0,400);	//0代表悬停，300是限制最高值
