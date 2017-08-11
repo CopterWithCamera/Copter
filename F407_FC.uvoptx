@@ -118,7 +118,7 @@
         <SetRegEntry>
           <Number>0</Number>
           <Key>DLGUARM</Key>
-          <Name>皫??Tw皫?</Name>
+          <Name>貀??Tw貀?</Name>
         </SetRegEntry>
         <SetRegEntry>
           <Number>0</Number>
@@ -162,6 +162,11 @@
           <count>2</count>
           <WinNumber>1</WinNumber>
           <ItemText>mode_state</ItemText>
+        </Ww>
+        <Ww>
+          <count>3</count>
+          <WinNumber>1</WinNumber>
+          <ItemText>votage,0x0A</ItemText>
         </Ww>
       </WatchWindow1>
       <MemoryWindow1>

@@ -12,7 +12,7 @@
 #include "ultrasonic.h"
 #include "camera_datatransfer.h"
 #include "ano_of.h"
-
+#include "renesas_datatransfer.h"
 
 	/*
 	
@@ -609,6 +609,7 @@ void Usart1_IRQ(void)
 		com_data = USART1->DR;
 		
 		//此处添加接收处理函数
+		renesas_data_receive_handle(com_data);
 	}
 	
 	//发送（进入移位）中断
@@ -629,7 +630,7 @@ void Usart1_IRQ(void)
 //重定向c库函数printf到串口DEBUG_USART，重定向后可使用printf函数
 int fputc(int ch, FILE *f)
 {
-	unsigned char temp = (unsigned char)ch;
+	unsigned char temp = ch;
 	Usart1_Send(&temp,1);
 	return (ch);
 }
