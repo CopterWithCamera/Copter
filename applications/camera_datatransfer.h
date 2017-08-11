@@ -14,7 +14,6 @@ extern float bias;			//Æ«ÒÆ
 extern float bias_pitch;	//pitchÆ«ÒÆ
 extern float angle;			//½Ç¶È
 
-
 //²ÎÊý
 extern float fps;
 extern float processing_fps;

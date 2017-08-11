@@ -9,6 +9,7 @@
 #include "led.h"
 #include "include.h"
 #include "mymath.h"
+#include "camera_datatransfer.h"
 
 void LED_Init()
 {
@@ -326,14 +327,30 @@ void LED_Duty() //50ms一次
 	}
 	else if(mode_state ==3)							//自动模式
 	{
-		if(!fly_ready)				
+		if(tracking_state)	//跟踪成功
 		{
-			light.RGB_Info = 28;	//黄呼吸
-		} 
-		else     					
-		{
-			light.RGB_Info = 29;	//黄色
+			if(!fly_ready)				
+			{
+				light.RGB_Info = 28;	//黄呼吸
+			} 
+			else     					
+			{
+				light.RGB_Info = 29;	//黄色
+			}
 		}
+		else
+		{
+			if(!fly_ready)				
+			{
+				light.RGB_Info = 24;	//绿呼吸
+			} 
+			else
+			{
+				light.RGB_Info = 25;	//绿色
+			}
+		}
+		
+
 	}
 	
 	static u8 step;
