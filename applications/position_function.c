@@ -87,7 +87,7 @@ void position_pitch(float T)	//与摄像头采集数据同频调用
 	{
 		//偏移过大，使用乒乓控制
 		
-		if(	( bias_error_counter_pitch * T ) > 2.0f )	//时间超过1s
+		if(	( bias_error_counter_pitch * T ) > 20.0f )	//时间超过5s
 		{
 			p_out = 0.0f;	//不再控制
 			i_out = 0.0f;
@@ -97,22 +97,22 @@ void position_pitch(float T)	//与摄像头采集数据同频调用
 		{
 			bias_error_counter_pitch++;	//继续记录超出控制时间
 			
-//			if( bias_detect_pitch < -30.0f )
-//			{
-//				//后偏过大
-//				p_out = -5;		//前飞
-//			}
-//			else if( bias_detect_pitch > 30.0f )
-//			{
-//				//前偏过大
-//				p_out =  5;		//后飞
-//			}
-//			else
-//			{
-//				p_out = 0.0f;
-//			}
+			if( bias_detect_pitch < -30.0f )
+			{
+				//后偏过大
+				p_out = -5;		//前飞
+			}
+			else if( bias_detect_pitch > 30.0f )
+			{
+				//前偏过大
+				p_out =  5;		//后飞
+			}
+			else
+			{
+				p_out = 0.0f;
+			}
 			
-			p_out = bias_lpf_pitch / 2.0f * pid_setup.groups.ctrl5.kp;
+//			p_out = bias_lpf_pitch / 2.0f * pid_setup.groups.ctrl5.kp;
 
 			i_out = 0.0f;
 			d_out = 0.0f;
@@ -183,7 +183,7 @@ void position_roll(float T)
 	{
 		//偏移过大，使用乒乓控制
 		
-		if( bias_error_counter * T >1.0f )	//超时控制持续时间大于1s
+		if( bias_error_counter * T >20.0f )	//超时控制持续时间大于5s
 		{
 			p_out = 0.0f;	//不再控制
 			i_out = 0.0f;
@@ -193,23 +193,23 @@ void position_roll(float T)
 		{
 			bias_error_counter++;
 			
-//			if( bias_detect < -50.0f )	//根据偏移方向给出指令
-//			{
-//				//右偏过大
-//				p_out = -5;		//左飞
-//			}
-//			else if( bias_detect > 50.0f )
-//			{
-//				//左偏过大
-//				p_out =  5;		//右飞
-//			}
-//			else
-//			{
-//				//容错
-//				p_out = 0.0f;
-//			}
+			if( bias_detect < -50.0f )	//根据偏移方向给出指令
+			{
+				//右偏过大
+				p_out = -5;		//左飞
+			}
+			else if( bias_detect > 50.0f )
+			{
+				//左偏过大
+				p_out =  5;		//右飞
+			}
+			else
+			{
+				//容错
+				p_out = 0.0f;
+			}
 			
-			p_out = bias_lpf / 2.0f * user_parameter.groups.self_def_2.kp;
+//			p_out = bias_lpf / 2.0f * user_parameter.groups.self_def_2.kp;
 
 			i_out = 0.0f;
 			d_out = 0.0f;
@@ -413,11 +413,11 @@ void speed_roll(void)
 		
 		if( except_speed > 1.0f )	//速度期望向左
 		{
-			p_out = -40.0f * user_parameter.groups.param_A;	//左飞
+			p_out = -30.0f * user_parameter.groups.param_A;	//左飞
 		}
 		else if(except_speed < -1.0f)	//速度期望向右
 		{
-			p_out =  40.0f * user_parameter.groups.param_B;	//右飞
+			p_out =  30.0f * user_parameter.groups.param_B;	//右飞
 		}
 		else						
 		{

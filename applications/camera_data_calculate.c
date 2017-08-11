@@ -141,7 +141,7 @@ void Camera_Calculate(void)
 	
 	//数据校准与滤波（生成 bias_error_flag、bias_real、bias_lpf、speed_d_bias、speed_d_bias_lpf 数值）
 	static float bias_lpf_old;	//上一个在可用范围内的bias_lpf
-	if(ABS(bias_detect)<50.0f)	//只有在合理范围内才会矫正，矫正的同时进行低通滤波
+	if(ABS(bias_detect)<38.0f)	//只有在合理范围内才会矫正，矫正的同时进行低通滤波
 	{
 		//正常情况
 		
@@ -188,7 +188,7 @@ void Camera_Calculate(void)
 	
 	//数据校准与滤波
 	static float bias_lpf_old_pitch;	//上一个在可用范围内的bias_lpf
-	if(ABS(bias_detect_pitch)<30.0f)	//数据正常（bias_detect_pitch的正常值只有-24~+24）
+	if(ABS(bias_detect_pitch)<22.0f)	//数据正常（bias_detect_pitch的正常值只有-24~+24）
 	{
 		//偏移运算
 		bias_real_pitch = bias_pitch_correct(Roll_Image,Pitch_Image, Height_Image/10.0f, bias_detect_pitch);	//姿态误差校准

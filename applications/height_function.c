@@ -138,7 +138,7 @@ void take_off(float dT)	//dT单位是s
 	}
 	else if(auto_take_off == 4)		//1s整，然后锁定当前高度
 	{
-		thr_auto = 50;
+		thr_auto = 60;
 		
 		time_counter -= dT;
 		

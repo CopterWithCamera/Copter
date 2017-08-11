@@ -47,8 +47,8 @@ void Copter_Attitude_Hand(float T)
 //悬停
 void Copter_Hover(float T)
 {
-	roll_speed = 2;		//光流速度
-	pitch_speed = 2;
+	roll_speed = 1;		//光流速度
+	pitch_speed = 1;
 	
 	roll_position = 1;
 	pitch_position = 1;

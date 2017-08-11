@@ -212,12 +212,12 @@ void flow_data_detect(float T)
 	OF_DX2FIX_DETECT_LPF = flow_bias_lpf(OF_DX2FIX_DETECT,T,0.8f,OF_DX2FIX_DETECT_LPF);
 	OF_DY2FIX_DETECT_LPF = flow_bias_lpf(OF_DY2FIX_DETECT,T,0.8f,OF_DY2FIX_DETECT_LPF);
 	
-	mydata.d1 = (s16)OF_DX2FIX;
-	mydata.d2 = (s16)OF_DX2FIX_DETECT;
-	mydata.d3 = (s16)OF_DX2FIX_DETECT_LPF;
-	mydata.d4 = (s16)OF_DY2FIX;
-	mydata.d5 = (s16)OF_DY2FIX_DETECT;
-	mydata.d6 = (s16)OF_DY2FIX_DETECT_LPF;
+//	mydata.d1 = (s16)OF_DX2FIX;
+//	mydata.d2 = (s16)OF_DX2FIX_DETECT;
+//	mydata.d3 = (s16)OF_DX2FIX_DETECT_LPF;
+//	mydata.d4 = (s16)OF_DY2FIX;
+//	mydata.d5 = (s16)OF_DY2FIX_DETECT;
+//	mydata.d6 = (s16)OF_DY2FIX_DETECT_LPF;
 	
 }
 
