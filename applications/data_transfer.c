@@ -623,6 +623,30 @@ void ANO_DT_Send_User2()
 	ANO_DT_Send_Data(data_to_send, _cnt);
 }
 
+//向地面站辅助程序发送信息
+void ANO_DT_Send_User3()
+{
+	u8 _cnt=0;
+	vs16 _temp;
+	
+	data_to_send[_cnt++]=0xAA; 
+	data_to_send[_cnt++]=0xAA;
+	data_to_send[_cnt++]=0xf3; //用户数据3（对小车发送跟踪结果）
+	data_to_send[_cnt++]=0;
+	
+	data_to_send[_cnt++] = tracking_state;	//跟踪情况	0：失败   1：成功
+	
+	data_to_send[3] = _cnt-4;				//LEN位，在这里补上
+	
+	u8 sum = 0;
+	for(u8 i=0;i<_cnt;i++)
+		sum += data_to_send[i];
+	
+	data_to_send[_cnt++]=sum;
+
+	ANO_DT_Send_Data(data_to_send, _cnt);
+}
+
 //**************************************************************************************************\
 //							对外数据输入输出函数，总调用接口
 //**************************************************************************************************\
@@ -770,6 +794,7 @@ void ANO_DT_Data_Exchange(void)	//当前调用周期1ms
 			f.send_user = 0;
 			ANO_DT_Send_User();
 			ANO_DT_Send_User2();
+			ANO_DT_Send_User3();
 		}
 		else if(f.send_senser)	//9轴姿态传感器数值
 		{
