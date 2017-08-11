@@ -577,6 +577,11 @@
               <FileType>1</FileType>
               <FilePath>.\applications\position_function_flow.c</FilePath>
             </File>
+            <File>
+              <FileName>renesas_datatransfer.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\applications\renesas_datatransfer.c</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>
