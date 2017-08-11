@@ -16,7 +16,7 @@
 
 
 float CH_ctrl[CH_NUM];	//具体输入给ctrl的遥控器值
-float my_except_height = 0;//期望高度
+float my_except_height = 0;//期望高度，单位mm
 u8 my_height_mode = 0;	//模式使用的定高模式
 						//0：油门
 						//1：期望高度
