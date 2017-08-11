@@ -203,7 +203,7 @@ void take_off(float dT)	//dT单位是s
 
 	CH_ctrl[THR] = thr_auto;	//输出值传给油门
 	
-	mydata.d14 = (u16)thr_auto;
+//	mydata.d14 = (u16)thr_auto;
 }
 
 //4.降落
