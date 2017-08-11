@@ -99,6 +99,11 @@ void USART3_IRQHandler(void)
 	Usart3_IRQ();
 }
 
+void UART4_IRQHandler(void)
+{
+	Uart4_IRQ();
+}
+
 void UART5_IRQHandler(void)
 {
 	Uart5_IRQ();

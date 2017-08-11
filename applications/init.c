@@ -54,6 +54,8 @@ u8 All_Init()
 		Ultrasonic_Init();
 	#endif
 	
+	Uart4_Init(115200);		//串口4
+	
 	ak8975_ok = !(ANO_AK8975_Run());
 	
 	ANO_ADC_Init();					//ADC电池电压采集
