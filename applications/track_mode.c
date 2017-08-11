@@ -61,7 +61,7 @@ void Copter_Search(float T)
 {
 	//速度控制用前进状态特殊速度控制
 	pitch_speed = 3;
-	roll_speed = 3;		//水平光流速度
+	roll_speed = 3;		//摄像头前进
 	
 	//只开启水平位置期望
 	roll_position = 1;	//位置

@@ -24,6 +24,8 @@ void forward_pitch(void)
 	static u8 d_stop_flag = 0;		//停止d运算的标志位，表示speed_error_old数值无效
 	s32 out_tmp;
 	
+	static u8 lost_circle_flag = 0;	//如果出现超出状态，就是已经丢失圆，准备进入跟随模式
+	
 	/*
 		speed_d_bias_pitch			速度值			+ <前---  ---后> -
 		speed_d_bias_lpf_pitch		lpf值			+ <前---  ---后> -
@@ -44,15 +46,23 @@ void forward_pitch(void)
 		
 		//向前飘动
 		
-		p_out = 0.0f;
+		p_out = -0.5f;	//向前很低的倾角
 		i_out = 0.0f;
 		d_out = 0.0f;
 		
 		speed_error_old = 0;	// speed_error_old 清零（在一定程度上减小对d的影响）
 		d_stop_flag = 1;	//表示speed_error_old无效，无法进行d运算
+		
+		lost_circle_flag = 1;	//在向前飘模式出现前后超出都认为是已经开始匹配小车
 	}
 	else
 	{
+		if(lost_circle_flag)
+		{
+			//在丢失圆后又看到东西
+			ctrl_command = 5;		//进入跟随模式
+		}
+		
 		//bias_detect值正常
 		
 		speed_error = except_speed - speed_d_bias_lpf_pitch;	//计算error   speed_error值
@@ -139,7 +149,7 @@ void forward_roll(void)
 
 		// 此时已经丢失视野，放弃roll调整
 		
-		p_out = 0.0f;	//中间设置死区
+		p_out = 0.0f;
 		i_out = 0.0f;
 		d_out = 0.0f;
 		

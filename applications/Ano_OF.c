@@ -85,7 +85,11 @@ void AnoOF_DataAnl(uint8_t *data_buf,uint8_t num)
 			OF_DY2FIX	= (int16_t)(*(data_buf+12)<<8)|*(data_buf+13) ;
 			OF_LIGHT  	= *(data_buf+14);
 			
-			loop.flow_data_ok = 1;	//指示光流速度数据已经更新
+			#if defined(ANO_OF_FUNCTION)
+			
+				loop.flow_data_ok = 1;	//指示光流速度数据已经更新
+			
+			#endif
 		}
 	}
 	if(*(data_buf+2)==0X52)//高度信息
