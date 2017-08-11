@@ -432,7 +432,10 @@ float Height_Ctrl(float T,u8 mode,float thr,float height,u8 ready,float en)	//高
 		
 		#endif
 		
-		set_height_e = set_height_e * 2.0f;	//给一个p
+		if( ABS(set_height_e) < 150)
+			set_height_e = set_height_e * 2.0f;	//给一个p
+		else
+			set_height_e = set_height_e * 5.0f;	//给一个p
 	}
 	
 	if(mode == 0)	//油门值控制
@@ -443,12 +446,12 @@ float Height_Ctrl(float T,u8 mode,float thr,float height,u8 ready,float en)	//高
 	else
 	{
 		//高度控制
-		if( set_height_e > 100)			//期望高度大于当前高度，需要上升
+		if( set_height_e > 200)			//期望高度大于当前高度，需要上升
 		{
 			//期望速度模式
 			my_thr_out = Height_Pid(T,en,1,0,300,detection_takeoff_flag,detection_modechange_flag);	//设置上升速度
 		}
-		else if(set_height_e < -100)	//期望高度小于当前高度，需要下降
+		else if(set_height_e < -200)	//期望高度小于当前高度，需要下降
 		{
 			//期望速度模式
 			my_thr_out = Height_Pid(T,en,1,0,-240,detection_takeoff_flag,detection_modechange_flag);	//设置下降速度

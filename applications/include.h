@@ -14,9 +14,9 @@
 
 //================系统===================
 
-//#define USE_US100				//使用us100型号超声波
+#define USE_US100				//使用us100型号超声波
 //#define	USE_KS103			//使用KS103型号超声波
-#define	USE_ANO_OF			//使用光流传感器
+//#define	USE_ANO_OF			//使用光流传感器
 
 #define MAXMOTORS 			(4)		//电机数量
 #define GET_TIME_NUM 		(10)		//设置获取时间的数组数量

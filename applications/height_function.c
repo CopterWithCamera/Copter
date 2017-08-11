@@ -138,7 +138,7 @@ void take_off(float dT)	//dTµ¥Î»ÊÇs
 	}
 	else if(auto_take_off == 4)
 	{
-		thr_auto = 30;
+		thr_auto = 50;
 		
 		time_counter -= dT;
 		
