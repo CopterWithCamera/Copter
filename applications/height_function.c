@@ -128,7 +128,7 @@ void take_off(float dT)	//dT单位是s
 	{
 		if(thr_auto > 0.0f)
 		{
-			thr_auto -= 180 *dT;	//油门缓慢缩小，在2ms调用周期下1.7s中后此变量归零
+			thr_auto -= 180 *dT;	//油门缓慢缩小，在2ms调用周期下1.666s中后此变量归零
 		}
 		else
 		{
@@ -136,7 +136,7 @@ void take_off(float dT)	//dT单位是s
 			time_counter = 1.0;
 		}
 	}
-	else if(auto_take_off == 4)
+	else if(auto_take_off == 4)		//1s整，然后锁定当前高度
 	{
 		thr_auto = 50;
 		
