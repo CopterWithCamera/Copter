@@ -331,22 +331,22 @@ void LED_Duty() //50ms一次
 		{
 			if(!fly_ready)				
 			{
-				light.RGB_Info = 28;	//黄呼吸
-			} 
-			else     					
-			{
-				light.RGB_Info = 29;	//黄色
-			}
-		}
-		else
-		{
-			if(!fly_ready)				
-			{
 				light.RGB_Info = 24;	//绿呼吸
 			} 
 			else
 			{
 				light.RGB_Info = 25;	//绿色
+			}
+		}
+		else
+		{	
+			if(!fly_ready)				
+			{
+				light.RGB_Info = 28;	//黄呼吸
+			} 
+			else     					
+			{
+				light.RGB_Info = 29;	//黄色
 			}
 		}
 		
