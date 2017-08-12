@@ -206,6 +206,8 @@ void Fly_Ctrl(float T)		//调用周期5ms
 
 void Fly_Ctrl_Cam(float T)		//调用周期与camera数据相同
 {
+	static u8 position_counter = 0;
+	
 	//只有自动模式才会执行自动控制代码
 	if(mode_state != 3)
 	{
@@ -214,15 +216,32 @@ void Fly_Ctrl_Cam(float T)		//调用周期与camera数据相同
 	
 	//位置控制
 	
-	if( roll_position == 1 )	//摄像头位置输出
+	if(position_counter >= 3)	//降低调用频率
 	{
-		position_roll(T);
+		position_counter = 0;
+		
+		if( roll_position == 1 )	//摄像头位置输出
+		{
+			position_roll(T);
+		}
+		
+		if( pitch_position == 1 )	//摄像头位置输出
+		{
+			position_pitch(T);
+		}
+		
+		if( roll_position == 2 )	//摄像头位置输出
+		{
+			position_track_roll(T);
+		}
+		
+		if( pitch_position == 2 )	//摄像头位置输出
+		{
+			position_track_pitch(T);
+		}
 	}
 	
-	if( pitch_position == 1 )	//摄像头位置输出
-	{
-		position_pitch(T);
-	}
+	position_counter++;
 	
 	//速度控制
 	
@@ -256,6 +275,15 @@ void Fly_Ctrl_Cam(float T)		//调用周期与camera数据相同
 		backward_pitch();
 	}
 	
+	if( roll_speed == 5 )	//摄像头跟踪
+	{
+		speed_track_roll();
+	}
+	
+	if( pitch_speed == 5 )	//摄像头跟踪
+	{
+		speed_track_pitch();
+	}
 }
 
 void Fly_Ctrl_Flow(void)		//调用周期与camera数据相同

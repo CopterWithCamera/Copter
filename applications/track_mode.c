@@ -47,7 +47,7 @@ void Copter_Attitude_Hand(float T)
 //悬停
 void Copter_Hover(float T)
 {
-	roll_speed = 1;		//光流速度
+	roll_speed = 1;
 	pitch_speed = 1;
 	
 	roll_position = 1;
@@ -75,13 +75,11 @@ void Copter_Track(float T)
 {
 	//完全使用摄像头数据
 	
-	//暂时使用悬停算法代替
+	roll_speed = 5;		//跟踪专用速度环
+	pitch_speed = 5;
 	
-	roll_speed = 1;		//摄像头数据
-	pitch_speed = 1;
-	
-	roll_position = 1;
-	pitch_position = 1;
+	roll_position = 2;		//跟踪专用位置环
+	pitch_position = 2;
 	
 	yaw_mode = 0;
 }

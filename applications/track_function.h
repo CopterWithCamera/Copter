@@ -10,6 +10,12 @@ void forward_roll(void);
 void backward_pitch(void);
 void backward_roll(void);
 
+void position_track_pitch(float T);
+void position_track_roll(float T);
+
+void speed_track_roll(void);
+void speed_track_pitch(void);
+
 
 #endif
 
