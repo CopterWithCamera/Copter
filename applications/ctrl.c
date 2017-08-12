@@ -366,6 +366,8 @@ void All_Out(float out_roll,float out_pitch,float out_yaw)
 		}
 	}
 	
+//	All_Out_Switch = 0;
+	
 	//通过AUX8控制输出值，实现一键停转
 	if(!All_Out_Switch)	//All_Out_Switch = 0时急停
 	{

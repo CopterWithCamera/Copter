@@ -216,9 +216,9 @@ void Fly_Ctrl_Cam(float T)		//调用周期与camera数据相同
 	
 	//位置控制
 	
-	if(position_counter >= 3)	//降低调用频率
-	{
-		position_counter = 0;
+//	if(position_counter >= 3)	//降低调用频率
+//	{
+//		position_counter = 0;
 		
 		if( roll_position == 1 )	//摄像头位置输出
 		{
@@ -239,9 +239,9 @@ void Fly_Ctrl_Cam(float T)		//调用周期与camera数据相同
 		{
 			position_track_pitch(T);
 		}
-	}
+//	}
 	
-	position_counter++;
+//	position_counter++;
 	
 	//速度控制
 	

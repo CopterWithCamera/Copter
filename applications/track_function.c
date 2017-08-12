@@ -37,6 +37,12 @@ void forward_pitch(void)
 	
 	//except_speed_pitch      + <-- --> -      单位cm/s
 	
+	if(bias_detect > 50)	//前超出
+	{
+		lost_circle_flag = 1;	//在向前飘模式出现前后超出都认为是已经开始匹配小车
+		mydata.d20 = 1;
+	}
+	
 	except_speed = 10;	//给一个比较合适的前进初速度
 	except_speed = LIMIT(except_speed,-15,15);			//限幅（速度调整要求平稳）
 	
@@ -52,16 +58,19 @@ void forward_pitch(void)
 		
 		speed_error_old = 0;	// speed_error_old 清零（在一定程度上减小对d的影响）
 		d_stop_flag = 1;	//表示speed_error_old无效，无法进行d运算
-		
-		lost_circle_flag = 1;	//在向前飘模式出现前后超出都认为是已经开始匹配小车
+
 	}
 	else
 	{
 		if(lost_circle_flag)
-		{
+		{	
 			//在丢失圆后又看到东西
 			ctrl_command = 5;		//进入跟随模式
+			
+			return;
 		}
+		
+		mydata.d20 = -1;
 		
 		//bias_detect值正常
 		
@@ -606,17 +615,30 @@ void speed_track_pitch(float T)
 	static u8 d_stop_flag = 0;		//停止d运算的标志位，表示speed_error_old数值无效
 	s32 out_tmp;
 	
-	static u8 break_counter = 0;	//刹车计时器
+	static float break_counter = 0;	//刹车计时器
 	
-	if( break_counter*T < 1.0f )
+	break_counter += T;
+	
+	if(break_counter < 0.0f)
 	{
-		CH_ctrl[1] = 40;	//刹车
+		
+	}
+	else if(break_counter < 0.2f)
+	{
+		CH_ctrl[1] = 50.0f;
+		
 		return;
 	}
-	else
+	else if( break_counter < 0.4f )
 	{
-		break_counter++;
+		CH_ctrl[1] = 0.0f;
+		
+		mydata.d20 = 2;
+		
+		return;
 	}
+	
+	mydata.d20 = 3;
 	
 	/*
 		speed_d_bias_pitch			速度值			+ <前---  ---后> -
@@ -721,6 +743,8 @@ void speed_track_roll(void)
 	static u8 d_stop_flag = 0;		//停止d运算的标志位，表示speed_error_old数值无效
 	s32 out_tmp;
 	
+//	static u8 ok_flag = 0;
+	
 	/*
 		CH_filter[0]			遥控器横滚输入	- <---  ---> +
 	
@@ -758,6 +782,11 @@ void speed_track_roll(void)
 		{
 			p_out = 0.0f;	//中间设置死区
 		}
+		
+//		if(ok_flag == 0)
+//		{
+//			p_out = 0;
+//		}
 
 		i_out = 0.0f;
 		d_out = 0.0f;
@@ -768,6 +797,8 @@ void speed_track_roll(void)
 	else
 	{
 		//bias_detect值正常
+		
+//		ok_flag = 1;
 		
 		speed_error = except_speed - speed_d_bias_lpf;	//计算期望速度差   speed_error值   - <-- --> +
 														//error   正：期望向左速度大于当前向左速度，期望向左速度比较大，应该向左加速		负：期望向左速度小于当前向左速度，期望向左速度比较小，应该向右加速
