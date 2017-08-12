@@ -149,11 +149,8 @@ void Fly_Mode_Ctrl(float T)		//飞行模式切换控制函数
 			copter_fly_mode = 4;		//后退降落
 		}
 		
-		//清零
-		if(ctrl_command!=0)
-		{
-			ctrl_command = 0;	//外来指令在此清零
-		}
+		ctrl_command = 0;	//外来指令在此清零
+
 	}
 	
 	//姿态控制模式切换
@@ -270,16 +267,12 @@ void Height_Mode_Ctrl(float T)		//高度模式切换控制函数
 			copter_height_mode = 4;		//指令控高
 		}
 		
-		//清零
-		if(height_command != 0)
-		{
-			height_command = 0;	//外来指令在此清零
-		}
+		height_command = 0;	//外来指令在此清零
 	}
 	
 	//姿态控制模式切换
 	switch(copter_height_mode)
-	{	
+	{
 		case 0:		//手动
 			Copter_Height_Hand(T);
 		break;

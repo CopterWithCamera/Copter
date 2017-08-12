@@ -155,7 +155,8 @@ void RC_Duty( float T , u16 tmp16_CH[CH_NUM] )
 	if(++NS_cnt>200)  // 400ms  未插信号线。
 	{
 		NS_cnt = 0;
-		NS = 0;
+//		NS = 0;
+		NS = 1;
 	}
 }
 
