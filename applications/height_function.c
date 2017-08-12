@@ -170,7 +170,7 @@ void take_off(float dT)	//dT单位是s
 		{
 			if(thr_auto > 0.0f)
 			{
-				thr_auto -= 180 *dT;	//油门缓慢缩小，在2ms调用周期下1.666s中后此变量归零
+				thr_auto -= 180 *dT;	//油门缓慢缩小，在2ms调用周期下1s中后此变量归零
 			}
 			else
 			{
@@ -191,10 +191,10 @@ void take_off(float dT)	//dT单位是s
 		}
 		else
 		{
-			height_command = 2;		//给出定高指令
+//			height_command = 2;		//给出定高指令
 			
-//			my_except_height = 850;	//给850mm的期望高度
-//			height_command = 5;		//指令控高
+			my_except_height = 850;	//给850mm的期望高度
+			height_command = 5;		//指令控高
 		}
 		
 		thr_auto = LIMIT(thr_auto,0,400);	//0代表悬停，300是限制最高值

@@ -46,7 +46,7 @@ void forward_pitch(void)
 		
 		//向前飘动
 		
-		p_out = -0.5f;	//向前很低的倾角
+		p_out = 0.0f;	//向前很低的倾角
 		i_out = 0.0f;
 		d_out = 0.0f;
 		
