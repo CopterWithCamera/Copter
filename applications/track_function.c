@@ -620,29 +620,14 @@ void speed_track_pitch(float T)
 	
 	static float break_counter = 0;	//É²³µ¼ÆÊ±Æ÷
 	
-	break_counter += T;
-	
-	if(break_counter < 0.0f)
+	if(break_counter < 0.2f)
 	{
-		
-	}
-	else if(break_counter < 0.2f)
-	{
-		CH_ctrl[1] = 50.0f;
-		
 		speed_integration_roll = 0.0f;
-		speed_integration_pitch = 0.0f;
+		speed_integration_pitch = -10.0f;
 		
-		return;
+		break_counter = 1.0f;
 	}
-	else if( break_counter < 0.4f )
-	{
-		CH_ctrl[1] = 0.0f;
-		
-		mydata.d20 = 2;
-		
-		return;
-	}
+
 	
 	mydata.d20 = 3;
 	
