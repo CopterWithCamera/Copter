@@ -113,7 +113,7 @@ void forward_pitch(void)
 	CH_ctrl[1] = out;	//根据经验值，CH_ctrl的输入值应该在50-100之间
 }
 
-//前进时用的roll控制
+//前进时用的roll速度控制
 void forward_roll(void)
 {
 	float except_speed = 0.0f;
@@ -213,7 +213,7 @@ void forward_roll(void)
 //*************************************************************************************************************************
 //*************************************************************************************************************************
 
-//后退时用的pitch控制
+//后退时用的pitch速度控制
 void backward_pitch(void)
 {
 	float except_speed = 0.0f;
@@ -596,7 +596,7 @@ void position_track_roll(float T)
 
 //追踪用速度控制
 //接口：except_speed      + <-- --> -      单位cm/s
-void speed_track_pitch(void)
+void speed_track_pitch(float T)
 {
 	float except_speed = 0.0f;
 	float p_out,i_out,d_out,out;
@@ -605,6 +605,18 @@ void speed_track_pitch(void)
 	static float speed_error_old = 0.0f;	//old变量
 	static u8 d_stop_flag = 0;		//停止d运算的标志位，表示speed_error_old数值无效
 	s32 out_tmp;
+	
+	static u8 break_counter = 0;	//刹车计时器
+	
+	if( break_counter*T < 1.0f )
+	{
+		CH_ctrl[1] = 40;	//刹车
+		return;
+	}
+	else
+	{
+		break_counter++;
+	}
 	
 	/*
 		speed_d_bias_pitch			速度值			+ <前---  ---后> -

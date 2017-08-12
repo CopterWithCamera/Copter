@@ -14,7 +14,7 @@ void position_track_pitch(float T);
 void position_track_roll(float T);
 
 void speed_track_roll(void);
-void speed_track_pitch(void);
+void speed_track_pitch(float T);
 
 
 #endif

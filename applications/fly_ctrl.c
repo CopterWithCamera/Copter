@@ -282,7 +282,7 @@ void Fly_Ctrl_Cam(float T)		//调用周期与camera数据相同
 	
 	if( pitch_speed == 5 )	//摄像头跟踪
 	{
-		speed_track_pitch();
+		speed_track_pitch(T);
 	}
 }
 

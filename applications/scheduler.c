@@ -160,8 +160,8 @@ void Duty_5ms()
 	mydata.d15 = (s16)bias_lpf_pitch;
 	mydata.d16 = (s16)speed_d_bias_pitch;
 	mydata.d17 = (s16)speed_d_bias_lpf_pitch;
-	mydata.d18 = (s16)0;
-	mydata.d19 = (s16)0;
+	mydata.d18 = (s16)CH_ctrl[ROL];
+	mydata.d19 = (s16)CH_ctrl[PIT];
 	mydata.d20 = (s16)0;
 	
 //	mydata.d1 = (s16)ultra.height * 10;	//height
