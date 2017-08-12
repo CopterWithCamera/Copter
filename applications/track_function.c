@@ -13,6 +13,8 @@
 #include "ano_of.h"
 #include "position_function.h"
 
+extern void Fly_Mode_Ctrl(float T);
+
 //前进时用的pitch控制
 void forward_pitch(void)
 {
@@ -39,7 +41,7 @@ void forward_pitch(void)
 	
 	if(bias_detect > 50)	//前超出
 	{
-		lost_circle_flag = 1;	//在向前飘模式出现前后超出都认为是已经开始匹配小车
+		lost_circle_flag++;	//在向前飘模式出现前后超出都认为是已经开始匹配小车
 		mydata.d20 = 1;
 	}
 	
@@ -62,10 +64,11 @@ void forward_pitch(void)
 	}
 	else
 	{
-		if(lost_circle_flag)
+		if(lost_circle_flag >= 4)
 		{	
 			//在丢失圆后又看到东西
 			ctrl_command = 5;		//进入跟随模式
+			Fly_Mode_Ctrl(0.0f);
 			
 			return;
 		}
@@ -626,6 +629,9 @@ void speed_track_pitch(float T)
 	else if(break_counter < 0.2f)
 	{
 		CH_ctrl[1] = 50.0f;
+		
+		speed_integration_roll = 0.0f;
+		speed_integration_pitch = 0.0f;
 		
 		return;
 	}
