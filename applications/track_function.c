@@ -623,7 +623,7 @@ void speed_track_pitch(float T)
 	if(break_counter < 0.2f)
 	{
 		speed_integration_roll = 0.0f;
-		speed_integration_pitch = -10.0f;
+		speed_integration_pitch = -30.0f;
 		
 		break_counter = 1.0f;
 	}
