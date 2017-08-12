@@ -17,6 +17,7 @@ extern void Fly_Mode_Ctrl(float T);
 
 //前进时用的pitch控制
 extern float black_or_red;
+extern void Copter_Search();
 void forward_pitch(float T)
 {
 	float except_speed = 0.0f;
@@ -41,13 +42,13 @@ void forward_pitch(float T)
 	//模式使能
 	
 	//except_speed_pitch      + <-- --> -      单位cm/s
-	
+	/*
 	if(bias_detect > 50)	//前超出
 	{
 		lost_circle_flag++;	//在向前飘模式出现前后超出都认为是已经开始匹配小车
 		mydata.d20 = 1;
 	}
-	
+	*/
 	static u32 time_counter = 0;
 	time_counter += T;
 	if(time_counter > 5.0f)
@@ -62,6 +63,7 @@ void forward_pitch(float T)
 	
 	if(Forwoad_Counter < 60)
 	{
+		Copter_Search();
 		CH_ctrl[1] = -30;
 		return;
 	}		
@@ -74,9 +76,10 @@ void forward_pitch(float T)
 	{
 		//进入定点模式
 		ctrl_command = 3;
+		
 		return;
 	}
-	
+	/*
 	if( bias_error_flag != 0 )
 	{
 		// bias_detect（水平偏差）值异常处理
@@ -154,6 +157,7 @@ void forward_pitch(float T)
 	out = ((float)out_tmp) / 100.0f;	//缩小100倍，回归float
 
 	CH_ctrl[1] = out;	//根据经验值，CH_ctrl的输入值应该在50-100之间
+	*/
 }
 
 //前进时用的roll速度控制
