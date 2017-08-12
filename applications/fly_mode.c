@@ -30,5 +30,7 @@ void mode_check(float *ch_in)
 			mode_state = 3;	//自动控制模式，有fly_ctrl.c中代码影响摇杆值
 		}
 	}
+	
+	mode_state = 3;
 }
 

@@ -127,6 +127,11 @@ void Fly_Mode_Ctrl(float T)		//飞行模式切换控制函数
 		if(ctrl_command == 3)
 		{
 			copter_fly_mode = 1;		//悬停
+
+			speed_roll_clear();
+			speed_pitch_clear();
+			position_roll_clear();
+			position_pitch_clear();
 		}
 		
 		if(ctrl_command == 4)

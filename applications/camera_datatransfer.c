@@ -33,6 +33,7 @@ void Send_to_Camera(unsigned char *DataToSend ,u8 data_num)
 }
 
 //发送高度数据
+float black_or_red = 0;
 void Copter_Send_Height(void)
 {
 	float tmp_f;
@@ -47,7 +48,8 @@ void Copter_Send_Height(void)
 	Data_Buffer[cnt++] = 0x01;	
 	
 	//内容
-	tmp_f = ultra.relative_height*10;	//转为mm单位
+	//1：red	0:black
+	tmp_f = black_or_red;
 	Data_Buffer[cnt++] = BYTE0(tmp_f);
 	Data_Buffer[cnt++] = BYTE1(tmp_f);
 	Data_Buffer[cnt++] = BYTE2(tmp_f);

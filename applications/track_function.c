@@ -16,7 +16,8 @@
 extern void Fly_Mode_Ctrl(float T);
 
 //前进时用的pitch控制
-void forward_pitch(void)
+extern float black_or_red;
+void forward_pitch(float T)
 {
 	float except_speed = 0.0f;
 	float p_out,i_out,d_out,out;
@@ -25,6 +26,8 @@ void forward_pitch(void)
 	static float speed_error_old = 0.0f;	//old变量
 	static u8 d_stop_flag = 0;		//停止d运算的标志位，表示speed_error_old数值无效
 	s32 out_tmp;
+	
+	static unsigned int Forwoad_Counter = 0;
 	
 	static u8 lost_circle_flag = 0;	//如果出现超出状态，就是已经丢失圆，准备进入跟随模式
 	
@@ -45,8 +48,34 @@ void forward_pitch(void)
 		mydata.d20 = 1;
 	}
 	
-	except_speed = 10;	//给一个比较合适的前进初速度
-	except_speed = LIMIT(except_speed,-15,15);			//限幅（速度调整要求平稳）
+	static u32 time_counter = 0;
+	time_counter += T;
+	if(time_counter > 5.0f)
+	{
+		black_or_red = 0.0;
+	}
+	
+	//except_speed = 10;	//给一个比较合适的前进初速度
+	//except_speed = LIMIT(except_speed,-15,15);			//限幅（速度调整要求平稳）
+	
+	Forwoad_Counter++;
+	
+	if(Forwoad_Counter < 60)
+	{
+		CH_ctrl[1] = -30;
+		return;
+	}		
+	else if(Forwoad_Counter < 120)
+	{
+		CH_ctrl[1] = 0;
+		return;
+	}
+	else
+	{
+		//进入定点模式
+		ctrl_command = 3;
+		return;
+	}
 	
 	if( bias_error_flag != 0 )
 	{
@@ -69,6 +98,8 @@ void forward_pitch(void)
 			//在丢失圆后又看到东西
 			ctrl_command = 5;		//进入跟随模式
 			Fly_Mode_Ctrl(0.0f);
+			
+			Forwoad_Counter = 0;
 			
 			return;
 		}
@@ -619,15 +650,6 @@ void speed_track_pitch(float T)
 	s32 out_tmp;
 	
 	static float break_counter = 0;	//刹车计时器
-	
-	if(break_counter < 0.2f)
-	{
-		speed_integration_roll = 0.0f;
-		speed_integration_pitch = -30.0f;
-		
-		break_counter = 1.0f;
-	}
-
 	
 	mydata.d20 = 3;
 	

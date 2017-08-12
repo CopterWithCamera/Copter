@@ -4,7 +4,7 @@
 #include "stm32f4xx.h"
 #include "include.h"
 
-void forward_pitch(void);
+void forward_pitch(float T);
 void forward_roll(void);
 
 void backward_pitch(void);

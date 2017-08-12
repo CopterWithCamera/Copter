@@ -262,47 +262,47 @@ void Fly_Ctrl_Cam(float T)		//调用周期与camera数据相同
 	
 	if( pitch_speed == 3 )	//摄像头前进
 	{
-		forward_pitch();
+		forward_pitch(T);
 	}
 	
-	if( roll_speed == 4 )	//摄像头后退
-	{
-		backward_roll();
-	}
-	
-	if( pitch_speed == 4 )	//摄像头后退
-	{
-		backward_pitch();
-	}
-	
-	if( roll_speed == 5 )	//摄像头跟踪
-	{
-		speed_track_roll();
-	}
-	
-	if( pitch_speed == 5 )	//摄像头跟踪
-	{
-		speed_track_pitch(T);
-	}
+//	if( roll_speed == 4 )	//摄像头后退
+//	{
+//		backward_roll();
+//	}
+//	
+//	if( pitch_speed == 4 )	//摄像头后退
+//	{
+//		backward_pitch();
+//	}
+//	
+//	if( roll_speed == 5 )	//摄像头跟踪
+//	{
+//		speed_track_roll();
+//	}
+//	
+//	if( pitch_speed == 5 )	//摄像头跟踪
+//	{
+//		speed_track_pitch(T);
+//	}
 }
 
 void Fly_Ctrl_Flow(void)		//调用周期与camera数据相同
 {	
-	//只有自动模式才会执行自动控制代码
-	if(mode_state != 3)
-	{
-		return;
-	}
-	
-	if(roll_speed == 2)	//光流定点
-	{
-		speed_flow_roll();
-	}
-	
-	if(pitch_speed == 2)	//光流定点
-	{
-		speed_flow_pitch();
-	}
+//	//只有自动模式才会执行自动控制代码
+//	if(mode_state != 3)
+//	{
+//		return;
+//	}
+//	
+//	if(roll_speed == 2)	//光流定点
+//	{
+//		speed_flow_roll();
+//	}
+//	
+//	if(pitch_speed == 2)	//光流定点
+//	{
+//		speed_flow_pitch();
+//	}
 	
 }
 
