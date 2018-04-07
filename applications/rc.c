@@ -222,7 +222,7 @@ void Fly_Ready(float T,float height_speed_mm)
 		//切换解锁状态（解锁时上锁，上锁时解锁）
 		if( !fly_ready )
 		{
-			fly_ready = 1;		//允许解锁
+			fly_ready = 1;		//解锁
 			acc_ng_cali = mpu6050.Gyro_CALIBRATE = 2;	//在解锁的一瞬间执行陀螺仪初始化，认为此时陀螺仪数值为静止时的偏移值
 		}
 		else

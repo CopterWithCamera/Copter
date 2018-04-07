@@ -259,17 +259,19 @@ void Thr_Ctrl(float T , u8 state)	//计算生成 thr_value 和 Thr_Weight
 		
 		if(state)	//定高模式（在此版本代码里，mode_state由fly_mode.c控制）
 		{
-			if(NS==0) 	//丢失信号
+			if(NS==0) 	
 			{
+				//丢失信号
 				thr = LIMIT(thr,0,500);	//保持当前油门值，但不能超过半油门，500这个数在定高代码里代表悬停
 										//也就是说定高模式丢信号时只能悬停或下降（依照丢信号前状态）
 			}
 			thr_value = Height_Ctrl(T,0,thr,0,fly_ready,1);
 		}
-		else			//手动模式（只有mode_state = 0时才是手动，其余的都是自动控高）
+		else		//手动模式（只有mode_state = 0时才是手动，其余的都是自动控高）
 		{
-			if(NS==0) //丢失信号
+			if(NS==0) 
 			{
+				//丢失信号
 				thr = LIMIT(thr,0,300);	//非定高模式丢信号，油门300，基本上就是悬停或者慢速下降
 			}
 			thr_value = Height_Ctrl(T,0,thr,0,fly_ready,0);	 //直接使用油门摇杆值

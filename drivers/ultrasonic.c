@@ -54,6 +54,7 @@ void Ultra_Duty()
 		temp[1] = 0x02;
 		temp[2] = 0xb0;			//0xb0  -- 5m -- 33ms    0xb4 -- 5m -- 78ms   0xbc -- 11m -- 78ms	//为了保证采集周期不超过50ms，选择0xb0（不带温度补偿）的工作模式					
 		Uart5_Send(temp ,3);
+		
 	#elif defined(USE_US100)
 		u8 temp[3];
 		temp[0] = 0x55;
@@ -80,7 +81,6 @@ void Ultra_Duty()
 		ultra_start_f = 0;
 		ultra.h_delta = ultra.relative_height - ultra_distance_old;
 		ultra_distance_old = ultra.relative_height;
-
 	#endif
 
 	ultra_start_f = 1;

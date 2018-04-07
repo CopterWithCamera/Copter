@@ -161,7 +161,7 @@ void Fly_Mode_Ctrl(float T)		//飞行模式切换控制函数
 		break;
 		
 		case 1:
-			Copter_Hover(T);
+			Copter_Hover(T);			//跟踪模式
 		break;
 			
 		case 2:

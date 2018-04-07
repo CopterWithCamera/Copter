@@ -129,75 +129,13 @@ void Duty_5ms()
 	Fly_Height_Ctrl(outer_loop_time);				//高度控制函数
 	Fly_Ctrl(outer_loop_time);						//位置控制函数
 	
-	CTRL_2( outer_loop_time ); 					//外环角度控制。输入：执行周期，期望角度（摇杆量），姿态角度；输出：期望角速度。<函数未封装>
-	
 	//控制上层
 	Fly_Mode_Ctrl(outer_loop_time);					//飞行模式控制
 	Height_Mode_Ctrl(outer_loop_time);
 	
-	/* ********************** 姿态外环 ********************* */
- 	
+	/* ************************ 姿态外环 ************************ */
+	CTRL_2( outer_loop_time ); 					//外环角度控制。输入：执行周期，期望角度（摇杆量），姿态角度；输出：期望角速度。<函数未封装>
 	
-	//数值监控
-
-//	mydata.d1 = (s16)ultra.height * 10;	//height
-//	mydata.d2 = (s16)sonar.displacement;
-//	mydata.d3 = (s16)sonar_fusion.fusion_displacement.out;
-//	mydata.d4 = (s16)my_except_height;
-	
-	mydata.d1 = (s16)ultra.height * 10;	//height
-	mydata.d2 = (s16)sonar.displacement;
-	mydata.d3 = (s16)sonar_fusion.fusion_displacement.out;
-	mydata.d4 = (s16)my_except_height;
-	mydata.d5 = (s16)bias;				//roll方向
-	mydata.d6 = (s16)bias_detect;
-	mydata.d7 = (s16)bias_real;
-	mydata.d8 = (s16)bias_lpf;
-	mydata.d9 = (s16)speed_d_bias;
-	mydata.d10 = (s16)speed_d_bias_lpf;
-	mydata.d11 = (s16)angle;			//yaw
-	mydata.d12 = (s16)bias_pitch;		//pitch方向
-	mydata.d13 = (s16)bias_detect_pitch;
-	mydata.d14 = (s16)bias_real_pitch;
-	mydata.d15 = (s16)bias_lpf_pitch;
-	mydata.d16 = (s16)speed_d_bias_pitch;
-	mydata.d17 = (s16)speed_d_bias_lpf_pitch;
-	mydata.d18 = (s16)CH_ctrl[ROL];
-	mydata.d19 = (s16)CH_ctrl[PIT];
-//	mydata.d20 = (s16)0;
-	
-//	mydata.d1 = (s16)ultra.height * 10;	//height
-//	mydata.d2 = (s16)sonar.displacement;
-//	mydata.d3 = (s16)sonar_fusion.fusion_displacement.out;
-//	mydata.d4 = (s16)angle;
-//	mydata.d5 = (s16)OF_QUA;	//质量参数
-//	mydata.d6 = (s16)OF_LIGHT;
-//	mydata.d7 = (s16)OF_DX;		//x方向
-//	mydata.d8 = (s16)OF_DX2;
-//	mydata.d9 = (s16)OF_DX2FIX;
-//	mydata.d10 = (s16)OF_DY;	//y方向
-//	mydata.d11 = (s16)OF_DY2;
-//	mydata.d12 = (s16)OF_DY2FIX;
-//	mydata.d13 = (s16)OF_ALT;	//高度数据
-//	mydata.d14 = (s16)OF_ALT2;
-//	mydata.d15 = (s16)bias;				//roll方向
-//	mydata.d16 = (s16)bias_real;
-//	mydata.d17 = (s16)bias_lpf;			
-//	mydata.d18 = (s16)bias_pitch;		//pitch方向
-//	mydata.d19 = (s16)bias_real_pitch;
-//	mydata.d20 = (s16)bias_lpf_pitch;
-
-//	mydata.d10 = (s16)position_roll_out;
-//	mydata.d9 = (s16)position_pitch_out;
-//	mydata.d11 = (s16)speed_d_bias_lpf;
-//	mydata.d12 = (s16)speed_d_bias_lpf_pitch;
-//	
-//	mydata.d15 = (s16)bias;				//roll方向
-//	mydata.d16 = (s16)bias_real;
-//	mydata.d17 = (s16)bias_lpf;			
-//	mydata.d18 = (s16)bias_pitch;		//pitch方向
-//	mydata.d19 = (s16)bias_real_pitch;
-//	mydata.d20 = (s16)bias_lpf_pitch;
 }
 
 //10ms线程

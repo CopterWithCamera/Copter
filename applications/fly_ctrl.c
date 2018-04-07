@@ -188,6 +188,9 @@ void Fly_Ctrl(float T)		//调用周期5ms
 	
 	/* ********************* 综合控制 ********************* */
 	
+	//这一段是 mode_state == 3 情况下 使用到摇杆数据时的数据输入代码
+	//作用为把摇杆数据 CH_filter 复制到 CH_ctrl 用于控制
+	
 	if(roll_speed == 0)
 	{
 		attitude_roll();
@@ -206,8 +209,6 @@ void Fly_Ctrl(float T)		//调用周期5ms
 
 void Fly_Ctrl_Cam(float T)		//调用周期与camera数据相同
 {
-	static u8 position_counter = 0;
-	
 	//只有自动模式才会执行自动控制代码
 	if(mode_state != 3)
 	{
@@ -216,32 +217,26 @@ void Fly_Ctrl_Cam(float T)		//调用周期与camera数据相同
 	
 	//位置控制
 	
-//	if(position_counter >= 3)	//降低调用频率
-//	{
-//		position_counter = 0;
-		
-		if( roll_position == 1 )	//摄像头位置输出
-		{
-			position_roll(T);
-		}
-		
-		if( pitch_position == 1 )	//摄像头位置输出
-		{
-			position_pitch(T);
-		}
-		
-		if( roll_position == 2 )	//摄像头位置输出
-		{
-			position_track_roll(T);
-		}
-		
-		if( pitch_position == 2 )	//摄像头位置输出
-		{
-			position_track_pitch(T);
-		}
-//	}
+	if( roll_position == 1 )	//摄像头位置输出
+	{
+		position_roll(T);
+	}
 	
-//	position_counter++;
+	if( pitch_position == 1 )	//摄像头位置输出
+	{
+		position_pitch(T);
+	}
+	
+	if( roll_position == 2 )	//摄像头位置输出
+	{
+		position_track_roll(T);
+	}
+	
+	if( pitch_position == 2 )	//摄像头位置输出
+	{
+		position_track_pitch(T);
+	}
+
 	
 	//速度控制
 	

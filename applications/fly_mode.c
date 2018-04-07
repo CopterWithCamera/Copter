@@ -10,7 +10,7 @@ void mode_check(float *ch_in)
 		mode_state:
 		0：手动				白
 		1：气压计			紫
-		2：超声波+气压计		蓝
+		2：超声波+气压计	蓝
 		3：自动				黄	绿
 	*/
 	
@@ -30,7 +30,5 @@ void mode_check(float *ch_in)
 			mode_state = 3;	//自动控制模式，有fly_ctrl.c中代码影响摇杆值
 		}
 	}
-	
-	mode_state = 3;
 }
 

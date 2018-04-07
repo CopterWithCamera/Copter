@@ -24,7 +24,7 @@
 //#define	USE_ANO_OF			//使用光流传感器
 
 #define MAXMOTORS 			(4)		//电机数量
-#define GET_TIME_NUM 		(10)		//设置获取时间的数组数量
+#define GET_TIME_NUM 		(10)	//设置获取时间的数组数量
 #define CH_NUM 				(8) 	//接收机通道数量
 
 #define ANO_DT_USE_USART2 		//开启串口2数传功能
